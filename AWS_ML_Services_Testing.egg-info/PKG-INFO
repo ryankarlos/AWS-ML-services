@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: AWS-ML-Services-Testing
+Version: 0.1
+Summary: Testing various AWS ML Services
+License: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+
+## Trying out various Auto ML services on AWS 
+
+* Rekognition
+* Transcribe
+* Translate
+* Textract
+* Forecast
+* Comprehend
+* Personalize
+* Fraud Detector
+
+

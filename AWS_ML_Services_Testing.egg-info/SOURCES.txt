@@ -1,0 +1,6 @@
+README.md
+setup.py
+AWS_ML_Services_Testing.egg-info/PKG-INFO
+AWS_ML_Services_Testing.egg-info/SOURCES.txt
+AWS_ML_Services_Testing.egg-info/dependency_links.txt
+AWS_ML_Services_Testing.egg-info/top_level.txt

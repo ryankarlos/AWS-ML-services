@@ -1,0 +1,7 @@
+__pycache__
+.DS_Store
+.idea/
+.ipynb_checkpoints
+*.zip
+*.tar.gz
+train/

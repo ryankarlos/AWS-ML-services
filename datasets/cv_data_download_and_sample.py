@@ -3,8 +3,15 @@ import random
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import shutil
+import logging
+from tqdm import tqdm
+from dask import delayed
 
 print(f"GPU Available: {tf.config.experimental.list_physical_devices('GPU')} \n")
+logging.basicConfig(
+    format="%(asctime)s %(name)s %(levelname)s:%(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 def download_tfds_dataset(name, dir, shuffle=True):
@@ -16,51 +23,67 @@ def download_tfds_dataset(name, dir, shuffle=True):
     )
 
 
-def create_sample_images_from_dir(
+def sample_images_for_aws(
     labels: list,
     number_of_samples: int,
     cropped_dim: tuple,
     images_dir: str,
     samples_dir: str,
 ):
+    delete_image_folders(samples_dir)
+    pbar1 = tqdm(labels)
+    for label in pbar1:
+        pbar1.set_description(f"Writing images for label {label}")
+        dataset_filtered, folder_path = filter_raw_images_from_local_folder(
+            images_dir, label, number_of_samples
+        )
+        pbar2 = tqdm(dataset_filtered)
+        for image, _ in pbar2:
+            fname = tf.constant(f"{folder_path}/{random.randint(0, 200000)}.jpeg")
+            pbar2.set_description(f"Resizing and writing {fname}")
+            fwrite = resize_and_write_images(image, fname, cropped_dim)
+            fwrite.compute()
+        logger.info(f"Completed writing samples for {label} images")
+
+
+def filter_raw_images_from_local_folder(images_dir, label, number_of_samples):
     builder = tfds.ImageFolder(images_dir)
     dataset = builder.as_dataset(split="train", shuffle_files=True, as_supervised=True)
     label_map = builder.info.features["label"]
-    delete_image_folders(samples_dir)
-    for label in labels:
+    folder_path = os.path.join(samples_dir, label)
+    os.mkdir(folder_path)
+    dataset_filtered = dataset.filter(
+        lambda x, y: tf.equal(y, label_map.str2int(label))
+    ).take(number_of_samples)
+    return dataset_filtered, folder_path
 
-        folder_path = os.path.join(samples_dir, label)
-        os.mkdir(folder_path)
-        dataset_filtered = dataset.filter(
-            lambda x, y: tf.equal(y, label_map.str2int(label))
-        ).take(number_of_samples)
-        for image, _ in dataset_filtered:
-            cropped = tf.image.resize_with_crop_or_pad(
-                image, cropped_dim[0], cropped_dim[1]
-            )
-            enc = tf.image.encode_jpeg(cropped)
-            fname = tf.constant(f"{folder_path}/{random.randint(0, 20000)}.jpeg")
-            fwrite = tf.io.write_file(fname, enc)
-        print(f"Completed writing samples for {label} images")
+
+@delayed
+def resize_and_write_images(image, fname, cropped_dim):
+    cropped = tf.image.resize_with_crop_or_pad(image, cropped_dim[0], cropped_dim[1])
+    enc = tf.image.encode_jpeg(cropped)
+    return tf.io.write_file(fname, enc)
 
 
 def delete_image_folders(samples_dir):
     folder_list = os.listdir(samples_dir)
     if folder_list:
-        print(f"Deleting image folders: {','.join(folder_list)} from {samples_dir}")
+        logger.info(
+            f"Deleting image folders: {','.join(folder_list)} from {samples_dir}"
+        )
         for file in folder_list:
             folder_path = os.path.join(samples_dir, file).replace("\\", "/")
             shutil.rmtree(folder_path)
-        print(f"Deletion complete !")
+        logger.info(f"Deletion complete !")
     else:
-        print(f"Folder {samples_dir} is empty. No files to be deleted")
+        logger.info(f"Folder {samples_dir} is empty. No files to be deleted")
 
 
 if __name__ == "__main__":
     # download_tfds_dataset("food101", r"food-cv" )
     labels = ["apple_pie", "chocolate_cake", "fish_and_chips", "pizza"]
-    samples = 20
+    samples = 250
     crop_dim = (400, 400)
     samples_dir = "cv/food101/samples/"
     images_dir = "cv/food101/"
-    create_sample_images_from_dir(labels, samples, crop_dim, images_dir, samples_dir)
+    sample_images_for_aws(labels, samples, crop_dim, images_dir, samples_dir)

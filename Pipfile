@@ -11,6 +11,7 @@ pipenv = "==2022.1.8"
 sagemaker = "==2.78.0"
 tensorflow = "==2.8.0"
 tqdm = "==4.63.0"
+dask = "2022.2.1"
 
 [dev-packages]
 

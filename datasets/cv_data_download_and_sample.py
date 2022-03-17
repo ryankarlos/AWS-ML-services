@@ -6,6 +6,7 @@ import shutil
 import logging
 from tqdm import tqdm
 from dask import delayed
+import argparse
 
 print(f"GPU Available: {tf.config.experimental.list_physical_devices('GPU')} \n")
 logging.basicConfig(
@@ -79,11 +80,34 @@ def delete_image_folders(samples_dir):
         logger.info(f"Folder {samples_dir} is empty. No files to be deleted")
 
 
-if __name__ == "__main__":
+def add_arguments(parser):
+    """
+    Adds command line arguments to the parser.
+    :param parser: The command line parser.
+    """
+
+    parser.add_argument(
+        "--labels", help="List of labels to be used e.g. ['apple_pie', 'chocolate_cake', 'fish_and_chips', 'pizza']"
+    )
+    parser.add_argument("--samples", default=250, help="Number of random samples to use for AWS upload from raw data")
+    parser.add_argument(
+        "--crop_dim", default=(400,400), help="Dimensions to resize the images"
+    )
+
+    parser.add_argument("--samples_dir", help="local dir where the samples for aws will be stored")
+    parser.add_argument(
+        "--images_dir", help="dir where the raw images downloaded from tf datasets"
+    )
+
+
+def main():
+    # get command line arguments
+    parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
+    add_arguments(parser)
+    args = parser.parse_args()
     # download_tfds_dataset("food101", r"food-cv" )
-    labels = ["apple_pie", "chocolate_cake", "fish_and_chips", "pizza"]
-    samples = 250
-    crop_dim = (400, 400)
-    samples_dir = "cv/food101/food101_aws/"
-    images_dir = "cv/food101/"
-    sample_images_for_aws(labels, samples, crop_dim, images_dir, samples_dir)
+    sample_images_for_aws(args.labels, args.samples, args.crop_dim, args.images_dir, args.samples_dir)
+
+
+if __name__ == "__main__":
+    main()

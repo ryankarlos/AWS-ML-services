@@ -24,7 +24,7 @@ def download_tfds_dataset(name, dir, shuffle=True):
     )
 
 
-def sample_images_for_aws(
+def create_sample_images_for_aws(
     labels: list,
     number_of_samples: int,
     cropped_dim: tuple,
@@ -35,9 +35,16 @@ def sample_images_for_aws(
     pbar1 = tqdm(labels)
     for label in pbar1:
         pbar1.set_description(f"Writing images for label {label}")
-        dataset_filtered, folder_path = filter_raw_images_from_local_folder(
-            images_dir, label, number_of_samples
+        builder = tfds.ImageFolder(images_dir)
+        dataset = builder.as_dataset(
+            split="train", shuffle_files=True, as_supervised=True
         )
+        label_map = builder.info.features["label"]
+        folder_path = os.path.join(samples_dir, label)
+        os.mkdir(folder_path)
+        dataset_filtered = dataset.filter(
+            lambda x, y: tf.equal(y, label_map.str2int(label))
+        ).take(number_of_samples)
         pbar2 = tqdm(dataset_filtered)
         for image, _ in pbar2:
             fname = tf.constant(f"{folder_path}/{random.randint(0, 200000)}.jpeg")
@@ -45,18 +52,6 @@ def sample_images_for_aws(
             fwrite = resize_and_write_images(image, fname, cropped_dim)
             fwrite.compute()
         logger.info(f"Completed writing food101_aws for {label} images")
-
-
-def filter_raw_images_from_local_folder(images_dir, label, number_of_samples):
-    builder = tfds.ImageFolder(images_dir)
-    dataset = builder.as_dataset(split="train", shuffle_files=True, as_supervised=True)
-    label_map = builder.info.features["label"]
-    folder_path = os.path.join(samples_dir, label)
-    os.mkdir(folder_path)
-    dataset_filtered = dataset.filter(
-        lambda x, y: tf.equal(y, label_map.str2int(label))
-    ).take(number_of_samples)
-    return dataset_filtered, folder_path
 
 
 @delayed
@@ -87,14 +82,21 @@ def add_arguments(parser):
     """
 
     parser.add_argument(
-        "--labels", help="List of labels to be used e.g. ['apple_pie', 'chocolate_cake', 'fish_and_chips', 'pizza']"
+        "--labels",
+        help="List of labels to be used e.g. ['apple_pie', 'chocolate_cake', 'fish_and_chips', 'pizza']",
     )
-    parser.add_argument("--samples", default=250, help="Number of random samples to use for AWS upload from raw data")
     parser.add_argument(
-        "--crop_dim", default=(400,400), help="Dimensions to resize the images"
+        "--samples",
+        default=250,
+        help="Number of random samples to use for AWS upload from raw data",
+    )
+    parser.add_argument(
+        "--crop_dim", default=(400, 400), help="Dimensions to resize the images"
     )
 
-    parser.add_argument("--samples_dir", help="local dir where the samples for aws will be stored")
+    parser.add_argument(
+        "--samples_dir", help="local dir where the samples for aws will be stored"
+    )
     parser.add_argument(
         "--images_dir", help="dir where the raw images downloaded from tf datasets"
     )
@@ -106,7 +108,9 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
     # download_tfds_dataset("food101", r"food-cv" )
-    sample_images_for_aws(args.labels, args.samples, args.crop_dim, args.images_dir, args.samples_dir)
+    create_sample_images_for_aws(
+        args.labels, args.samples, args.crop_dim, args.images_dir, args.samples_dir
+    )
 
 
 if __name__ == "__main__":

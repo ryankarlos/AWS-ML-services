@@ -65,7 +65,7 @@ def main():
     parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
     add_arguments(parser)
     args = parser.parse_args()
-    # create_bucket(s3_client, args.bucket_name, policy=bucket_policy_rekog)
+    create_bucket(s3_client, args.bucket_name, policy=bucket_policy_rekog)
     upload_folder_to_s3(s3_resource, args.local_dir, args.bucket_name)
     logger.info(
         f"Successfully uploaded all image folders in {args.local_dir} to S3  bucket {args.bucket_name}"

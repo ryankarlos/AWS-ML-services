@@ -46,7 +46,7 @@ def train_model(
 
         tags = {}
 
-        if tag_key != None and tag_key_value != None:
+        if tag_key is not None and tag_key_value is not None:
             tags = json.loads('{"' + tag_key + '":"' + tag_key_value + '"}')
 
         response = rek_client.create_project_version(
@@ -126,9 +126,6 @@ def main():
         print(
             f"Training model version {args.version_name} for project {args.project_arn}"
         )
-
-        # Train the model
-        rek_client = boto3.client("rekognition")
 
         model_arn, status = train_model(
             rek_client,

@@ -5,3 +5,4 @@ __pycache__
 *.zip
 *.tar.gz
 train/
+aws_cli_commands.sh

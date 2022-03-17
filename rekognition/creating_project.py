@@ -19,8 +19,6 @@ def create_project(rek_client, project_name):
 
         response = rek_client.create_project(ProjectName=project_name)
 
-        logger.info(f"project ARN: {response['ProjectArn']}")
-
         return response["ProjectArn"]
 
     except ClientError as err:
@@ -49,19 +47,18 @@ def main():
         add_arguments(parser)
         args = parser.parse_args()
 
-        print(f"Creating project: {args.project_name}")
+        logger.info(f"Creating project: {args.project_name}")
 
         # Create the project
         rek_client = boto3.client("rekognition")
 
         project_arn = create_project(rek_client, args.project_name)
 
-        print(f"Finished creating project: {args.project_name}")
-        print(f"ARN: {project_arn}")
+        logger.info(f"Finished creating project: {args.project_name}")
 
     except ClientError as err:
         logger.exception(f"Problem creating project: {err}")
-        print(f"Problem creating project: {err}")
+        logger.info(f"Problem creating project: {err}")
 
 
 if __name__ == "__main__":

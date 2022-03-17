@@ -40,7 +40,7 @@ def upload_folder_to_s3(s3_resource, path, bucket_name):
         for child in pbar:
             label_name = child.parent.name
             aws_path = project_name + "/" + label_name
-            key = aws_path + "/" + str(child.stem) + '.jpeg'
+            key = aws_path + "/" + str(child.stem) + ".jpeg"
             pbar.set_description(
                 f"Uploading {str(child)} to {aws_path} in S3 bucket {bucket_name}"
             )

@@ -8,11 +8,12 @@ from tqdm import tqdm
 from dask import delayed
 import argparse
 
-print(f"GPU Available: {tf.config.experimental.list_physical_devices('GPU')} \n")
+
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s:%(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+logger.info(f"GPU Available: {tf.config.experimental.list_physical_devices('GPU')} \n")
 
 
 def download_tfds_dataset(name, dir, shuffle=True):

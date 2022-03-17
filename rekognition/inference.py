@@ -1,122 +1,59 @@
 import boto3
-import io
 import logging
 import argparse
-from PIL import Image, ImageDraw, ImageFont
 from botocore.exceptions import ClientError
-import time
-
-logger = logging.getLogger(__name__)
+import io
+from PIL import Image, ImageDraw, ExifTags, ImageColor, ImageFont
 
 
 rek_client = boto3.client("rekognition")
-
-
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def start_model(rek_client, project_arn, model_arn, min_inference_units):
-    """
-    Copied from https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/rm-start.html#rm-start-sdk
-    """
+def start_model(project_arn, model_arn, version_name, min_inference_units):
+    client = boto3.client("rekognition")
 
     try:
         # Start the model
-        logger.info(f"Starting model: {model_arn}. Please wait....")
-
-        rek_client.start_project_version(
+        print("Starting model: " + model_arn)
+        response = client.start_project_version(
             ProjectVersionArn=model_arn, MinInferenceUnits=min_inference_units
         )
-
         # Wait for the model to be in the running state
-        version_name = (model_arn.split("version/", 1)[1]).rpartition("/")[0]
-        project_version_running_waiter = rek_client.get_waiter(
-            "project_version_running"
-        )
+        project_version_running_waiter = client.get_waiter("project_version_running")
         project_version_running_waiter.wait(
             ProjectArn=project_arn, VersionNames=[version_name]
         )
 
         # Get the running status
-        return get_model_status(rek_client, project_arn, model_arn)
-
-    except Exception as e:
-        logger.exception(
-            f"Couldn't start model - {model_arn}: {e.response['Error']['Message']}"
+        describe_response = client.describe_project_versions(
+            ProjectArn=project_arn, VersionNames=[version_name]
         )
+        for model in describe_response["ProjectVersionDescriptions"]:
+            print("Status: " + model["Status"])
+            print("Message: " + model["StatusMessage"])
+    except Exception as e:
+        print(e)
 
     print("Done...")
 
 
-def get_model_status(rek_client, project_arn, model_arn):
-    """
-    Gets the current status of an Amazon Rekognition Custom Labels model
-    :param rek_client: The Amazon Rekognition Custom Labels Boto3 client.
-    :param project_name:  The name of the project that you want to use.
-    :param model_arn:  The name of the model that you want the status for.
-    """
+def stop_model(model_arn):
 
-    logger.info(f"Getting status for {model_arn}.")
+    client = boto3.client("rekognition")
 
-    # extract the model version from the model arn.
-    version_name = (model_arn.split("version/", 1)[1]).rpartition("/")[0]
+    print("Stopping model:" + model_arn)
 
-    models = rek_client.describe_project_versions(
-        ProjectArn=project_arn, VersionNames=[version_name]
-    )
-
-    for model in models["ProjectVersionDescriptions"]:
-        logger.info(f"Status: {model['StatusMessage']}")
-        return model["Status"]
-
-    logger.exception(f"Model {model_arn} not found.")
-    raise Exception(f"Model {model_arn} not found.")
-
-
-def stop_model(rek_client, project_arn, model_arn):
-    """
-    Stops a running Amazon Rekognition Custom Labels Model.
-    :param rek_client: The Amazon Rekognition Custom Labels Boto3 client.
-    :param project_arn: The ARN of the project that you want to stop running.
-    :param model_arn:  The ARN of the model (ProjectVersion) that you want to stop running.
-    """
-
-    logger.info(f"Stopping model: {model_arn}")
-
+    # Stop the model
     try:
-        # Stop the model
-        response = rek_client.stop_project_version(ProjectVersionArn=model_arn)
+        response = client.stop_project_version(ProjectVersionArn=model_arn)
+        status = response["Status"]
+        print("Status: " + status)
+    except Exception as e:
+        print(e)
 
-        logger.info(f"Status: {response['Status']}")
-
-        # stops when hosting has stopped or failure.
-        status = ""
-        finished = False
-
-        while finished is False:
-
-            status = get_model_status(rek_client, project_arn, model_arn)
-
-            if status == "STOPPING":
-                logger.info("Model stopping in progress...")
-                time.sleep(10)
-                continue
-            if status == "STOPPED":
-                logger.info("Model is not running.")
-                finished = True
-                continue
-
-            logger.exception(f"Error stopping model. Unexepected state: {status}")
-            raise Exception(f"Error stopping model. Unexepected state: {status}")
-
-        logger.info(f"finished. Status {status}")
-        return status
-
-    except ClientError as e:
-        logger.exception(
-            f"Couldn't stop model - {model_arn}: {e.response['Error']['Message']}"
-        )
-        raise
+    print("Done...")
 
 
 def analyze_local_image(rek_client, model, photo, min_confidence):
@@ -134,7 +71,7 @@ def analyze_local_image(rek_client, model, photo, min_confidence):
         image = Image.open(photo)
         image_type = Image.MIME[image.format]
 
-        if (image_type == "image/jpeg" or image_type == "image/png") == False:
+        if not (image_type == "image/jpeg" or image_type == "image/png"):
             logger.error("Invalid image type for %s", photo)
             raise ValueError(
                 f"Invalid file format. Supply a jpeg or png format file: {photo}"
@@ -150,10 +87,12 @@ def analyze_local_image(rek_client, model, photo, min_confidence):
             MinConfidence=min_confidence,
             ProjectVersionArn=model,
         )
+        logger.info(f"Detected custom labels for {photo}: {response['CustomLabels']}")
 
-        show_predictions(image, response)
-        return len(response["CustomLabels"])
+        # For object detection use case, uncomment below code to display image.
+        # image = draw_bounding_box_for_labels(response, image)
 
+        return response, image
     except ClientError as client_err:
         logger.error(format(client_err))
         raise
@@ -162,133 +101,154 @@ def analyze_local_image(rek_client, model, photo, min_confidence):
         raise
 
 
-def analyze_s3_image(rek_client, s3_connection, model, bucket, photo, min_confidence):
-    """
-    Analyzes an image stored in the specified S3 bucket.
-    :param rek_client: The Amazon Rekognition Boto3 client.
-    :param s3_connection: The Amazon S3 Boto3 S3 connection object.
-    :param model: The ARN of the Amazon Rekognition Custom Labels model that you want to use.
-    :param bucket: The name of the S3 bucket that contains the image that you want to analyze.
-    :param photo: The name of the photo that you want to analyze.
-    :param min_confidence: The desired threshold/confidence for the call.
-    """
+def analyze_s3_image(rek_client, bucket, photo, model_arn, min_confidence):
+    # Load image from S3 bucket
+    s3_connection = boto3.resource("s3")
 
-    try:
-        # Get image from S3 bucket.
+    s3_object = s3_connection.Object(bucket, photo)
+    s3_response = s3_object.get()
 
-        logger.info("analyzing bucket: %s image: %s", bucket, photo)
-        s3_object = s3_connection.Object(bucket, photo)
-        s3_response = s3_object.get()
+    stream = io.BytesIO(s3_response["Body"].read())
+    image = Image.open(stream)
+    # Call DetectCustomLabels
+    response = rek_client.detect_custom_labels(
+        Image={"S3Object": {"Bucket": bucket, "Name": photo}},
+        MinConfidence=min_confidence,
+        ProjectVersionArn=model_arn,
+    )
 
-        stream = io.BytesIO(s3_response["Body"].read())
-        image = Image.open(stream)
+    # For object detection use case, uncomment below code to display image.
+    # image = draw_bounding_box_for_labels(response, image)
 
-        image_type = Image.MIME[image.format]
+    return response, image
 
-        if (image_type == "image/jpeg" or image_type == "image/png") == False:
-            logger.error("Invalid image type for %s", photo)
-            raise ValueError(
-                f"Invalid file format. Supply a jpeg or png format file: {photo}"
+
+def draw_bounding_box_for_labels(response, image):
+    # calculate and display bounding boxes for each detected custom label
+    imgWidth, imgHeight = image.size
+    draw = ImageDraw.Draw(image)
+    for customLabel in response["CustomLabels"]:
+        print("Label " + str(customLabel["Name"]))
+        print("Confidence " + str(customLabel["Confidence"]))
+        if "Geometry" in customLabel:
+            box = customLabel["Geometry"]["BoundingBox"]
+            left = imgWidth * box["Left"]
+            top = imgHeight * box["Top"]
+            width = imgWidth * box["Width"]
+            height = imgHeight * box["Height"]
+
+            fnt = ImageFont.truetype("/Library/Fonts/Arial.ttf", 50)
+            draw.text((left, top), customLabel["Name"], fill="#00d400", font=fnt)
+
+            print("Left: " + "{0:.0f}".format(left))
+            print("Top: " + "{0:.0f}".format(top))
+            print("Label Width: " + "{0:.0f}".format(width))
+            print("Label Height: " + "{0:.0f}".format(height))
+
+            points = (
+                (left, top),
+                (left + width, top),
+                (left + width, top + height),
+                (left, top + height),
+                (left, top),
             )
+            draw.line(points, fill="#00d400", width=5)
 
-        img_width, img_height = image.size
-        draw = ImageDraw.Draw(image)
-
-        # Call DetectCustomLabels
-        response = rek_client.detect_custom_labels(
-            Image={"S3Object": {"Bucket": bucket, "Name": photo}},
-            MinConfidence=min_confidence,
-            ProjectVersionArn=model,
-        )
-
-        show_predictions(image, response)
-        return len(response["CustomLabels"])
-
-    except ClientError as err:
-        logger.error(format(err))
-        raise
+    return image
 
 
-def show_predictions(response):
-    """
-    Displays the analyzed image and overlays analysis results
-    :param image: The analyzed image
-    :param response: the response from DetectCustomLabels
-    """
-    try:
-        for custom_label in response["CustomLabels"]:
-            confidence = int(round(custom_label["Confidence"], 0))
-            logger.info(f"{custom_label['Name']}:{confidence}%")
-    except Exception as err:
-        logger.error(format(err))
-        raise
-
-
-def add_arguments(parser):
+def add_arguments():
     """
     Adds command line arguments to the parser.
     :param parser: The command line parser.
     """
-
-    parser.add_argument("model_arn", help="The ARN of the model that you want to use.")
-
+    # get command line arguments
+    parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
+    add_arguments(parser)
+    args = parser.parse_args()
     parser.add_argument(
-        "image", help="The path and file name of the image that you want to analyze"
+        "--model_arn", help="The ARN of the model that you want to use."
+    )
+    parser.add_argument(
+        "--project_arn",
+        help="The ARN of the project that contains that the model you want to start.",
+    )
+    parser.add_argument(
+        "--image", help="The path and file name of the image that you want to analyze"
+    )
+    parser.add_argument(
+        "--min_inference_units",
+        default=1,
+        help="The minimum number of inference units to use.",
+    )
+    parser.add_argument(
+        "--min_confidence",
+        default=50,
+        help="Min confidence threshold for label detection",
     )
     parser.add_argument(
         "--bucket",
         help="The bucket that contains the image. If not supplied, image is assumed to be a local file.",
         required=False,
     )
+    parser.add_argument(
+        "--photo",
+        help="the image key for the image if fetching from s3 bucket",
+        required=False,
+    )
+
+    return args
 
 
 def main():
     try:
-        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+        args = add_arguments()
 
-        # get command line arguments
-        parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
-        add_arguments(parser)
-        args = parser.parse_args()
+        # start the model
+        start_model(
+            args.project_arn,
+            args.model_arn,
+            args.version_name,
+            args.min_inference_units,
+        )
+        logger.info(f"Finished starting model: {args.model_arn}")
 
-        label_count = 0
-        min_confidence = 50
-
-        rek_client = boto3.client("rekognition")
-
-        if args.bucket == None:
+        if args.bucket is None:
             # Analyze local image
-            label_count = analyze_local_image(
-                rek_client, args.model_arn, args.image, min_confidence
+            logger.info(f"Analysing local image as --bucket arg not supplied")
+            _, image = analyze_local_image(
+                rek_client, args.model_arn, args.image, args.min_confidence
             )
+            image.show()
         else:
             # Analyze image in S3 bucket
-            s3_connection = boto3.resource("s3")
-            label_count = analyze_s3_image(
-                rek_client,
-                s3_connection,
-                args.model_arn,
-                args.bucket,
-                args.image,
-                min_confidence,
+            if args.photo is None:
+                raise ValueError(
+                    f"--photo arg also needs to be supplied if fetching image from s3 bucket"
+                )
+            _, image = analyze_s3_image(
+                rek_client, args.bucket, args.photo, args.model_arn, args.min_confidence
             )
+            image.show()
 
-        print(f"Custom labels detected: {label_count}")
+        # stop the model
+        stop_model(args.model_arn)
+        logger.info(f"Finished stopping model: {args.model_arn}")
 
     except ClientError as client_err:
-        print(
+        logger.exception(
             "A service client error occurred: "
             + format(client_err.response["Error"]["Message"])
         )
 
     except ValueError as value_err:
-        print("A value error occurred: " + format(value_err))
+        logger.exception("A value error occurred: " + format(value_err))
 
     except FileNotFoundError as file_error:
-        print("File not found error: " + format(file_error))
+        logger.exception("File not found error: " + format(file_error))
 
     except Exception as err:
-        print("An error occurred: " + format(err))
+        logger.exception("An error occurred: " + format(err))
 
 
 if __name__ == "__main__":

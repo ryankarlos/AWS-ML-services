@@ -38,8 +38,6 @@ def create_dataset_from_existing_dataset(
 
         dataset_arn = response["DatasetArn"]
 
-        logger.info(f"New dataset ARN: {dataset_arn}")
-
         finished = False
         while finished == False:
 

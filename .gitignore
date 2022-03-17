@@ -4,5 +4,6 @@ __pycache__
 .ipynb_checkpoints
 *.zip
 *.tar.gz
+*.jpeg
 train/
 aws_cli_commands.sh

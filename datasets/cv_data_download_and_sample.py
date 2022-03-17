@@ -43,7 +43,7 @@ def sample_images_for_aws(
             pbar2.set_description(f"Resizing and writing {fname}")
             fwrite = resize_and_write_images(image, fname, cropped_dim)
             fwrite.compute()
-        logger.info(f"Completed writing samples for {label} images")
+        logger.info(f"Completed writing food101_aws for {label} images")
 
 
 def filter_raw_images_from_local_folder(images_dir, label, number_of_samples):
@@ -84,6 +84,6 @@ if __name__ == "__main__":
     labels = ["apple_pie", "chocolate_cake", "fish_and_chips", "pizza"]
     samples = 250
     crop_dim = (400, 400)
-    samples_dir = "cv/food101/samples/"
+    samples_dir = "cv/food101/food101_aws/"
     images_dir = "cv/food101/"
     sample_images_for_aws(labels, samples, crop_dim, images_dir, samples_dir)

@@ -1,0 +1,41 @@
+bucket_policy_rekog = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AWSRekognitionS3AclBucketRead20191011",
+            "Effect": "Allow",
+            "Principal": {"Service": "rekognition.amazonaws.com"},
+            "Action": ["s3:GetBucketAcl", "s3:GetBucketLocation"],
+            "Resource": "arn:aws:s3:::rekognition-cv",
+        },
+        {
+            "Sid": "AWSRekognitionS3GetBucket20191011",
+            "Effect": "Allow",
+            "Principal": {"Service": "rekognition.amazonaws.com"},
+            "Action": [
+                "s3:GetObject",
+                "s3:GetObjectAcl",
+                "s3:GetObjectVersion",
+                "s3:GetObjectTagging",
+            ],
+            "Resource": "arn:aws:s3:::rekognition-cv/*",
+        },
+        {
+            "Sid": "AWSRekognitionS3ACLBucketWrite20191011",
+            "Effect": "Allow",
+            "Principal": {"Service": "rekognition.amazonaws.com"},
+            "Action": "s3:GetBucketAcl",
+            "Resource": "arn:aws:s3:::rekognition-cv",
+        },
+        {
+            "Sid": "AWSRekognitionS3PutObject20191011",
+            "Effect": "Allow",
+            "Principal": {"Service": "rekognition.amazonaws.com"},
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::rekognition-cv/*",
+            "Condition": {
+                "StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}
+            },
+        },
+    ],
+}

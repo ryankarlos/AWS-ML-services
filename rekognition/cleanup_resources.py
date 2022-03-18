@@ -177,19 +177,15 @@ def add_arguments(parser):
         choices=["dataset", "project", "model"],
         help="The type of resource that needs deletion.",
     )
-
+    parser.add_argument(
+        "--project_arn",
+        help="The ARN of the project that contains the model that you want to delete.",
+    )
     parser.add_argument(
         "--dataset_arn",
         help="The ARN of the dataset that you want to delete.",
         required=False,
     )
-
-    parser.add_argument(
-        "--project_arn",
-        help="The ARN of the project that contains the model that you want to delete.",
-        required=False,
-    )
-
     parser.add_argument(
         "--model_arn",
         help="The ARN of the model version that you want to delete.",
@@ -207,7 +203,7 @@ def main():
 
         if args.resource == "model":
             expected_arns = {"model_arn", "project_arn"}
-            if expected_arns.issubset(args.keys):
+            if expected_arns.issubset(vars(args)):
 
                 if confirm_model_deletion(args.model_arn):
                     logger.info(f"Deleting model: {args.model_arn}")
@@ -226,7 +222,7 @@ def main():
 
         elif args.resource == "dataset":
             expected_arns = {"dataset_arn"}
-            if expected_arns.issubset(args.keys):
+            if expected_arns.issubset(vars(args)):
                 delete_dataset(rek_client, args.dataset_arn)
 
                 logger.info(f"Finished deleting dataset: {args.dataset_arn}")
@@ -237,7 +233,7 @@ def main():
 
         elif args.resource == "project":
             expected_arns = {"project_arn"}
-            if expected_arns.issubset(args.keys):
+            if expected_arns.issubset(vars(args)):
                 delete_project(rek_client, args.project_arn)
 
                 logger.info(f"Finished deleting project: {args.project_arn}")

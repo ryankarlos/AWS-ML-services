@@ -1,9 +1,12 @@
+import random
 import boto3
 import logging
 import argparse
 from botocore.exceptions import ClientError
 import io
-from PIL import Image, ImageDraw, ExifTags, ImageColor, ImageFont
+from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
+import ast
 
 
 rek_client = boto3.client("rekognition")
@@ -11,15 +14,16 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def start_model(project_arn, model_arn, version_name, min_inference_units):
+def start_model(project_arn, model_arn, min_inference_units):
     client = boto3.client("rekognition")
 
     try:
         # Start the model
-        print("Starting model: " + model_arn)
         response = client.start_project_version(
             ProjectVersionArn=model_arn, MinInferenceUnits=min_inference_units
         )
+        p = Path(model_arn)
+        version_name = p.parts[-2]
         # Wait for the model to be in the running state
         project_version_running_waiter = client.get_waiter("project_version_running")
         project_version_running_waiter.wait(
@@ -31,8 +35,8 @@ def start_model(project_arn, model_arn, version_name, min_inference_units):
             ProjectArn=project_arn, VersionNames=[version_name]
         )
         for model in describe_response["ProjectVersionDescriptions"]:
-            print("Status: " + model["Status"])
-            print("Message: " + model["StatusMessage"])
+            logger.info("Status: " + model["Status"])
+            logger.info("Message: " + model["StatusMessage"])
     except Exception as e:
         print(e)
 
@@ -43,7 +47,7 @@ def stop_model(model_arn):
 
     client = boto3.client("rekognition")
 
-    print("Stopping model:" + model_arn)
+    logging.info("Stopping model:")
 
     # Stop the model
     try:
@@ -52,8 +56,6 @@ def stop_model(model_arn):
         print("Status: " + status)
     except Exception as e:
         print(e)
-
-    print("Done...")
 
 
 def analyze_local_image(rek_client, model, photo, min_confidence):
@@ -157,6 +159,18 @@ def draw_bounding_box_for_labels(response, image):
     return image
 
 
+def get_random_img_for_label_detection(path, labels_list):
+    p = Path(path)
+    # list all the subfolders (food label names)
+    label_paths = [x for x in p.glob("*") if x.stem in labels_list]
+    subfolder_path = random.choice(label_paths)
+    # list all the images
+    image_list = list(subfolder_path.glob("*.jpg"))
+    image_path = random.choice(image_list)
+    correct_label = image_path.parent.stem
+    return image_path, correct_label
+
+
 def add_arguments():
     """
     Adds command line arguments to the parser.
@@ -164,17 +178,23 @@ def add_arguments():
     """
     # get command line arguments
     parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
-    add_arguments(parser)
-    args = parser.parse_args()
     parser.add_argument(
-        "--model_arn", help="The ARN of the model that you want to use."
+        "--model_arn",
+        help="The ARN of the model that you want to use.",
     )
     parser.add_argument(
         "--project_arn",
         help="The ARN of the project that contains that the model you want to start.",
     )
     parser.add_argument(
-        "--image", help="The path and file name of the image that you want to analyze"
+        "--image",
+        help="The path to the image folders to randomly sample images to be analysed",
+    )
+    parser.add_argument(
+        "--labels_list",
+        default='["apple_pie", "chocolate_cake", "fish_and_chips", "pizza"]',
+        type=ast.literal_eval,
+        help="Expected labels for checking accuracy of algorithm",
     )
     parser.add_argument(
         "--min_inference_units",
@@ -183,7 +203,7 @@ def add_arguments():
     )
     parser.add_argument(
         "--min_confidence",
-        default=50,
+        default=60,
         help="Min confidence threshold for label detection",
     )
     parser.add_argument(
@@ -197,6 +217,8 @@ def add_arguments():
         required=False,
     )
 
+    args = parser.parse_args()
+
     return args
 
 
@@ -205,41 +227,61 @@ def main():
         args = add_arguments()
 
         # start the model
+        logger.info(f"Starting model")
         start_model(
             args.project_arn,
             args.model_arn,
-            args.version_name,
             args.min_inference_units,
         )
-        logger.info(f"Finished starting model: {args.model_arn}")
+        logger.info(f"Finished starting model")
+
+        # Analyze image
 
         if args.bucket is None:
-            # Analyze local image
-            logger.info(f"Analysing local image as --bucket arg not supplied")
-            _, image = analyze_local_image(
-                rek_client, args.model_arn, args.image, args.min_confidence
+            logger.info(
+                f"Analysing random 10 samples of local images as --bucket arg not supplied"
             )
-            image.show()
+            num_images_to_detect = 10
+            correct_detection_counter  = 0
+            low_confidence_counter = 0
+            for _ in range(num_images_to_detect):
+                image_path, correct_label = get_random_img_for_label_detection(
+                    args.image, args.labels_list
+                )
+                response, image = analyze_local_image(
+                    rek_client, args.model_arn, image_path, args.min_confidence
+                )
+                image.show()
+                if not response['CustomLabels']:
+                    low_confidence_counter += 1
+                else:
+                    if response['CustomLabels'][0]["Name"] == correct_label:
+                        correct_detection_counter += 1
+            logger.info(f'Model detected {correct_detection_counter} out of {num_images_to_detect} correctly')
+            logger.info(f'Model could not detect {low_confidence_counter} images due to confidence below threshold {args.min_confidence}')
         else:
-            # Analyze image in S3 bucket
             if args.photo is None:
                 raise ValueError(
                     f"--photo arg also needs to be supplied if fetching image from s3 bucket"
                 )
-            _, image = analyze_s3_image(
+            response, image = analyze_s3_image(
                 rek_client, args.bucket, args.photo, args.model_arn, args.min_confidence
             )
+
             image.show()
 
         # stop the model
         stop_model(args.model_arn)
-        logger.info(f"Finished stopping model: {args.model_arn}")
+        logger.info(f"Finished stopping model")
 
     except ClientError as client_err:
         logger.exception(
             "A service client error occurred: "
             + format(client_err.response["Error"]["Message"])
         )
+
+    except ValueError as value_err:
+        logger.exception("A validation error occurred: " + format(value_err))
 
     except ValueError as value_err:
         logger.exception("A value error occurred: " + format(value_err))

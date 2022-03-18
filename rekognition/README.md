@@ -19,6 +19,21 @@ Finished creating project: custom_labels
 https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/md-create-dataset-existing-dataset-sdk.html
 
 
+This automatically splits the dataset into training and test.Alternatively one can also pass in existing test dataset
+
+![img_1.png](../screenshots/rekognition/food101/img_1.png)
+
+
+#### Training model
+
+
+Once training is complete you can view the overall results and per label performance on AWS console
+
+![img_2.png](../screenshots/rekognition/food101/img_2.png)
+
+or also examine the  false positives/false negative images 
+![img_4.png](../screenshots/rekognition/food101/img_4.png)
+
 ### Run inference
 
 ```
@@ -46,6 +61,5 @@ INFO: Analyzing local file: datasets\cv\food101\train\fish_and_chips\674163.jpg
 INFO: Detected custom labels for datasets\cv\food101\train\fish_and_chips\674163.jpg: [{'Name': 'fish_and_chips', 'Confidence': 99.18800354003906}]
 INFO: Model detected 9 out of 10 correctly
 INFO: Model could not detect 0 images due to confidence below threshold 60
-
 
 ```

@@ -242,7 +242,7 @@ def main():
                 f"Analysing random 10 samples of local images as --bucket arg not supplied"
             )
             num_images_to_detect = 10
-            correct_detection_counter  = 0
+            correct_detection_counter = 0
             low_confidence_counter = 0
             for _ in range(num_images_to_detect):
                 image_path, correct_label = get_random_img_for_label_detection(
@@ -252,13 +252,17 @@ def main():
                     rek_client, args.model_arn, image_path, args.min_confidence
                 )
                 image.show()
-                if not response['CustomLabels']:
+                if not response["CustomLabels"]:
                     low_confidence_counter += 1
                 else:
-                    if response['CustomLabels'][0]["Name"] == correct_label:
+                    if response["CustomLabels"][0]["Name"] == correct_label:
                         correct_detection_counter += 1
-            logger.info(f'Model detected {correct_detection_counter} out of {num_images_to_detect} correctly')
-            logger.info(f'Model could not detect {low_confidence_counter} images due to confidence below threshold {args.min_confidence}')
+            logger.info(
+                f"Model detected {correct_detection_counter} out of {num_images_to_detect} correctly"
+            )
+            logger.info(
+                f"Model could not detect {low_confidence_counter} images due to confidence below threshold {args.min_confidence}"
+            )
         else:
             if args.photo is None:
                 raise ValueError(

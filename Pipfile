@@ -5,14 +5,18 @@ name = "pypi"
 
 [packages]
 awscli = ">=1.22.73"
-black = ">=22.1.0"
 matplotlib = ">=3.5.1"
 pipenv = "==2022.1.8"
 boto = ">=1.22.0"
 tqdm = ">=4.63.0"
 dask = ">=2022.2.0"
 
+
 [dev-packages]
+black = ">=22.1.0"
+ipykernel = "*"
+jupyterlab= "*"
+notebook = "*"
 
 [requires]
 python_version = "3.9.1"

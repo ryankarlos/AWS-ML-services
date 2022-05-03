@@ -42,7 +42,8 @@ Launching subshell in virtual environment...
 
 ```
 
-to update the lock file if the pipefile is updated, run:
+to update the lock file if the pipefile is updated (for example, if you
+have updated the dev-packages section), run:
 
 ```
 $ pipenv update
@@ -60,8 +61,18 @@ All dependencies are now up-to-date!
 
 ```
 
-To see a graph of packages and their dependencies
+To install from lock file, can run `pipenv install` or `pipenv install -d` to
+install specifically dev-packages
 
+```
+$ pipenv install -d
+
+Installing dependencies from Pipfile.lock (595137)...
+  🐍   ▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉ 43/43 — 00:00:17
+
+```
+
+To see a graph of packages and their dependencies
 
 ```
 $ pipenv graph 

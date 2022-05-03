@@ -4,16 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-awscli = "==1.22.73"
-black = "==22.1.0"
-matplotlib = "==3.5.1"
+awscli = ">=1.22.73"
+black = ">=22.1.0"
+matplotlib = ">=3.5.1"
 pipenv = "==2022.1.8"
-sagemaker = "==2.78.0"
-tensorflow = "==2.8.0"
-tqdm = "==4.63.0"
-dask = "2022.2.1"
+boto = ">=1.22.0"
+tqdm = ">=4.63.0"
+dask = ">=2022.2.0"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.9.1"

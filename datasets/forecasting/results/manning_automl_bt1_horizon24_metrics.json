@@ -1,0 +1,425 @@
+{
+    "PredictorEvaluationResults": [
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/NPTS",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.5813304989234203,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.02063651665657977
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.062278599702156975
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.02514369892312955
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.05279864664804241,
+                                "RMSE": 0.5813304989234203,
+                                "MASE": 1.0084322939081958,
+                                "MAPE": 0.05034810554074965
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.03601960509395543
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.5813304989234203,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.02063651665657977
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.062278599702156975
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.02514369892312955
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.05279864664804241,
+                                "RMSE": 0.5813304989234203,
+                                "MASE": 1.0084322939081958,
+                                "MAPE": 0.05034810554074965
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.03601960509395543
+                    }
+                }
+            ]
+        },
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/ARIMA",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.7109991912123552,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.041156952141960204
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.08204920297244947
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.016080403657418297
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08204920297244947,
+                                "RMSE": 0.7109991912123552,
+                                "MASE": 1.5671058108440004,
+                                "MAPE": 0.08423355955389095
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04642885292394266
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.7109991912123552,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.041156952141960204
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.08204920297244947
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.016080403657418297
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08204920297244947,
+                                "RMSE": 0.7109991912123552,
+                                "MASE": 1.5671058108440004,
+                                "MAPE": 0.08423355955389095
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04642885292394266
+                    }
+                }
+            ]
+        },
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/Deep_AR_Plus",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.6382434565403572,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.0377132204915757
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.06811156090108098
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.03352957512683637
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.0673399386139525,
+                                "RMSE": 0.6382434565403572,
+                                "MASE": 1.2861649507946809,
+                                "MAPE": 0.06753320414028884
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04645145217316435
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.6382434565403572,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.0377132204915757
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.06811156090108098
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.03352957512683637
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.0673399386139525,
+                                "RMSE": 0.6382434565403572,
+                                "MASE": 1.2861649507946809,
+                                "MAPE": 0.06753320414028884
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04645145217316435
+                    }
+                }
+            ]
+        },
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/ETS",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.7312439146448312,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.04180430124143294
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.08455909487719088
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.015895626636425873
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08455909487719088,
+                                "RMSE": 0.7312439146448312,
+                                "MASE": 1.6150437072039598,
+                                "MAPE": 0.08682037731157936
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04741967425168323
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.7312439146448312,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.04180430124143294
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.08455909487719088
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.015895626636425873
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08455909487719088,
+                                "RMSE": 0.7312439146448312,
+                                "MASE": 1.6150437072039598,
+                                "MAPE": 0.08682037731157936
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.04741967425168323
+                    }
+                }
+            ]
+        },
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/Prophet",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.7780160492846357,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.04026632876521175
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.09203198454228698
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.021507499699081216
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08997084330503899,
+                                "RMSE": 0.7780160492846357,
+                                "MASE": 1.718405861872962,
+                                "MAPE": 0.09256519047420857
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.05126860433552665
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.7780160492846357,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.04026632876521175
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.09203198454228698
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.021507499699081216
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.08997084330503899,
+                                "RMSE": 0.7780160492846357,
+                                "MASE": 1.718405861872962,
+                                "MAPE": 0.09256519047420857
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.05126860433552665
+                    }
+                }
+            ]
+        },
+        {
+            "AlgorithmArn": "arn:aws:forecast:::algorithm/CNN-QR",
+            "TestWindows": [
+                {
+                    "EvaluationType": "SUMMARY",
+                    "Metrics": {
+                        "RMSE": 0.6270681076471499,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.03128080182917267
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.07113695227853484
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.11464764786429016
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.07113695227853484,
+                                "RMSE": 0.6270681076471499,
+                                "MASE": 1.3586863399374742,
+                                "MAPE": 0.07222045923775021
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.07235513399066588
+                    }
+                },
+                {
+                    "TestWindowStart": "2015-12-08 00:00:00+00:00",
+                    "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                    "ItemCount": 1,
+                    "EvaluationType": "COMPUTED",
+                    "Metrics": {
+                        "RMSE": 0.6270681076471499,
+                        "WeightedQuantileLosses": [
+                            {
+                                "Quantile": 0.9,
+                                "LossValue": 0.03128080182917267
+                            },
+                            {
+                                "Quantile": 0.5,
+                                "LossValue": 0.07113695227853484
+                            },
+                            {
+                                "Quantile": 0.1,
+                                "LossValue": 0.11464764786429016
+                            }
+                        ],
+                        "ErrorMetrics": [
+                            {
+                                "ForecastType": "mean",
+                                "WAPE": 0.07113695227853484,
+                                "RMSE": 0.6270681076471499,
+                                "MASE": 1.3586863399374742,
+                                "MAPE": 0.07222045923775021
+                            }
+                        ],
+                        "AverageWeightedQuantileLoss": 0.07235513399066588
+                    }
+                }
+            ]
+        }
+    ],
+    "IsAutoPredictor": false,
+    "ResponseMetadata": {
+        "RequestId": "7ed16bb2-8dbb-405d-b26c-7a5b697ce5be",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "application/x-amz-json-1.1",
+            "date": "Wed, 04 May 2022 13:46:26 GMT",
+            "x-amzn-requestid": "7ed16bb2-8dbb-405d-b26c-7a5b697ce5be",
+            "content-length": "6181",
+            "connection": "keep-alive"
+        },
+        "RetryAttempts": 0
+    }
+}

@@ -60,8 +60,9 @@ Installing dependencies from Pipfile.lock (687a38)...
 All dependencies are now up-to-date!
 
 ```
+This will also install the dependencies to the env.
 
-To install from lock file, can run `pipenv install` or `pipenv install -d` to
+To install directly from lock file, can run `pipenv install` or `pipenv install -d` to
 install specifically dev-packages
 
 ```

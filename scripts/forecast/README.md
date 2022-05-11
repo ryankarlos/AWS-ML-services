@@ -15,9 +15,6 @@ only include historical data for one year (2015) and then reformat the dataset
 to have columns ("timestamp", "target_value","item_id") and values as expected by AWS Forecast api.
 Finally we call the s3 put object to add to created S3 bucket.
 
-![img.png](../../screenshots/forecast/img.png)
-
-
 Module `dataset_and_import_jobs.py` creates an AWS Forecast dataset group and dataset 
 https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html
 Here we only use target time series dataset type 
@@ -33,6 +30,9 @@ as all the items belong to the same group (i.e Manning's wikipedia hits)
 
 For illustration purposes and to generate the task viz, ive used dask delayed, but the dataset
 size certainly does not warrant the need for it. 
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
+
 
 ```
 DATASET_FREQUENCY = "D"
@@ -61,7 +61,7 @@ dataset_group_arn = create_dataset_group_with_dataset(dataset_name, dataset_arn)
 
 We then create an import job to import the time series dataset from s3 into AWS forecast dataset
 so it is ready for training. After creating the import job - we can check for job status before 
-porgressing to the training
+progressing to the training step
 
 
 ```
@@ -71,6 +71,11 @@ ts_dataset_import_job_response = create_import_job(bucket_name, key, dataset_arn
 dataset_import_job_arn=ts_dataset_import_job_response['DatasetImportJobArn']
 check_job_status(dataset_import_job_arn, job_type="import_data")
 ```
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-datasets.png" ></img>
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-dashboard.png" ></img>
+
 
 #### Model Training
 
@@ -104,6 +109,8 @@ predictor_name = f"{PROJECT}_{DATA_VERSION}_automl"
 create_predictor_response , predictor_arn = train_aws_forecast_model(predictor_name, FORECAST_LENGTH, DATASET_FREQUENCY, dataset_group_arn)
 check_job_status(predictor_arn, job_type="training")
 ```
+
+
 ### Backtest results
 
 Amazon Forecast provides following metrics to evaluate predictors.
@@ -159,12 +166,24 @@ target time-series dataset. You can choose from between 1 and 5 backtests.
 error_metrics = evaluate_backtesting_metrics(predictor_arn)
 ```
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-predictors.png" ></img>
+
+
+
 #### Forecast and query
 
 Now we have a trained model so we can create a forecast. This
 includes predictions for every item (item_id) in the dataset group 
 that was used to train the predictor. 
 https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html
+
+```
+forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
+forecast_arn = create_forecast(forecast_name, predictor_arn)
+```
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecasts.png" ></img>
+
 
 Once this is done, we can then query the forecast by passing a filter (key-value pair),
 where the key/values are one of the schema attribute names and valid values respectively. 
@@ -174,13 +193,12 @@ In this case, we query the forecast and return all the items
 by using the item id dimension
 
 ```
-forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
-forecast_arn = create_forecast(forecast_name, predictor_arn)
 filters = {"item_id":"1"}
 prediction_df_p10,prediction_df_p50,prediction_df_p90 = run_forecast_query_and_plot(forecast_arn, filters)
 ```
 
-![img.png](../../screenshots/forecast/img.png)
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecast-plots.png" ></img>
+
 
 #### Terminating resources
 

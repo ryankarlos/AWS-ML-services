@@ -4,7 +4,7 @@ import time
 
 forecast = boto3.client("forecast")
 forecastquery = boto3.client(service_name="forecastquery")
-
+s3_client = boto3.client("s3", region_name="us-east-1")
 
 def check_job_status(arn, job_type, wait_time=60):
     if job_type == "training":

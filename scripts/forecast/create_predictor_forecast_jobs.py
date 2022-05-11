@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import json
 import itertools
-from forecast.common import forecast, forecastquery
+from common import forecast, forecastquery
 
 
 def train_aws_forecast_model(

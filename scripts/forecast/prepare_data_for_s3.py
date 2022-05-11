@@ -1,4 +1,4 @@
-import boto3
+from common import s3_client
 import dask.dataframe as dd
 import dask
 from pathlib import Path
@@ -46,7 +46,7 @@ def save_data_for_s3(df, basepath, filename):
     return destination_path
 
 
-def create_bucket(s3_client, bucket_name):
+def create_bucket(bucket_name):
     """Create an S3 bucket in a specified region
 
     If a region is not specified, the bucket is created in the S3 default
@@ -65,8 +65,7 @@ def create_bucket(s3_client, bucket_name):
         print(f"bucket {bucket_name} already exists")
 
 
-def put_object_in_s3_bucket(bucket_name, filepath, region="us-east-1"):
-    s3_client = boto3.client("s3", region_name=region)
+def put_object_in_s3_bucket(bucket_name, filepath):
     create_bucket(s3_client, bucket_name)
     filename = Path(filepath).name
     s3_client.upload_file(filepath, bucket_name, filename)

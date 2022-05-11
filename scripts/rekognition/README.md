@@ -21,7 +21,7 @@ https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/md-create-dataset
 
 This automatically splits the dataset into training and test.Alternatively one can also pass in existing test dataset
 
-![img_1.png](../screenshots/rekognition/food101/img_1.png)
+![img_1.png](../../screenshots/rekognition/food101/img_1.png)
 
 
 #### Training model
@@ -29,13 +29,13 @@ This automatically splits the dataset into training and test.Alternatively one c
 
 Once training is complete you can view the overall results and per label performance on AWS console
 
-![img_2.png](../screenshots/rekognition/food101/img_2.png)
+![img_2.png](../../screenshots/rekognition/food101/img_2.png)
 
 or also examine the  false positives/false negative images 
-![img_4.png](../screenshots/rekognition/food101/img_4.png)
+![img_4.png](../../screenshots/rekognition/food101/img_4.png)
 
 to be fair a lot of false negatives and positives are rubbish images which should have been filtered out or better processed 
-![img.png](../screenshots/rekognition/img.png)
+![img.png](../../screenshots/rekognition/img.png)
 
 ### Run inference
 

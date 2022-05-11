@@ -1,4 +1,4 @@
-from forecast.common import forecast
+from common import forecast
 
 
 def delete_dataset_resources(dataset_name):

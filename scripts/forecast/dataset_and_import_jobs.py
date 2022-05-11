@@ -1,4 +1,4 @@
-from forecast.common import forecast
+from common import forecast
 
 
 def create_dataset(dataset_name, freq, schema):

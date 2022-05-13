@@ -141,10 +141,41 @@ Job succeeded !
 
 ```
 
-If step function is already created and we just want to execute, run the following command
+If step function is already created and we just want to execute, run the following command. This will translate the video
+to spanish.
 
 ```
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
 ```
 
 ![](../../screenshots/nlp/step_function_text-speech.png)
+
+#### Copying results to local 
+
+To copy all the contents of the s3 bucket `awstetsnlp` to local `datasets\nlp` folder
+
+````
+$ aws s3 cp s3://awstestnlp datasets/nlp --recursive
+
+download: s3://awstestnlp/polly/text_to_speech.mp3.0ec1ff34-318e-4d1b-a43e-5d9cb7760a4c.mp3 to datasets\nlp\polly\text_to_speech.mp3.0ec1ff34-318e-4d1b-a43e-5d9cb7760a4c.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.4e6bad27-9766-4209-a533-c4c665f4de25.mp3 to datasets\nlp\polly\text_to_speech.mp3.4e6bad27-9766-4209-a533-c4c665f4de25.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.46fa196c-150b-48f0-9e3a-6930b7e52322.mp3 to datasets\nlp\polly\text_to_speech.mp3.46fa196c-150b-48f0-9e3a-6930b7e52322.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.22e4f400-406b-4db3-a6da-5292565a35a2.mp3 to datasets\nlp\polly\text_to_speech.mp3.22e4f400-406b-4db3-a6da-5292565a35a2.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.20bacd74-abf6-4215-99e2-d140d745c419.mp3 to datasets\nlp\polly\text_to_speech.mp3.20bacd74-abf6-4215-99e2-d140d745c419.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.0278c082-1fb4-4ed3-9fba-cc3100d49b1a.mp3 to datasets\nlp\polly\text_to_speech.mp3.0278c082-1fb4-4ed3-9fba-cc3100d49b1a.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.5af307bf-4be1-47a6-a48b-f26a402e7c65.mp3 to datasets\nlp\polly\text_to_speech.mp3.5af307bf-4be1-47a6-a48b-f26a402e7c65.mp3
+download: s3://awstestnlp/polly/test.json.a8cc5b40-a0ec-4815-b3c7-f5f1cb6d9166.mp3 to datasets\nlp\polly\test.json.a8cc5b40-a0ec-4815-b3c7-f5f1cb6d9166.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.bfb4d484-4c41-4766-9d7a-6cde7ad64f49.mp3 to datasets\nlp\polly\text_to_speech.mp3.bfb4d484-4c41-4766-9d7a-6cde7ad64f49.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.7263a0dd-5c9f-4328-9f0b-d051fe375a13.mp3 to datasets\nlp\polly\text_to_speech.mp3.7263a0dd-5c9f-4328-9f0b-d051fe375a13.mp3
+download: s3://awstestnlp/transcribed/.write_access_check_file.temp to datasets\nlp\transcribed\.write_access_check_file.temp
+download: s3://awstestnlp/polly/text_to_speech.mp3.cddebc19-8cbb-4d97-bea0-84b3349778d6.mp3 to datasets\nlp\polly\text_to_speech.mp3.cddebc19-8cbb-4d97-bea0-84b3349778d6.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.d341979e-4a93-4c12-ae82-d2af7493ad9c.mp3 to datasets\nlp\polly\text_to_speech.mp3.d341979e-4a93-4c12-ae82-d2af7493ad9c.mp3
+download: s3://awstestnlp/transcribed/test.json to datasets\nlp\transcribed\test.json
+download: s3://awstestnlp/polly/text_to_speech.mp3.f4b0bc05-a932-42f0-b547-dfb41e362fa3.mp3 to datasets\nlp\polly\text_to_speech.mp3.f4b0bc05-a932-42f0-b547-dfb41e362fa3.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.ffb6858e-aee5-4dc3-9591-846e4b4515a3.mp3 to datasets\nlp\polly\text_to_speech.mp3.ffb6858e-aee5-4dc3-9591-846e4b4515a3.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.f17b0367-0f92-4dfc-9c04-ce625a8f5fae.mp3 to datasets\nlp\polly\text_to_speech.mp3.f17b0367-0f92-4dfc-9c04-ce625a8f5fae.mp3
+download: s3://awstestnlp/polly/text_to_speech.mp3.d4cb7f7e-25bf-40a9-b78c-a92cb926df4e.mp3 to datasets\nlp\polly\text_to_speech.mp3.d4cb7f7e-25bf-40a9-b78c-a92cb926df4e.mp3
+download: s3://awstestnlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3 to datasets\nlp\source\transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3
+download: s3://awstestnlp/transcribed/transcribed.json to datasets\nlp\transcribed\transcribed.json
+download: s3://awstestnlp/polly/text_to_speech.mp3.f6247047-127b-457d-bed0-f82070fe695c.mp3 to datasets\nlp\polly\text_to_speech.mp3.f6247047-127b-457d-bed0-f82070fe695c.mp3
+```

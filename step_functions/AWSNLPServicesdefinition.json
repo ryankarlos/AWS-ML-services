@@ -1,0 +1,226 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ListTranscriptionJobs",
+  "States": {
+    "ListTranscriptionJobs": {
+      "Type": "Task",
+      "Next": "Choice",
+      "Parameters": {
+        "JobNameContains.$": "$.JobName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:transcribe:listTranscriptionJobs",
+      "ResultPath": "$.Result",
+      "ResultSelector": {
+        "Job.$": "$.TranscriptionJobSummaries[0]"
+      }
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.Result.Job.TranscriptionJobName",
+              "IsPresent": true
+            },
+            {
+              "Variable": "$.Result.Job.TranscriptionJobName",
+              "IsString": true
+            }
+          ],
+          "Next": "DeleteTranscriptionJob"
+        }
+      ],
+      "Default": "StartTranscriptionJob"
+    },
+    "DeleteTranscriptionJob": {
+      "Type": "Task",
+      "Parameters": {
+        "TranscriptionJobName.$": "$.JobName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:transcribe:deleteTranscriptionJob",
+      "ResultPath": "$.Result",
+      "Next": "StartTranscriptionJob"
+    },
+    "StartTranscriptionJob": {
+      "Type": "Task",
+      "Parameters": {
+        "Media": {
+          "MediaFileUri.$": "$.Source"
+        },
+        "LanguageCode.$": "$.SourceLanguageCode",
+        "TranscriptionJobName.$": "$.JobName",
+        "OutputBucketName.$": "$.BucketName",
+        "OutputKey.$": "$.TranscribeOutputKey"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:transcribe:startTranscriptionJob",
+      "Next": "Wait",
+      "ResultPath": "$.Result"
+    },
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 3,
+      "Next": "GetTranscriptionJob"
+    },
+    "GetTranscriptionJob": {
+      "Type": "Task",
+      "Parameters": {
+        "TranscriptionJobName.$": "$.JobName"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:transcribe:getTranscriptionJob",
+      "ResultSelector": {
+        "status.$": "$.TranscriptionJob.TranscriptionJobStatus"
+      },
+      "Next": "Check Job Status",
+      "ResultPath": "$.Result"
+    },
+    "Check Job Status": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Result.status",
+          "StringMatches": "COMPLETED",
+          "Comment": "If status from get transcription job call is success then proceed to next stage",
+          "Next": "Parse Transcribed Text from S3"
+        },
+        {
+          "Variable": "$.Result.status",
+          "StringMatches": "FAILED",
+          "Next": "Fail"
+        }
+      ],
+      "Default": "Wait"
+    },
+    "Parse Transcribed Text from S3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:376337229415:function:parseS3json:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "TranslateText",
+      "Comment": "Fetches s3 json object key and parses transcribed text",
+      "ResultSelector": {
+        "TranscribedText.$": "$.Payload.TranscribedText"
+      },
+      "ResultPath": "$.Result"
+    },
+    "TranslateText": {
+      "Type": "Task",
+      "Next": "Parallel",
+      "Parameters": {
+        "SourceLanguageCode.$": "$.SourceLanguageCode",
+        "TargetLanguageCode.$": "$.TargetLanguageCode",
+        "Text.$": "$.Result.TranscribedText"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:translate:translateText",
+      "ResultPath": "$.Result"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "StartSpeechSynthesisTask",
+          "States": {
+            "StartSpeechSynthesisTask": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "Engine": "neural",
+                "OutputFormat": "mp3",
+                "OutputS3BucketName.$": "$.BucketName",
+                "OutputS3KeyPrefix.$": "$.PollyOutputKey",
+                "Text.$": "$.Result.TranslatedText",
+                "VoiceId.$": "$.VoiceId"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask"
+            }
+          }
+        },
+        {
+          "StartAt": "Comprehend Tasks",
+          "States": {
+            "Comprehend Tasks": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "DetectSentiment",
+                  "States": {
+                    "DetectSentiment": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "LanguageCode.$": "$.TargetLanguageCode",
+                        "Text.$": "$.Result.TranslatedText"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:comprehend:detectSentiment"
+                    }
+                  }
+                },
+                {
+                  "StartAt": "DetectEntities",
+                  "States": {
+                    "DetectEntities": {
+                      "Type": "Task",
+                      "Parameters": {
+                        "LanguageCode.$": "$.TargetLanguageCode",
+                        "Text.$": "$.Result.TranslatedText"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:comprehend:detectEntities",
+                      "End": true
+                    }
+                  }
+                },
+                {
+                  "StartAt": "DetectSyntax",
+                  "States": {
+                    "DetectSyntax": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "LanguageCode.$": "$.TargetLanguageCode",
+                        "Text.$": "$.Result.TranslatedText"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:comprehend:detectSyntax"
+                    }
+                  }
+                },
+                {
+                  "StartAt": "DetectKeyPhrases",
+                  "States": {
+                    "DetectKeyPhrases": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "LanguageCode.$": "$.TargetLanguageCode",
+                        "Text.$": "$.Result.TranslatedText"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:comprehend:detectKeyPhrases"
+                    }
+                  }
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ],
+      "End": true
+    },
+    "Fail": {
+      "Type": "Fail"
+    }
+  }
+}

@@ -1,0 +1,95 @@
+## AWS NLP services
+
+This section will focus on pipelines combining the following AWS services:
+
+* AWS Transcribe: automatic speech recognition (speech to text)
+* AWS Textract: Extract text and data from documents (e.g. scanned docs, jpeg etc)
+* AWS Polly: Convert text to life like speech
+* AWS Translate: Translate text from one lang to another
+* AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
+
+### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
+
+We will first need to create a lambda function with packaged code in lambdas/parses3json. This parses the json from s3 
+(returned  from AWS Transcription jon step in the state machine) and returns the output to the next stage for further 
+NLP processing by other AWS services
+
+```
+$ python lambdas/deploy_lambda_function.py --function_name parses3json
+ 
+{
+    "ResponseMetadata": {
+        "RequestId": "8f272d31-ea01-4b3f-a34b-1e523dc4539d",
+        "HTTPStatusCode": 201,
+        "HTTPHeaders": {
+            "date": "Thu, 12 May 2022 22:55:16 GMT",
+            "content-type": "application/json",
+            "content-length": "999",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "8f272d31-ea01-4b3f-a34b-1e523dc4539d"
+        },
+        "RetryAttempts": 0
+    },
+    "FunctionName": "parses3json",
+    "FunctionArn": "arn:aws:lambda:us-east-1:376337229415:function:parses3json",
+    "Runtime": "python3.9",
+    "Role": "arn:aws:iam::376337229415:role/service-role/ReadObjectsS3forLambda",
+    "Handler": "lambda_function.lambda_handler",
+    "CodeSize": 372,
+    "Description": "",
+    "Timeout": 20,
+    "MemorySize": 128,
+    "LastModified": "2022-05-12T22:55:16.473+0000",
+    "CodeSha256": "6Q14hDxyn8Eh9eXqxo9jhEka8I4wcAH302TxUMOww1s=",
+    "Version": "$LATEST",
+    "TracingConfig": {
+        "Mode": "PassThrough"
+    },
+    "RevisionId": "e574f385-0982-4b22-846b-a6ea0ac6a485",
+    "State": "Pending",
+    "StateReason": "The function is being created.",
+    "StateReasonCode": "Creating",
+    "PackageType": "Zip",
+    "Architectures": [
+        "x86_64"
+    ],
+    "EphemeralStorage": {
+        "Size": 512
+    }
+}
+
+```
+
+Currently, this assumes we have a role named "ReadObjectsS3forLambda" for lambda resource to assume. If we need to
+change this, we can pass in an additional parameter. Also, timeout defaults to 20 secs. This can also be overwritten
+
+```
+$ python lambdas/deploy_lambda_function.py --function_name parses3json --role "NewLambdaRole" --timeout 150
+```
+
+#### Step Function Execution
+
+Before creating and executing the Step Functions workflows, first need to grant Step Functions workflow 
+(state machine) permissions to trigger Lambda functions via IAM role as below. Here I have attached a number 
+of AWS managed policies to the role to allow access to translate, comprehend, polly, transcribe, 
+comprehend services and S3,lambda etc
+
+![](../../screenshots/nlp/step-function-role.png)
+
+To create and execute the step function run the following command. This will first deploy the step function and attach role
+'StepFunctionAWSNLPServices', with step function name 'NLPExecution'.
+Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
+`--target_lang_code`). This needs to be paired with a voice-id for the chosen target language, required by AWS Polly  
+https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
+
+```
+$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --deploy --role StepFunctionAWSNLPServices
+```
+
+If step function is already created and we just want to execute, run the following command
+
+```
+$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
+```
+
+![](../../screenshots/nlp/step_function_text-speech.png)

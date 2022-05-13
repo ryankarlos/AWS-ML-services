@@ -76,6 +76,15 @@ comprehend services and S3,lambda etc
 
 ![](../../screenshots/nlp/step-function-role.png)
 
+
+If creating new step function, the create_state_machine() method of boto sfn client requires the
+Amazon States Language definition of the state machine in string format
+the https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine asl_definition 
+
+This is defined in the json file `step_functions/AWSNLPServicesdefinition.json`, which is loaded and converted to
+json string format.
+This may need to be adapted depending if the lambda function to be executed has a different name/arn
+
 To create and execute the step function run the following command. This will first deploy the step function and attach role
 'StepFunctionAWSNLPServices', with step function name 'NLPExecution'.
 Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
@@ -84,6 +93,52 @@ https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
 
 ```
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --deploy --role StepFunctionAWSNLPServices
+
+Deploying step function:
+
+{
+    "stateMachineArn": "arn:aws:states:us-east-1:376337229415:stateMachine:NLPExecution", 
+    "creationDate": "2022-05-13 03:13:49.982000+01:00", 
+    "ResponseMetadata": {
+        "RequestId": "10cea0a5-1a75-4d31-b59c-527e78fcb566", 
+        "HTTPStatusCode": 200, 
+        "HTTPHeaders": {
+            "x-amzn-requestid": "10cea0a5-1a75-4d31-b59c-527e78fcb566",
+             "date": "Fri, 13 May 2022 02:13:50 GMT",
+              "content-type": "application/x-amz-json-1.0",
+               "content-length": "117"
+        }, 
+        "RetryAttempts": 0
+    }
+}
+
+waiting for 30 secs for deployment to complete and state function in active state
+
+Step function NLPExecution is active with resource arn: arn:aws:states:us-east-1:376337229415:stateMachine:NLPExecution
+
+Executed state machine NLPExecution:
+ {
+    "executionArn": "arn:aws:states:us-east-1:376337229415:execution:NLPExecution:9f572dda-0707-4851-b5c9-21496931b874",
+    "startDate": "2022-05-13 03:47:00.646000+01:00",
+    "ResponseMetadata": {
+        "RequestId": "7cdd8471-670f-42ad-8f6b-1a9a95b610fe",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "x-amzn-requestid": "7cdd8471-670f-42ad-8f6b-1a9a95b610fe",
+            "date": "Fri, 13 May 2022 02:47:00 GMT",
+            "content-type": "application/x-amz-json-1.0",
+            "content-length": "145"
+        },
+        "RetryAttempts": 0
+    }
+}
+
+Execution status is 'RUNNING', waiting 10 secs before checking status again
+Execution status is 'RUNNING', waiting 10 secs before checking status again
+Execution status is 'RUNNING', waiting 10 secs before checking status again
+Execution status is 'RUNNING', waiting 10 secs before checking status again
+Job succeeded !
+
 ```
 
 If step function is already created and we just want to execute, run the following command

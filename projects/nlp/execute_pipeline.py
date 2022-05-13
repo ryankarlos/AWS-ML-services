@@ -10,6 +10,11 @@ import click
     help="Polly voice id for synthesising text to speech. Must be available with neural engine option in AWS Polly",
 )
 @click.option(
+    "--deploy/--no-deploy",
+    default=False,
+    help="Flag to determine whether to deploy new step function or not before execution",
+)
+@click.option(
     "--bucket",
     default="awstestnlp",
     help="s3 bucket containing the source and output files",
@@ -36,10 +41,6 @@ import click
     "--job_name",
     default="Test",
     help="Name of transcription job to execute in step function",
-)
-@click.option(
-    "--deploy/--no-deploy",
-    help="Flag to determine whether to deploy new step function or not before execution",
 )
 @click.option(
     "--sf_role",
@@ -77,5 +78,4 @@ def execute_nlp_state_machine(
 
 
 if __name__ == "__main__":
-    response = execute_state_machine()
-    print(response)
+    execute_nlp_state_machine()

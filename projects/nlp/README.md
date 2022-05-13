@@ -160,7 +160,7 @@ to spanish.
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
 ```
 
-![](../../screenshots/nlp/step_function_text-speech.png)
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/nlp/step_function_text-speech.png" height=450 width=1500></img>
 
 
 The input to the state machine is in the following format

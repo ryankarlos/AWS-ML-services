@@ -1,13 +1,10 @@
 ## Trying out various Auto ML services on AWS 
 
-* Rekognition
-* Transcribe
-* Translate
-* Textract
-* Forecast
-* Comprehend
-* Personalize
-* Fraud Detector
+* Rekognition https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/rekognition#readme
+* NLP (Transcribe, Translate, Textract, Comprehend, Polly) https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/nlp/README.md
+* Forecast https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/README.md
+* Personalize #TODO
+* Fraud Detector #TODO
 
 ### Environment and dependencies
 

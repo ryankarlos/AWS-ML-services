@@ -21,7 +21,7 @@ import click
 )
 @click.option(
     "--s3_uri",
-    default="s3://awstestnlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3",
+    default="s3://awstestnlp/source/transcribe-sample.mp3",
     help="s3 uti for source mp3 video",
 )
 @click.option(

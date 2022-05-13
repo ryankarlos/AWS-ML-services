@@ -10,6 +10,18 @@ This section will focus on pipelines combining the following AWS services:
 
 ### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
 
+
+The mp3 file we want to use is in `datasets/nlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3`
+and is just some english speech about ML. 
+we first need to create a bucket in S3 `awstestnlp` and then copy this data over, either via console or using cli
+
+``
+$ aws s3 cp datasets/nlp/source/transcribe-sample.mp3 s3://awstestnlp/source/transcribe-sample.mp3
+``
+
+#### deploying lambda function 
+
+
 We will first need to create a lambda function with packaged code in lambdas/parses3json. This parses the json from s3 
 (returned  from AWS Transcription jon step in the state machine) and returns the output to the next stage for further 
 NLP processing by other AWS services
@@ -149,6 +161,22 @@ $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_c
 ```
 
 ![](../../screenshots/nlp/step_function_text-speech.png)
+
+
+The input to the state machine is in the following format
+
+````
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribed/transcribed.json",
+  "PollyOutputKey": "polly/text_to_speech.mp3",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "es",
+  "JobName": "Test",
+  "VoiceId": "Lupe"
+}
+````
 
 #### Copying results to local 
 

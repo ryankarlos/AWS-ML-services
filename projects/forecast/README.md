@@ -5,8 +5,6 @@ dataset which is a time series of the Wikipedia page hits for Peyton Manning
 https://peerj.com/preprints/3190/
 https://facebook.github.io/prophet/docs/quick_start.html#python-api
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=400 width=800></img>
-
 
 The notebook `AWS_Forecast.ipynb` uses the functions in the modules in this package to 
 import data into S3, create an AWS forecast dataset and import data into it from S3, 
@@ -39,6 +37,13 @@ size certainly does not warrant the need for it.
 <p align="center">
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
 </p>
+
+
+The filtered raw data for 2015 which is imported into S3 and then imported into AWS forecast has the following
+profile
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=1000></img>
+
 
 ```
 DATASET_FREQUENCY = "D"

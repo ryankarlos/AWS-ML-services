@@ -18,6 +18,19 @@ only include historical data for one year (2015) and then reformat the dataset
 to have columns ("timestamp", "target_value","item_id") and values as expected by AWS Forecast api.
 Finally we call the s3 put object to add to created S3 bucket.
 
+For illustration purposes and to generate the task viz, ive used dask delayed, but the dataset
+size certainly does not warrant the need for it. 
+
+<p align="center">
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
+</p>
+
+The filtered raw data for 2015 which is imported into S3 and then imported into AWS forecast has the following
+profile
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=500 width=1000></img>
+
+
 Module `dataset_and_import_jobs.py` creates an AWS Forecast dataset group and dataset 
 https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html
 Here we only use target time series dataset type 
@@ -28,22 +41,11 @@ As per https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups
 target attribute (item_id) and timestamp attribute, as well as any dimensions. 
 Related time series and Item metadata is optional".
 
-In this example, the itemid column has been created and set to arbitary value (1)
+For the data uploaded to S3 using module `prepare_data_for_s3.py`, the itemid column has been created and set to arbitary value (1) 
 as all the items belong to the same group (i.e Manning's wikipedia hits)
 
-For illustration purposes and to generate the task viz, ive used dask delayed, but the dataset
-size certainly does not warrant the need for it. 
 
-<p align="center">
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
-</p>
-
-
-The filtered raw data for 2015 which is imported into S3 and then imported into AWS forecast has the following
-profile
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=1000></img>
-
+The dataset group and import job can then be created using the snippet below after setting the data frequency for daily frequency and ts_schema.
 
 ```
 DATASET_FREQUENCY = "D"

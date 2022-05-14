@@ -2,6 +2,11 @@
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the Fbprophet library example
 dataset which is a time series of the Wikipedia page hits for Peyton Manning
+https://peerj.com/preprints/3190/
+https://facebook.github.io/prophet/docs/quick_start.html#python-api
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=1000></img>
+
 
 The notebook `AWS_Forecast.ipynb` uses the functions in the modules in this package to 
 import data into S3, create an AWS forecast dataset and import data into it from S3, 
@@ -170,14 +175,21 @@ error_metrics = evaluate_backtesting_metrics(predictor_arn)
 
 
 and to plot the backtest results for all metrics except 
-Weighted Quantile Losses
+Weighted Quantile Losses.
+
+Looking at the results, seems like NPTS is the winning algorithm
+followed by Deep AR Plus. 
+So AWS Forecast, will use the NPTS model for serving forecasts
+
+We can also see MASE metric better highlights the difference in
+performance between various algorithms as it is more suited to
+this dataset due to cyclical/seasonal properties in data
 
 ```
 plot_backtest_metrics(error_metrics)
 ```
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-backtest-results-plot.png" ></img>
-
 
 
 #### Forecast and query

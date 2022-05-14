@@ -169,6 +169,16 @@ error_metrics = evaluate_backtesting_metrics(predictor_arn)
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-predictors.png" ></img>
 
 
+and to plot the backtest results for all metrics except 
+Weighted Quantile Losses
+
+```
+plot_backtest_metrics(error_metrics)
+```
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-backtest-results-plot.png" ></img>
+
+
 
 #### Forecast and query
 
@@ -194,10 +204,12 @@ by using the item id dimension
 
 ```
 filters = {"item_id":"1"}
-prediction_df_p10,prediction_df_p50,prediction_df_p90 = run_forecast_query_and_plot(forecast_arn, filters)
+forecast_response = run_forecast_query_and_plot(forecast_arn, filters)
+df = create_forecast_plot(forecast_response)
+
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecast-plots.png" ></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecast-p10-p50-p90-plot.png" ></img>
 
 
 #### Terminating resources

@@ -160,24 +160,61 @@ to spanish.
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/nlp/step_function_text-speech.png" height=450 width=1500></img>
 
+The input to the state machine is computed in the code in `execute_pipeline.py` and is passed 
+in the following format for this execution
 
-The input to the state machine is in the following format
 
 ````
 {
   "BucketName": "awstestnlp",
-  "Source": "s3://awstestnlp/source/transcribe-sample.mp3",
-  "ComprehendOutputKey": "comprehend/text_analysis.json",
-  "TranscribeOutputKey": "transcribed/transcribed.json",
-  "PollyOutputKey": "polly/text_to_speech.mp3",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/es/transcribed.json",
+  "PollyVideoOutputKey": "polly/es/Lupe/",
+  "PollyResponseOutputKey": "polly/es/response.json",
+  "ComprehendOutputKey": "comprehend/es/text_analysis.json",
   "SourceLanguageCode": "en-US",
   "TargetLanguageCode": "es",
   "JobName": "Test",
-  "VoiceId": "Lupe"
+  "VoiceId": "Lupe",
+  "EngineType": "neural",
+  "SkipComprehend": false
 }
 ````
+
+We can see from the flow below, that depending on the engine type detected, the input will go to the 
+respective task to execute - which sets the engine parameter to 'neural' or 'standard' depending on the
+voice id chosen from this list https://docs.aws.amazon.com/polly/latest/dg/voicelist.html.
+Also, there is another choice task to determine whether to skip the comprehend step if the language is not one of 
+the following (de", "pt","en","it","fr","es") as the others are not supported by all the services e.g. syntax detection
+It uses the $.SkipComprehend state variable which is part of the input passed to the state machine (above) and computed
+in the code in `execute_pipeline.py`
+
+![](../../screenshots/nlp/step_function_text-speech-es.png)
+
+
+The following execution translates to French using voice id 'Mathieu'. This is a standard engine and 
+the flow passes it ot the appropriate task. Since French is supported by all comprehend services, the parallel block
+is executed.
+
+```
+$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code fr --voice_id Mathieu --no-deploy
+```
+
+
+![](../../screenshots/nlp/step-function_text-speech-fr.png)
+
+This execution  translates to Japanese using voice id 'Takumi'. This is a neural engine. However, the language is
+not supported by all the AWS Comprehend services used in the state machine and hence the choice task will skip this
+
+
+```
+$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code ja --voice_id Takumi --no-deploy
+```
+
+![](../../screenshots/nlp/step-function_text-speech-ja.png)
+
+
 
 #### Copying results to local 
 

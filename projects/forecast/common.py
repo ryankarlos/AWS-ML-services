@@ -1,6 +1,9 @@
 import boto3
 import time
-
+from pathlib import Path
+import os
+import json
+import numpy as np
 
 forecast = boto3.client("forecast")
 forecastquery = boto3.client(service_name="forecastquery")
@@ -26,3 +29,9 @@ def check_job_status(arn, job_type, wait_time=60):
                 "Status"
             ]
         print(f"Data Import job complete with job status {job_status}")
+
+
+def read_json(dataset_results_dir, filename):
+    json_path = os.path.join(dataset_results_dir, filename)
+    with open(json_path, "rb") as f:
+        return json.load(f)

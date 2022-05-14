@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import itertools
 from common import forecast, forecastquery
+import numpy as np
 
 
 def train_aws_forecast_model(
@@ -41,26 +42,68 @@ def create_forecast(forecast_name, predictor_arn):
     return forecast_arn
 
 
-def run_forecast_query_and_plot(forecast_arn, filters):
+def run_forecast_query(forecast_arn, filters):
     forecastResponse = forecastquery.query_forecast(
         ForecastArn=forecast_arn, Filters=filters
     )
-    # Generate DF
-    prediction_df_p10 = pd.DataFrame.from_dict(
-        forecastResponse["Forecast"]["Predictions"]["p10"]
+    return forecastResponse
+
+
+def create_forecast_plot(forecast_response):
+    ts = {}
+
+    timestamp = [k["Timestamp"] for k in forecast_response["p10"]]
+    p10 = [k["Value"] for k in forecast_response["p10"]]
+    p50 = [k["Value"] for k in forecast_response["p50"]]
+    p90 = [k["Value"] for k in forecast_response["p90"]]
+
+    ts["timestamp"] = timestamp
+    ts["p10"] = p10
+    ts["p50"] = p50
+    ts["p90"] = p90
+    df = pd.DataFrame(ts)
+    df.plot(x="timestamp", figsize=(15, 8))
+    return df
+
+
+def plot_backtest_metrics(error_metrics):
+    parsed_json = {
+        "Algorithm": [],
+        "WQuantLosses": [],
+        "WAPE": [],
+        "RMSE": [],
+        "MASE": [],
+        "MAPE": [],
+        "AvgWQuantLoss": [],
+    }
+    for v in error_metrics:
+        algo = v["AlgorithmArn"].split("/")[-1]
+        weighted_quantile_losses = v["TestWindows"][0]["Metrics"][
+            "WeightedQuantileLosses"
+        ]
+        wape = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["WAPE"]
+        rmse = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["RMSE"]
+        mase = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["MASE"]
+        mape = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["MAPE"]
+        avg_weighted_quantile_losses = v["TestWindows"][0]["Metrics"][
+            "AverageWeightedQuantileLoss"
+        ]
+        parsed_json["Algorithm"].append(algo)
+        parsed_json["WQuantLosses"].append(json.dumps(weighted_quantile_losses))
+        parsed_json["WAPE"].append(np.round(wape, 4))
+        parsed_json["RMSE"].append(np.round(rmse, 4))
+        parsed_json["MASE"].append(np.round(mase, 4))
+        parsed_json["MAPE"].append(np.round(mape, 4))
+        parsed_json["AvgWQuantLoss"].append(np.round(avg_weighted_quantile_losses, 4))
+    df = (
+        pd.DataFrame(parsed_json)
+        .set_index("Algorithm")
+        .T.rename_axis("Metric", axis=0)
+        .rename_axis(None, axis=1)
+        .reset_index()
     )
-    prediction_df_p10.head()
-    # Plot
-    prediction_df_p10.plot()
-    prediction_df_p50 = pd.DataFrame.from_dict(
-        forecastResponse["Forecast"]["Predictions"]["p50"]
-    )
-    prediction_df_p50.plot()
-    prediction_df_p90 = pd.DataFrame.from_dict(
-        forecastResponse["Forecast"]["Predictions"]["p90"]
-    )
-    prediction_df_p90.plot()
-    return prediction_df_p10, prediction_df_p50, prediction_df_p90
+    df.iloc[1::, :].plot(x="Metric", kind="bar", figsize=(15, 8), legend=True)
+    return df
 
 
 def save_results(basepath, *args):

@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/fr/transcribed.json",
+  "PollyVideoOutputKey": "polly/fr/Mathieu/",
+  "PollyResponseOutputKey": "polly/fr/response.json",
+  "ComprehendOutputKey": "comprehend/fr/response.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "fr",
+  "JobName": "Test",
+  "VoiceId": "Mathieu",
+  "EngineType": "standard",
+  "SkipComprehend": false,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "fr",
+    "TranslatedText": "L'apprentissage automatique est utilisé dans diverses tâches informatiques où la conception et la programmation d'algorithmes explicites offrant de bonnes performances sont difficiles, voire irréalisables. Des exemples d'applications incluent le filtrage des e-mails, la détection d'intrus sur le réseau et la vision par ordinateur L'apprentissage automatique est étroitement lié aux statistiques informatiques, qui se concentrent également sur la réalisation de prévisions à l'aide d'un ordinateur. Elle est étroitement liée à l'optimisation mathématique, qui fournit des méthodes, de la théorie et des domaines d'application au domaine."
+  }
+}

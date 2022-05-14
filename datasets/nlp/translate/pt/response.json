@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/pt/transcribed.json",
+  "PollyVideoOutputKey": "polly/pt/Camila/",
+  "PollyResponseOutputKey": "polly/pt/response.json",
+  "ComprehendOutputKey": "comprehend/pt/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "pt",
+  "JobName": "Test",
+  "VoiceId": "Camila",
+  "EngineType": "neural",
+  "SkipComprehend": false,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "pt",
+    "TranslatedText": "O aprendizado de máquina é empregado em uma variedade de tarefas de computação em que projetar e programar algoritmos explícitos com bom desempenho é difícil ou inviável. Exemplos de aplicativos incluem filtragem de e-mail, detecção de intrusos de rede e visão computacional. O aprendizado de máquina está intimamente relacionado à estatística computacional, que também se concentra na criação de previsões por meio do uso do computador. Ele tem fortes laços com a otimização matemática, que fornece métodos, teoria e domínios de aplicação para o campo."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/pl/transcribed.json",
+  "PollyVideoOutputKey": "polly/pl/Jan/",
+  "PollyResponseOutputKey": "polly/pl/response.json",
+  "ComprehendOutputKey": "comprehend/pl/response.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "pl",
+  "JobName": "Test",
+  "VoiceId": "Jan",
+  "EngineType": "standard",
+  "SkipComprehend": true,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "pl",
+    "TranslatedText": "Uczenie maszynowe jest stosowane w szeregu zadań obliczeniowych, w których projektowanie i programowanie jawnych algorytmów o dobrej wydajności jest trudne lub niewykonalne. Przykładowe aplikacje obejmują filtrowanie wiadomości e-mail, wykrywanie intruzów sieciowych i wizję komputerową. Uczenie maszynowe jest ściśle związane ze statystykami obliczeniowymi, która koncentruje się również na prognozach dokonywanych za pomocą komputera. Ma silne powiązania z optymalizacją matematyczną, która dostarcza metody, teoria i domeny aplikacji do tej dziedziny."
+  }
+}

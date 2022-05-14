@@ -1,0 +1,1174 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/fr/transcribed.json",
+  "PollyVideoOutputKey": "polly/fr/Mathieu/",
+  "PollyResponseOutputKey": "polly/fr/response.json",
+  "ComprehendOutputKey": "comprehend/fr/response.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "fr",
+  "JobName": "Test",
+  "VoiceId": "Mathieu",
+  "EngineType": "standard",
+  "SkipComprehend": false,
+  "Result": [
+    {
+      "Sentiment": "NEUTRAL",
+      "SentimentScore": {
+        "Mixed": 0.0000056799377,
+        "Negative": 0.0042026793,
+        "Neutral": 0.9951244,
+        "Positive": 0.0006672346
+      }
+    },
+    {
+      "Entities": [
+        {
+          "BeginOffset": 45,
+          "EndOffset": 60,
+          "Score": 0.7308441,
+          "Text": "diverses tâches",
+          "Type": "QUANTITY"
+        }
+      ]
+    },
+    {
+      "SyntaxTokens": [
+        {
+          "BeginOffset": 0,
+          "EndOffset": 2,
+          "PartOfSpeech": {
+            "Score": 0.99999344,
+            "Tag": "DET"
+          },
+          "Text": "L'",
+          "TokenId": 1
+        },
+        {
+          "BeginOffset": 2,
+          "EndOffset": 15,
+          "PartOfSpeech": {
+            "Score": 0.99973327,
+            "Tag": "NOUN"
+          },
+          "Text": "apprentissage",
+          "TokenId": 2
+        },
+        {
+          "BeginOffset": 16,
+          "EndOffset": 27,
+          "PartOfSpeech": {
+            "Score": 0.9968676,
+            "Tag": "ADJ"
+          },
+          "Text": "automatique",
+          "TokenId": 3
+        },
+        {
+          "BeginOffset": 28,
+          "EndOffset": 31,
+          "PartOfSpeech": {
+            "Score": 0.999488,
+            "Tag": "AUX"
+          },
+          "Text": "est",
+          "TokenId": 4
+        },
+        {
+          "BeginOffset": 32,
+          "EndOffset": 39,
+          "PartOfSpeech": {
+            "Score": 0.9999666,
+            "Tag": "VERB"
+          },
+          "Text": "utilisé",
+          "TokenId": 5
+        },
+        {
+          "BeginOffset": 40,
+          "EndOffset": 44,
+          "PartOfSpeech": {
+            "Score": 0.9999889,
+            "Tag": "ADP"
+          },
+          "Text": "dans",
+          "TokenId": 6
+        },
+        {
+          "BeginOffset": 45,
+          "EndOffset": 53,
+          "PartOfSpeech": {
+            "Score": 0.94078034,
+            "Tag": "DET"
+          },
+          "Text": "diverses",
+          "TokenId": 7
+        },
+        {
+          "BeginOffset": 54,
+          "EndOffset": 60,
+          "PartOfSpeech": {
+            "Score": 0.9997125,
+            "Tag": "NOUN"
+          },
+          "Text": "tâches",
+          "TokenId": 8
+        },
+        {
+          "BeginOffset": 61,
+          "EndOffset": 74,
+          "PartOfSpeech": {
+            "Score": 0.99819523,
+            "Tag": "ADJ"
+          },
+          "Text": "informatiques",
+          "TokenId": 9
+        },
+        {
+          "BeginOffset": 75,
+          "EndOffset": 77,
+          "PartOfSpeech": {
+            "Score": 0.99885345,
+            "Tag": "PRON"
+          },
+          "Text": "où",
+          "TokenId": 10
+        },
+        {
+          "BeginOffset": 78,
+          "EndOffset": 80,
+          "PartOfSpeech": {
+            "Score": 0.99961,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 11
+        },
+        {
+          "BeginOffset": 81,
+          "EndOffset": 91,
+          "PartOfSpeech": {
+            "Score": 0.99837554,
+            "Tag": "NOUN"
+          },
+          "Text": "conception",
+          "TokenId": 12
+        },
+        {
+          "BeginOffset": 92,
+          "EndOffset": 94,
+          "PartOfSpeech": {
+            "Score": 0.99999475,
+            "Tag": "CCONJ"
+          },
+          "Text": "et",
+          "TokenId": 13
+        },
+        {
+          "BeginOffset": 95,
+          "EndOffset": 97,
+          "PartOfSpeech": {
+            "Score": 0.999979,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 14
+        },
+        {
+          "BeginOffset": 98,
+          "EndOffset": 111,
+          "PartOfSpeech": {
+            "Score": 0.99992883,
+            "Tag": "NOUN"
+          },
+          "Text": "programmation",
+          "TokenId": 15
+        },
+        {
+          "BeginOffset": 112,
+          "EndOffset": 114,
+          "PartOfSpeech": {
+            "Score": 0.9998765,
+            "Tag": "ADP"
+          },
+          "Text": "d'",
+          "TokenId": 16
+        },
+        {
+          "BeginOffset": 114,
+          "EndOffset": 125,
+          "PartOfSpeech": {
+            "Score": 0.9985154,
+            "Tag": "NOUN"
+          },
+          "Text": "algorithmes",
+          "TokenId": 17
+        },
+        {
+          "BeginOffset": 126,
+          "EndOffset": 136,
+          "PartOfSpeech": {
+            "Score": 0.9485256,
+            "Tag": "ADJ"
+          },
+          "Text": "explicites",
+          "TokenId": 18
+        },
+        {
+          "BeginOffset": 137,
+          "EndOffset": 144,
+          "PartOfSpeech": {
+            "Score": 0.9971674,
+            "Tag": "VERB"
+          },
+          "Text": "offrant",
+          "TokenId": 19
+        },
+        {
+          "BeginOffset": 145,
+          "EndOffset": 147,
+          "PartOfSpeech": {
+            "Score": 0.9843046,
+            "Tag": "DET"
+          },
+          "Text": "de",
+          "TokenId": 20
+        },
+        {
+          "BeginOffset": 148,
+          "EndOffset": 154,
+          "PartOfSpeech": {
+            "Score": 0.9999995,
+            "Tag": "ADJ"
+          },
+          "Text": "bonnes",
+          "TokenId": 21
+        },
+        {
+          "BeginOffset": 155,
+          "EndOffset": 167,
+          "PartOfSpeech": {
+            "Score": 0.99986064,
+            "Tag": "NOUN"
+          },
+          "Text": "performances",
+          "TokenId": 22
+        },
+        {
+          "BeginOffset": 168,
+          "EndOffset": 172,
+          "PartOfSpeech": {
+            "Score": 0.99713945,
+            "Tag": "AUX"
+          },
+          "Text": "sont",
+          "TokenId": 23
+        },
+        {
+          "BeginOffset": 173,
+          "EndOffset": 183,
+          "PartOfSpeech": {
+            "Score": 0.9986572,
+            "Tag": "ADJ"
+          },
+          "Text": "difficiles",
+          "TokenId": 24
+        },
+        {
+          "BeginOffset": 183,
+          "EndOffset": 184,
+          "PartOfSpeech": {
+            "Score": 0.9999993,
+            "Tag": "PUNCT"
+          },
+          "Text": ",",
+          "TokenId": 25
+        },
+        {
+          "BeginOffset": 185,
+          "EndOffset": 190,
+          "PartOfSpeech": {
+            "Score": 0.96558326,
+            "Tag": "ADV"
+          },
+          "Text": "voire",
+          "TokenId": 26
+        },
+        {
+          "BeginOffset": 191,
+          "EndOffset": 204,
+          "PartOfSpeech": {
+            "Score": 0.9974419,
+            "Tag": "ADJ"
+          },
+          "Text": "irréalisables",
+          "TokenId": 27
+        },
+        {
+          "BeginOffset": 204,
+          "EndOffset": 205,
+          "PartOfSpeech": {
+            "Score": 0.9999933,
+            "Tag": "PUNCT"
+          },
+          "Text": ".",
+          "TokenId": 28
+        },
+        {
+          "BeginOffset": 206,
+          "EndOffset": 209,
+          "PartOfSpeech": {
+            "Score": 0.9976156,
+            "Tag": "DET"
+          },
+          "Text": "Des",
+          "TokenId": 29
+        },
+        {
+          "BeginOffset": 210,
+          "EndOffset": 218,
+          "PartOfSpeech": {
+            "Score": 0.99966323,
+            "Tag": "NOUN"
+          },
+          "Text": "exemples",
+          "TokenId": 30
+        },
+        {
+          "BeginOffset": 219,
+          "EndOffset": 221,
+          "PartOfSpeech": {
+            "Score": 0.9995431,
+            "Tag": "ADP"
+          },
+          "Text": "d'",
+          "TokenId": 31
+        },
+        {
+          "BeginOffset": 221,
+          "EndOffset": 233,
+          "PartOfSpeech": {
+            "Score": 0.9984635,
+            "Tag": "NOUN"
+          },
+          "Text": "applications",
+          "TokenId": 32
+        },
+        {
+          "BeginOffset": 234,
+          "EndOffset": 242,
+          "PartOfSpeech": {
+            "Score": 0.9996923,
+            "Tag": "VERB"
+          },
+          "Text": "incluent",
+          "TokenId": 33
+        },
+        {
+          "BeginOffset": 243,
+          "EndOffset": 245,
+          "PartOfSpeech": {
+            "Score": 0.9999949,
+            "Tag": "DET"
+          },
+          "Text": "le",
+          "TokenId": 34
+        },
+        {
+          "BeginOffset": 246,
+          "EndOffset": 254,
+          "PartOfSpeech": {
+            "Score": 0.9992618,
+            "Tag": "NOUN"
+          },
+          "Text": "filtrage",
+          "TokenId": 35
+        },
+        {
+          "BeginOffset": 255,
+          "EndOffset": 258,
+          "PartOfSpeech": {
+            "Score": 0.99929404,
+            "Tag": "ADP"
+          },
+          "Text": "des",
+          "TokenId": 36
+        },
+        {
+          "BeginOffset": 259,
+          "EndOffset": 266,
+          "PartOfSpeech": {
+            "Score": 0.99886775,
+            "Tag": "NOUN"
+          },
+          "Text": "e-mails",
+          "TokenId": 37
+        },
+        {
+          "BeginOffset": 266,
+          "EndOffset": 267,
+          "PartOfSpeech": {
+            "Score": 0.9999987,
+            "Tag": "PUNCT"
+          },
+          "Text": ",",
+          "TokenId": 38
+        },
+        {
+          "BeginOffset": 268,
+          "EndOffset": 270,
+          "PartOfSpeech": {
+            "Score": 0.99981076,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 39
+        },
+        {
+          "BeginOffset": 271,
+          "EndOffset": 280,
+          "PartOfSpeech": {
+            "Score": 0.99908066,
+            "Tag": "NOUN"
+          },
+          "Text": "détection",
+          "TokenId": 40
+        },
+        {
+          "BeginOffset": 281,
+          "EndOffset": 283,
+          "PartOfSpeech": {
+            "Score": 0.99998784,
+            "Tag": "ADP"
+          },
+          "Text": "d'",
+          "TokenId": 41
+        },
+        {
+          "BeginOffset": 283,
+          "EndOffset": 289,
+          "PartOfSpeech": {
+            "Score": 0.9940357,
+            "Tag": "NOUN"
+          },
+          "Text": "intrus",
+          "TokenId": 42
+        },
+        {
+          "BeginOffset": 290,
+          "EndOffset": 293,
+          "PartOfSpeech": {
+            "Score": 0.99996066,
+            "Tag": "ADP"
+          },
+          "Text": "sur",
+          "TokenId": 43
+        },
+        {
+          "BeginOffset": 294,
+          "EndOffset": 296,
+          "PartOfSpeech": {
+            "Score": 0.99970883,
+            "Tag": "DET"
+          },
+          "Text": "le",
+          "TokenId": 44
+        },
+        {
+          "BeginOffset": 297,
+          "EndOffset": 303,
+          "PartOfSpeech": {
+            "Score": 0.9978765,
+            "Tag": "NOUN"
+          },
+          "Text": "réseau",
+          "TokenId": 45
+        },
+        {
+          "BeginOffset": 304,
+          "EndOffset": 306,
+          "PartOfSpeech": {
+            "Score": 0.9999982,
+            "Tag": "CCONJ"
+          },
+          "Text": "et",
+          "TokenId": 46
+        },
+        {
+          "BeginOffset": 307,
+          "EndOffset": 309,
+          "PartOfSpeech": {
+            "Score": 0.9991154,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 47
+        },
+        {
+          "BeginOffset": 310,
+          "EndOffset": 316,
+          "PartOfSpeech": {
+            "Score": 0.99977607,
+            "Tag": "NOUN"
+          },
+          "Text": "vision",
+          "TokenId": 48
+        },
+        {
+          "BeginOffset": 317,
+          "EndOffset": 320,
+          "PartOfSpeech": {
+            "Score": 0.9999943,
+            "Tag": "ADP"
+          },
+          "Text": "par",
+          "TokenId": 49
+        },
+        {
+          "BeginOffset": 321,
+          "EndOffset": 331,
+          "PartOfSpeech": {
+            "Score": 0.9950304,
+            "Tag": "NOUN"
+          },
+          "Text": "ordinateur",
+          "TokenId": 50
+        },
+        {
+          "BeginOffset": 332,
+          "EndOffset": 334,
+          "PartOfSpeech": {
+            "Score": 0.74226636,
+            "Tag": "DET"
+          },
+          "Text": "L'",
+          "TokenId": 51
+        },
+        {
+          "BeginOffset": 334,
+          "EndOffset": 347,
+          "PartOfSpeech": {
+            "Score": 0.99924004,
+            "Tag": "NOUN"
+          },
+          "Text": "apprentissage",
+          "TokenId": 52
+        },
+        {
+          "BeginOffset": 348,
+          "EndOffset": 359,
+          "PartOfSpeech": {
+            "Score": 0.99689263,
+            "Tag": "ADJ"
+          },
+          "Text": "automatique",
+          "TokenId": 53
+        },
+        {
+          "BeginOffset": 360,
+          "EndOffset": 363,
+          "PartOfSpeech": {
+            "Score": 0.9994286,
+            "Tag": "AUX"
+          },
+          "Text": "est",
+          "TokenId": 54
+        },
+        {
+          "BeginOffset": 364,
+          "EndOffset": 375,
+          "PartOfSpeech": {
+            "Score": 0.99993324,
+            "Tag": "ADV"
+          },
+          "Text": "étroitement",
+          "TokenId": 55
+        },
+        {
+          "BeginOffset": 376,
+          "EndOffset": 379,
+          "PartOfSpeech": {
+            "Score": 0.9965456,
+            "Tag": "VERB"
+          },
+          "Text": "lié",
+          "TokenId": 56
+        },
+        {
+          "BeginOffset": 380,
+          "EndOffset": 383,
+          "PartOfSpeech": {
+            "Score": 0.99999726,
+            "Tag": "ADP"
+          },
+          "Text": "aux",
+          "TokenId": 57
+        },
+        {
+          "BeginOffset": 384,
+          "EndOffset": 396,
+          "PartOfSpeech": {
+            "Score": 0.9996598,
+            "Tag": "NOUN"
+          },
+          "Text": "statistiques",
+          "TokenId": 58
+        },
+        {
+          "BeginOffset": 397,
+          "EndOffset": 410,
+          "PartOfSpeech": {
+            "Score": 0.99859816,
+            "Tag": "ADJ"
+          },
+          "Text": "informatiques",
+          "TokenId": 59
+        },
+        {
+          "BeginOffset": 410,
+          "EndOffset": 411,
+          "PartOfSpeech": {
+            "Score": 0.99999964,
+            "Tag": "PUNCT"
+          },
+          "Text": ",",
+          "TokenId": 60
+        },
+        {
+          "BeginOffset": 412,
+          "EndOffset": 415,
+          "PartOfSpeech": {
+            "Score": 0.99999905,
+            "Tag": "PRON"
+          },
+          "Text": "qui",
+          "TokenId": 61
+        },
+        {
+          "BeginOffset": 416,
+          "EndOffset": 418,
+          "PartOfSpeech": {
+            "Score": 0.99999964,
+            "Tag": "PRON"
+          },
+          "Text": "se",
+          "TokenId": 62
+        },
+        {
+          "BeginOffset": 419,
+          "EndOffset": 430,
+          "PartOfSpeech": {
+            "Score": 0.99999285,
+            "Tag": "VERB"
+          },
+          "Text": "concentrent",
+          "TokenId": 63
+        },
+        {
+          "BeginOffset": 431,
+          "EndOffset": 440,
+          "PartOfSpeech": {
+            "Score": 0.9999999,
+            "Tag": "ADV"
+          },
+          "Text": "également",
+          "TokenId": 64
+        },
+        {
+          "BeginOffset": 441,
+          "EndOffset": 444,
+          "PartOfSpeech": {
+            "Score": 0.9999174,
+            "Tag": "ADP"
+          },
+          "Text": "sur",
+          "TokenId": 65
+        },
+        {
+          "BeginOffset": 445,
+          "EndOffset": 447,
+          "PartOfSpeech": {
+            "Score": 0.9999937,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 66
+        },
+        {
+          "BeginOffset": 448,
+          "EndOffset": 459,
+          "PartOfSpeech": {
+            "Score": 0.99992394,
+            "Tag": "NOUN"
+          },
+          "Text": "réalisation",
+          "TokenId": 67
+        },
+        {
+          "BeginOffset": 460,
+          "EndOffset": 462,
+          "PartOfSpeech": {
+            "Score": 0.99989915,
+            "Tag": "ADP"
+          },
+          "Text": "de",
+          "TokenId": 68
+        },
+        {
+          "BeginOffset": 463,
+          "EndOffset": 473,
+          "PartOfSpeech": {
+            "Score": 0.99840254,
+            "Tag": "NOUN"
+          },
+          "Text": "prévisions",
+          "TokenId": 69
+        },
+        {
+          "BeginOffset": 474,
+          "EndOffset": 475,
+          "PartOfSpeech": {
+            "Score": 0.99999964,
+            "Tag": "ADP"
+          },
+          "Text": "à",
+          "TokenId": 70
+        },
+        {
+          "BeginOffset": 476,
+          "EndOffset": 478,
+          "PartOfSpeech": {
+            "Score": 0.99929273,
+            "Tag": "DET"
+          },
+          "Text": "l'",
+          "TokenId": 71
+        },
+        {
+          "BeginOffset": 478,
+          "EndOffset": 482,
+          "PartOfSpeech": {
+            "Score": 0.9989504,
+            "Tag": "NOUN"
+          },
+          "Text": "aide",
+          "TokenId": 72
+        },
+        {
+          "BeginOffset": 483,
+          "EndOffset": 485,
+          "PartOfSpeech": {
+            "Score": 0.9999201,
+            "Tag": "ADP"
+          },
+          "Text": "d'",
+          "TokenId": 73
+        },
+        {
+          "BeginOffset": 485,
+          "EndOffset": 487,
+          "PartOfSpeech": {
+            "Score": 0.9963381,
+            "Tag": "DET"
+          },
+          "Text": "un",
+          "TokenId": 74
+        },
+        {
+          "BeginOffset": 488,
+          "EndOffset": 498,
+          "PartOfSpeech": {
+            "Score": 0.9963325,
+            "Tag": "NOUN"
+          },
+          "Text": "ordinateur",
+          "TokenId": 75
+        },
+        {
+          "BeginOffset": 498,
+          "EndOffset": 499,
+          "PartOfSpeech": {
+            "Score": 0.9999484,
+            "Tag": "PUNCT"
+          },
+          "Text": ".",
+          "TokenId": 76
+        },
+        {
+          "BeginOffset": 500,
+          "EndOffset": 504,
+          "PartOfSpeech": {
+            "Score": 0.9999906,
+            "Tag": "PRON"
+          },
+          "Text": "Elle",
+          "TokenId": 77
+        },
+        {
+          "BeginOffset": 505,
+          "EndOffset": 508,
+          "PartOfSpeech": {
+            "Score": 0.9996007,
+            "Tag": "AUX"
+          },
+          "Text": "est",
+          "TokenId": 78
+        },
+        {
+          "BeginOffset": 509,
+          "EndOffset": 520,
+          "PartOfSpeech": {
+            "Score": 0.99994624,
+            "Tag": "ADV"
+          },
+          "Text": "étroitement",
+          "TokenId": 79
+        },
+        {
+          "BeginOffset": 521,
+          "EndOffset": 525,
+          "PartOfSpeech": {
+            "Score": 0.9977769,
+            "Tag": "VERB"
+          },
+          "Text": "liée",
+          "TokenId": 80
+        },
+        {
+          "BeginOffset": 526,
+          "EndOffset": 527,
+          "PartOfSpeech": {
+            "Score": 1,
+            "Tag": "ADP"
+          },
+          "Text": "à",
+          "TokenId": 81
+        },
+        {
+          "BeginOffset": 528,
+          "EndOffset": 530,
+          "PartOfSpeech": {
+            "Score": 0.99999714,
+            "Tag": "DET"
+          },
+          "Text": "l'",
+          "TokenId": 82
+        },
+        {
+          "BeginOffset": 530,
+          "EndOffset": 542,
+          "PartOfSpeech": {
+            "Score": 0.9992924,
+            "Tag": "NOUN"
+          },
+          "Text": "optimisation",
+          "TokenId": 83
+        },
+        {
+          "BeginOffset": 543,
+          "EndOffset": 555,
+          "PartOfSpeech": {
+            "Score": 0.9991171,
+            "Tag": "ADJ"
+          },
+          "Text": "mathématique",
+          "TokenId": 84
+        },
+        {
+          "BeginOffset": 555,
+          "EndOffset": 556,
+          "PartOfSpeech": {
+            "Score": 0.99999905,
+            "Tag": "PUNCT"
+          },
+          "Text": ",",
+          "TokenId": 85
+        },
+        {
+          "BeginOffset": 557,
+          "EndOffset": 560,
+          "PartOfSpeech": {
+            "Score": 0.99999857,
+            "Tag": "PRON"
+          },
+          "Text": "qui",
+          "TokenId": 86
+        },
+        {
+          "BeginOffset": 561,
+          "EndOffset": 568,
+          "PartOfSpeech": {
+            "Score": 0.9999995,
+            "Tag": "VERB"
+          },
+          "Text": "fournit",
+          "TokenId": 87
+        },
+        {
+          "BeginOffset": 569,
+          "EndOffset": 572,
+          "PartOfSpeech": {
+            "Score": 0.9839282,
+            "Tag": "DET"
+          },
+          "Text": "des",
+          "TokenId": 88
+        },
+        {
+          "BeginOffset": 573,
+          "EndOffset": 581,
+          "PartOfSpeech": {
+            "Score": 0.99920493,
+            "Tag": "NOUN"
+          },
+          "Text": "méthodes",
+          "TokenId": 89
+        },
+        {
+          "BeginOffset": 581,
+          "EndOffset": 582,
+          "PartOfSpeech": {
+            "Score": 0.9999938,
+            "Tag": "PUNCT"
+          },
+          "Text": ",",
+          "TokenId": 90
+        },
+        {
+          "BeginOffset": 583,
+          "EndOffset": 585,
+          "PartOfSpeech": {
+            "Score": 0.9998987,
+            "Tag": "ADP"
+          },
+          "Text": "de",
+          "TokenId": 91
+        },
+        {
+          "BeginOffset": 586,
+          "EndOffset": 588,
+          "PartOfSpeech": {
+            "Score": 0.99990714,
+            "Tag": "DET"
+          },
+          "Text": "la",
+          "TokenId": 92
+        },
+        {
+          "BeginOffset": 589,
+          "EndOffset": 596,
+          "PartOfSpeech": {
+            "Score": 0.99783784,
+            "Tag": "NOUN"
+          },
+          "Text": "théorie",
+          "TokenId": 93
+        },
+        {
+          "BeginOffset": 597,
+          "EndOffset": 599,
+          "PartOfSpeech": {
+            "Score": 0.9999995,
+            "Tag": "CCONJ"
+          },
+          "Text": "et",
+          "TokenId": 94
+        },
+        {
+          "BeginOffset": 600,
+          "EndOffset": 603,
+          "PartOfSpeech": {
+            "Score": 0.59706604,
+            "Tag": "ADP"
+          },
+          "Text": "des",
+          "TokenId": 95
+        },
+        {
+          "BeginOffset": 604,
+          "EndOffset": 612,
+          "PartOfSpeech": {
+            "Score": 0.99971265,
+            "Tag": "NOUN"
+          },
+          "Text": "domaines",
+          "TokenId": 96
+        },
+        {
+          "BeginOffset": 613,
+          "EndOffset": 615,
+          "PartOfSpeech": {
+            "Score": 0.99989617,
+            "Tag": "ADP"
+          },
+          "Text": "d'",
+          "TokenId": 97
+        },
+        {
+          "BeginOffset": 615,
+          "EndOffset": 626,
+          "PartOfSpeech": {
+            "Score": 0.9982969,
+            "Tag": "NOUN"
+          },
+          "Text": "application",
+          "TokenId": 98
+        },
+        {
+          "BeginOffset": 627,
+          "EndOffset": 629,
+          "PartOfSpeech": {
+            "Score": 0.99999845,
+            "Tag": "ADP"
+          },
+          "Text": "au",
+          "TokenId": 99
+        },
+        {
+          "BeginOffset": 630,
+          "EndOffset": 637,
+          "PartOfSpeech": {
+            "Score": 0.99844545,
+            "Tag": "NOUN"
+          },
+          "Text": "domaine",
+          "TokenId": 100
+        },
+        {
+          "BeginOffset": 637,
+          "EndOffset": 638,
+          "PartOfSpeech": {
+            "Score": 0.9999808,
+            "Tag": "PUNCT"
+          },
+          "Text": ".",
+          "TokenId": 101
+        }
+      ]
+    },
+    {
+      "KeyPhrases": [
+        {
+          "BeginOffset": 0,
+          "EndOffset": 27,
+          "Score": 0.99982554,
+          "Text": "L'apprentissage automatique"
+        },
+        {
+          "BeginOffset": 45,
+          "EndOffset": 74,
+          "Score": 0.9997941,
+          "Text": "diverses tâches informatiques"
+        },
+        {
+          "BeginOffset": 75,
+          "EndOffset": 77,
+          "Score": 0.99894315,
+          "Text": "où"
+        },
+        {
+          "BeginOffset": 78,
+          "EndOffset": 136,
+          "Score": 0.9094584,
+          "Text": "la conception et la programmation d'algorithmes explicites"
+        },
+        {
+          "BeginOffset": 145,
+          "EndOffset": 167,
+          "Score": 0.9983377,
+          "Text": "de bonnes performances"
+        },
+        {
+          "BeginOffset": 206,
+          "EndOffset": 233,
+          "Score": 0.9992389,
+          "Text": "Des exemples d'applications"
+        },
+        {
+          "BeginOffset": 243,
+          "EndOffset": 266,
+          "Score": 0.9999029,
+          "Text": "le filtrage des e-mails"
+        },
+        {
+          "BeginOffset": 268,
+          "EndOffset": 303,
+          "Score": 0.9986447,
+          "Text": "la détection d'intrus sur le réseau"
+        },
+        {
+          "BeginOffset": 307,
+          "EndOffset": 331,
+          "Score": 0.99781656,
+          "Text": "la vision par ordinateur"
+        },
+        {
+          "BeginOffset": 332,
+          "EndOffset": 359,
+          "Score": 0.99824125,
+          "Text": "L'apprentissage automatique"
+        },
+        {
+          "BeginOffset": 384,
+          "EndOffset": 410,
+          "Score": 0.9998302,
+          "Text": "statistiques informatiques"
+        },
+        {
+          "BeginOffset": 412,
+          "EndOffset": 415,
+          "Score": 0.99997294,
+          "Text": "qui"
+        },
+        {
+          "BeginOffset": 416,
+          "EndOffset": 418,
+          "Score": 0.9999405,
+          "Text": "se"
+        },
+        {
+          "BeginOffset": 445,
+          "EndOffset": 498,
+          "Score": 0.9690844,
+          "Text": "la réalisation de prévisions à l'aide d'un ordinateur"
+        },
+        {
+          "BeginOffset": 500,
+          "EndOffset": 504,
+          "Score": 0.9999844,
+          "Text": "Elle"
+        },
+        {
+          "BeginOffset": 528,
+          "EndOffset": 555,
+          "Score": 0.9994817,
+          "Text": "l'optimisation mathématique"
+        },
+        {
+          "BeginOffset": 557,
+          "EndOffset": 560,
+          "Score": 0.9997899,
+          "Text": "qui"
+        },
+        {
+          "BeginOffset": 569,
+          "EndOffset": 581,
+          "Score": 0.997715,
+          "Text": "des méthodes"
+        },
+        {
+          "BeginOffset": 586,
+          "EndOffset": 596,
+          "Score": 0.91181725,
+          "Text": "la théorie"
+        },
+        {
+          "BeginOffset": 600,
+          "EndOffset": 637,
+          "Score": 0.92857873,
+          "Text": "des domaines d'application au domaine"
+        }
+      ]
+    }
+  ]
+}

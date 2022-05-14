@@ -92,7 +92,7 @@ def execute_nlp_state_machine(
         "TranscribeOutputKey": f"transcribe/{target_lang_code}/transcribed.json",
         "PollyVideoOutputKey": f"polly/{target_lang_code}/{voice_id}/",
         "PollyResponseOutputKey": f"polly/{target_lang_code}/response.json",
-        "ComprehendOutputKey": f"comprehend/{target_lang_code}/text_analysis.json",
+        "ComprehendOutputKey": f"comprehend/{target_lang_code}/response.json",
         "SourceLanguageCode": source_lang_code,
         "TargetLanguageCode": target_lang_code,
         "JobName": job_name,

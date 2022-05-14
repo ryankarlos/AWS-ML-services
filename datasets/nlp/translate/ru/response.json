@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/ru/transcribed.json",
+  "PollyVideoOutputKey": "polly/ru/Tatyana/",
+  "PollyResponseOutputKey": "polly/ru/response.json",
+  "ComprehendOutputKey": "comprehend/ru/response.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "ru",
+  "JobName": "Test",
+  "VoiceId": "Tatyana",
+  "EngineType": "standard",
+  "SkipComprehend": true,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "ru",
+    "TranslatedText": "Машинное обучение используется в ряде вычислительных задач, где разработка и программирование явных алгоритмов с хорошей производительностью затруднены или невыполнимы. Примеры применения включают фильтрацию электронной почты, обнаружение сетевых злоумышленников и компьютерное зрение. Машинное обучение тесно связано с вычислительной статистикой, которая также фокусируется на прогнозировании с использованием компьютера. Он тесно связан с математической оптимизацией, которая предоставляет методы, теорию и области применения в этой области."
+  }
+}

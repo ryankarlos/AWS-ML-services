@@ -169,6 +169,7 @@ The input to the state machine is in the following format
 {
   "BucketName": "awstestnlp",
   "Source": "s3://awstestnlp/source/transcribe-sample.mp3",
+  "ComprehendOutputKey": "comprehend/text_analysis.json",
   "TranscribeOutputKey": "transcribed/transcribed.json",
   "PollyOutputKey": "polly/text_to_speech.mp3",
   "SourceLanguageCode": "en-US",

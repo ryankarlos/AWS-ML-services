@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/ja/transcribed.json",
+  "PollyVideoOutputKey": "polly/ja/Takumi/",
+  "PollyResponseOutputKey": "polly/ja/response.json",
+  "ComprehendOutputKey": "comprehend/ja/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "ja",
+  "JobName": "Test",
+  "VoiceId": "Takumi",
+  "EngineType": "neural",
+  "SkipComprehend": true,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "ja",
+    "TranslatedText": "機械学習は、優れたパフォーマンスを備えた明示的アルゴリズムの設計とプログラミングが困難または実行不可能なさまざまなコンピューティングタスクで採用されています。アプリケーションの例としては、電子メールのフィルタリング、ネットワーク侵入者の検出、コンピュータビジョンなどがあります。機械学習は計算統計学と密接に関連しており、計算統計学はコンピューターを使用して行う予測にも焦点を当てています。それは数学的最適化と強いつながりがあり、それは方法、理論、そして応用分野を分野にもたらします。"
+  }
+}

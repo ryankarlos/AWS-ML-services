@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/de/transcribed.json",
+  "PollyVideoOutputKey": "polly/de/Vicki/",
+  "PollyResponseOutputKey": "polly/de/response.json",
+  "ComprehendOutputKey": "comprehend/de/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "de",
+  "JobName": "Test",
+  "VoiceId": "Vicki",
+  "EngineType": "neural",
+  "SkipComprehend": false,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "de",
+    "TranslatedText": "Maschinelles Lernen wird in einer Reihe von Rechenaufgaben eingesetzt, bei denen das Entwerfen und Programmieren expliziter Algorithmen mit guter Leistung schwierig oder nicht durchführbar ist. Beispielanwendungen sind E-Mail-Filterung, Erkennung von Netzwerkeindringlingen und Computer Vision. Maschinelles Lernen steht in engem Zusammenhang mit der Computerstatistik, die sich auch auf Vorhersagen konzentriert, die mithilfe von Computern getroffen werden. Es ist eng mit der mathematischen Optimierung verbunden, die Methoden, Theorie und Anwendungsbereiche für das Feld liefert."
+  }
+}

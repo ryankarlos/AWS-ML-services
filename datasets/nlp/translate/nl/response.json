@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/nl/transcribed.json",
+  "PollyVideoOutputKey": "polly/nl/Ruben/",
+  "PollyResponseOutputKey": "polly/nl/response.json",
+  "ComprehendOutputKey": "comprehend/nl/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "nl",
+  "JobName": "Test",
+  "VoiceId": "Ruben",
+  "EngineType": "standard",
+  "SkipComprehend": true,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "nl",
+    "TranslatedText": "Machine learning wordt gebruikt in een reeks computertaken waarbij het ontwerpen en programmeren van expliciete algoritmen met goede prestaties moeilijk of onhaalbaar is. Voorbeeldtoepassingen zijn e-mailfiltering, detectie van netwerkindringers en computervisie. Machine learning hangt nauw samen met computationele statistieken, die zich ook richten op voorspellingen door het gebruik van computer. Het heeft sterke banden met wiskundige optimalisatie, die methoden, theorie en toepassingsdomeinen aan het veld levert."
+  }
+}

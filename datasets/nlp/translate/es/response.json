@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/es/transcribed.json",
+  "PollyVideoOutputKey": "polly/es/Lupe/",
+  "PollyResponseOutputKey": "polly/es/response.json",
+  "ComprehendOutputKey": "comprehend/es/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "es",
+  "JobName": "Test",
+  "VoiceId": "Lupe",
+  "EngineType": "neural",
+  "SkipComprehend": false,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "es",
+    "TranslatedText": "El aprendizaje automático se emplea en una variedad de tareas informáticas en las que el diseño y la programación de algoritmos explícitos con un buen rendimiento son difíciles o inviables. Las aplicaciones de ejemplo incluyen el filtrado de correo electrónico, la detección de intrusos de la red y la visión artificial. El aprendizaje automático está estrechamente relacionado con las estadísticas computacionales, que también se centran en la realización de predicciones mediante el uso de la computadora. Tiene fuertes vínculos con la optimización matemática, que ofrece métodos, teoría y dominios de aplicación en el campo."
+  }
+}

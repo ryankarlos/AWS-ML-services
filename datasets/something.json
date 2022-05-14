@@ -1,0 +1,13 @@
+{
+    "SynthesisTask": {
+      "CreationTime": "2022-05-13T23:01:58.597Z",
+      "Engine": "neural",
+      "OutputFormat": "mp3",
+      "OutputUri": "https://s3.us-east-1.amazonaws.com/awstestnlp/polly/es.576af629-7911-4099-92e0-22aa3fb2a850.mp3",
+      "RequestCharacters": 627,
+      "TaskId": "576af629-7911-4099-92e0-22aa3fb2a850",
+      "TaskStatus": "scheduled",
+      "TextType": "text",
+      "VoiceId": "Lupe"
+    }
+}

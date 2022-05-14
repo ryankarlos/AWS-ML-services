@@ -1,0 +1,19 @@
+{
+  "BucketName": "awstestnlp",
+  "Source": "s3://awstestnlp/source/en-US/transcribe-sample.mp3",
+  "TranscribeOutputKey": "transcribe/hi/transcribed.json",
+  "PollyVideoOutputKey": "polly/hi/Aditi/",
+  "PollyResponseOutputKey": "polly/hi/response.json",
+  "ComprehendOutputKey": "comprehend/hi/text_analysis.json",
+  "SourceLanguageCode": "en-US",
+  "TargetLanguageCode": "hi",
+  "JobName": "Test",
+  "VoiceId": "Aditi",
+  "EngineType": "standard",
+  "SkipComprehend": true,
+  "Result": {
+    "SourceLanguageCode": "en",
+    "TargetLanguageCode": "hi",
+    "TranslatedText": "मशीन लर्निंग को कंप्यूटिंग कार्यों की एक श्रृंखला में नियोजित किया जाता है जहां अच्छे प्रदर्शन के साथ स्पष्ट एल्गोरिदम डिजाइन और प्रोग्रामिंग करना मुश्किल या अक्षम है। उदाहरण अनुप्रयोगों में ईमेल फ़िल्टरिंग, नेटवर्क घुसपैठियों का पता लगाना और कंप्यूटर विज़न शामिल हैं। मशीन लर्निंग कम्प्यूटेशनल आंकड़ों से निकटता से संबंधित है, जो कंप्यूटर के उपयोग के माध्यम से भविष्यवाणियों पर भी केंद्रित है। गणितीय अनुकूलन के साथ इसका मजबूत संबंध है, जो क्षेत्र में विधियों, सिद्धांत और अनुप्रयोग डोमेन को वितरित करता है।"
+  }
+}

@@ -5,7 +5,7 @@ dataset which is a time series of the Wikipedia page hits for Peyton Manning
 https://peerj.com/preprints/3190/
 https://facebook.github.io/prophet/docs/quick_start.html#python-api
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=1000></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=400 width=800></img>
 
 
 The notebook `AWS_Forecast.ipynb` uses the functions in the modules in this package to 
@@ -36,8 +36,9 @@ as all the items belong to the same group (i.e Manning's wikipedia hits)
 For illustration purposes and to generate the task viz, ive used dask delayed, but the dataset
 size certainly does not warrant the need for it. 
 
+<p align="center">
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
-
+</p>
 
 ```
 DATASET_FREQUENCY = "D"

@@ -2,6 +2,25 @@
 All the scripts in this folder using AWS SDK for python can be found in the official docs https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/what-is.html
 Some of these scripts have been adapted and tailored for the use of these sample datasets.
 
+
+#### Uploading datatset to S3
+
+Run the following command specifying the local path to image data tom upload, bucket name.
+We also need to attach a resource policy to the bucket to give AWS Rekogniiton required
+permissions to acccess bucket. Pass the required resource policy filename 
+(listed in `s3/resource_policies/`) to the arg `--policy_filename`
+
+```
+$ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir <path-to-data>--policy_filename rekognition_permissions.json   
+2022-05-15 00:46:40,095 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials
+2022-05-15 00:46:40,698 __main__ INFO:Creating new bucket with name:rekognition-cv
+2022-05-15 00:46:41,180 __main__ INFO:Creating bucket policy
+0it [00:00, ?it/s]2022-05-15 00:46:41,212 __main__ INFO:Starting upload ....
+0it [00:00, ?it/s]
+2022-05-15 00:46:41,651 __main__ INFO:Successfully uploaded all image folders in datasets/rekognition-cv to S3  bucket rekognition-cv
+```
+
+
 #### Creating project
 
 https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/mp-create-project.html

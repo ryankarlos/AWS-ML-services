@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 import json
 import argparse
-from bucket_policies import bucket_policy_rekog
+import os
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s:%(message)s", level=logging.INFO
@@ -14,20 +14,22 @@ s3_client = boto3.client("s3")
 s3_resource = boto3.resource("s3")
 
 
-def create_bucket(s3_client, bucket_name, policy):
-    if bucket_name in list_buckets(s3_client)["Buckets"][0]["Name"]:
-        logger.error("Bucket you want to create already exists")
+def create_bucket(s3_client, bucket_name, policy_path=None):
+    response = s3_client.list_buckets()["Buckets"]
+    bucket_list = [bucket["Name"] for bucket in response]
+    if bucket_name in bucket_list:
+        logger.info(
+            f"Bucket '{bucket_name}' already exists, so skipping bucket create step"
+        )
     else:
         logger.info(f"Creating new bucket with name:{bucket_name}")
         s3_client.create_bucket(Bucket=bucket_name)
-        logger.info(f"Creating bucket policy")
-        bucket_policy_str = json.dumps(policy)
-        s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy_str)
-
-
-def list_buckets(s3_client):
-    response = s3_client.list_buckets()
-    return response
+        if policy_path is not None:
+            with open(policy_path, "rb") as f:
+                policy = json.load(f)
+            logger.info(f"Creating bucket policy")
+            bucket_policy_str = json.dumps(policy)
+            s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy_str)
 
 
 def upload_folder_to_s3(s3_resource, path, bucket_name):
@@ -58,6 +60,7 @@ def add_arguments(parser):
     )
 
     parser.add_argument("--local_dir", help="Local image folder path to upload")
+    parser.add_argument("--policy_filename", help="filename of resource policy")
 
 
 def main():
@@ -65,7 +68,14 @@ def main():
     parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
     add_arguments(parser)
     args = parser.parse_args()
-    create_bucket(s3_client, args.bucket_name, policy=bucket_policy_rekog)
+    policy_filename = args.policy_filename
+    if policy_filename is not None:
+        policy_path = os.path.join(
+            str(Path(__file__).parent), "resource_policies", policy_filename
+        )
+        create_bucket(s3_client, args.bucket_name, policy_path=policy_path)
+    else:
+        create_bucket(s3_client, args.bucket_name)
     upload_folder_to_s3(s3_resource, args.local_dir, args.bucket_name)
     logger.info(
         f"Successfully uploaded all image folders in {args.local_dir} to S3  bucket {args.bucket_name}"

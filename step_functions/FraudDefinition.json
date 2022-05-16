@@ -1,0 +1,359 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Create Variable, Entities and Labels",
+  "States": {
+    "Create Variable, Entities and Labels": {
+      "Type": "Parallel",
+      "Next": "Create Event Type",
+      "Branches": [
+        {
+          "StartAt": "Create Variables",
+          "States": {
+            "Create Variables": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "Email",
+                  "States": {
+                    "Email": {
+                      "Type": "Task",
+                      "Parameters": {
+                        "DataSource": "EVENT",
+                        "VariableType": "EMAIL_ADDRESS",
+                        "DataType": "STRING",
+                        "DefaultValue": "<unknown>",
+                        "Name": "email_address"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:createVariable",
+                      "End": true
+                    }
+                  }
+                },
+                {
+                  "StartAt": "IP address",
+                  "States": {
+                    "IP address": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "DataSource": "EVENT",
+                        "VariableType": "IP_ADDRESS",
+                        "DataType": "STRING",
+                        "DefaultValue": "<unknown>",
+                        "Name": "ip_address"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:createVariable"
+                    }
+                  }
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "PutEntityType",
+          "States": {
+            "PutEntityType": {
+              "Type": "Task",
+              "Parameters": {
+                "Name": "sample_customer"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:frauddetector:putEntityType",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Create Labels",
+          "States": {
+            "Create Labels": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "Fraud",
+                  "States": {
+                    "Fraud": {
+                      "Type": "Task",
+                      "Parameters": {
+                        "Name": "fraud"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putLabel",
+                      "End": true
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Legit",
+                  "States": {
+                    "Legit": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "Name": "legit"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putLabel"
+                    }
+                  }
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Create Event Type": {
+      "Type": "Task",
+      "Parameters": {
+        "EntityTypes": [
+          "sample_customer"
+        ],
+        "EventVariables": [
+          "ip_address",
+          "email_address"
+        ],
+        "Labels": [
+          "legit",
+          "fraud"
+        ],
+        "Name": "sample_registration"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putEventType",
+      "Next": "CreateModel"
+    },
+    "CreateModel": {
+      "Type": "Task",
+      "Parameters": {
+        "EventTypeName": "sample_registration",
+        "ModelId": "sample_fraud_detection_model",
+        "ModelType": "ONLINE_FRAUD_INSIGHTS"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:createModel",
+      "Next": "Train Model"
+    },
+    "Train Model": {
+      "Type": "Task",
+      "Parameters": {
+        "ModelId": "sample_fraud_detection_model",
+        "ModelType": "ONLINE_FRAUD_INSIGHTS",
+        "TrainingDataSchema": {
+          "LabelSchema": {
+            "LabelMapper": {
+              "FRAUD": [
+                "fraud"
+              ],
+              "LEGIT": [
+                "legit"
+              ]
+            }
+          },
+          "ModelVariables": [
+            "ip_address",
+            "email_address"
+          ]
+        },
+        "TrainingDataSource": "EXTERNAL_EVENTS"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:createModelVersion",
+      "Next": "Deploy Model"
+    },
+    "Deploy Model": {
+      "Type": "Task",
+      "Parameters": {
+        "MajorVersionNumber": "1.00",
+        "ModelId": "sample_fraud_detection_model",
+        "ModelType": "ONLINE_FRAUD_INSIGHTS"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:updateModelVersion",
+      "Next": "Create Detector and Outcomes"
+    },
+    "Create Detector and Outcomes": {
+      "Type": "Parallel",
+      "Next": "Create Rules",
+      "Branches": [
+        {
+          "StartAt": "Create Detector",
+          "States": {
+            "Create Detector": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "DetectorId": "sample_detector",
+                "EventTypeName": "sample_registration"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:frauddetector:putDetector"
+            }
+          }
+        },
+        {
+          "StartAt": "Create Outcomes",
+          "States": {
+            "Create Outcomes": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "VerifyCustomer",
+                  "States": {
+                    "VerifyCustomer": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "Name": "verify_customer"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putOutcome"
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Review",
+                  "States": {
+                    "Review": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "Name": "review"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putOutcome"
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Approve",
+                  "States": {
+                    "Approve": {
+                      "Type": "Task",
+                      "End": true,
+                      "Parameters": {
+                        "Name": "approve"
+                      },
+                      "Resource": "arn:aws:states:::aws-sdk:frauddetector:putOutcome"
+                    }
+                  }
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Create Rules": {
+      "Type": "Parallel",
+      "Next": "CreateDetectorVersion",
+      "Branches": [
+        {
+          "StartAt": "HighRisk",
+          "States": {
+            "HighRisk": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "DetectorId": "sample_detector",
+                "Expression": "$sample_fraud_detection_model_insightscore > 900",
+                "Language": "DETECTORPL",
+                "Outcomes": [
+                  "verify_customer"
+                ],
+                "RuleId": "high_fraud_risk"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:frauddetector:createRule"
+            }
+          }
+        },
+        {
+          "StartAt": "MediumRisk",
+          "States": {
+            "MediumRisk": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "DetectorId": "sample_detector",
+                "Expression": "$sample_fraud_detection_model_insightscore <= 900 and $sample_fraud_detection_model_insightscore > 700",
+                "Language": "DETECTORPL",
+                "Outcomes": [
+                  "review"
+                ],
+                "RuleId": "medium_fraud_risk"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:frauddetector:createRule"
+            }
+          }
+        },
+        {
+          "StartAt": "LowRisk",
+          "States": {
+            "LowRisk": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "DetectorId": "sample_detector",
+                "Expression": "$sample_fraud_detection_model_insightscore <= 700",
+                "Language": "DETECTORPL",
+                "Outcomes": [
+                  "approve"
+                ],
+                "RuleId": "low_fraud_risk"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:frauddetector:createRule"
+            }
+          }
+        }
+      ]
+    },
+    "CreateDetectorVersion": {
+      "Type": "Task",
+      "Parameters": {
+        "DetectorId": "sample_detector",
+        "Rules": [
+          {
+            "DetectorId": "sample_detector",
+            "RuleId": "high_fraud_risk",
+            "RuleVersion": "1"
+          },
+          {
+            "DetectorId": "sample_detector",
+            "RuleId": "medium_fraud_risk",
+            "RuleVersion": "1"
+          },
+          {
+            "DetectorId": "sample_detector",
+            "RuleId": "low_fraud_risk",
+            "RuleVersion": "1"
+          }
+        ],
+        "ModelVersions": [
+          {
+            "ModelId": "sample_fraud_detection_model",
+            "ModelType": "ONLINE_FRAUD_INSIGHTS",
+            "ModelVersionNumber": "1.00"
+          }
+        ],
+        "RuleExecutionMode": "FIRST_MATCHED"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:createDetectorVersion",
+      "Next": "GetEventPrediction"
+    },
+    "GetEventPrediction": {
+      "Type": "Task",
+      "Parameters": {
+        "DetectorId": "sample_detector",
+        "Entities": [
+          {
+            "EntityId": "12345",
+            "EntityType": "sample_customer"
+          }
+        ],
+        "EventId": "802454d3-f7d8-482d-97e8-c4b6db9a0428",
+        "EventTimestamp": "2020-07-13T23:18:21Z",
+        "EventTypeName": "sample_registration",
+        "EventVariables": {
+          "email_address": "johndoe@exampledomain.com",
+          "ip_address": "1.2.3.4"
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:frauddetector:getEventPrediction",
+      "End": true
+    }
+  }
+}

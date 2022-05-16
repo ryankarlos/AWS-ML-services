@@ -1,9 +1,9 @@
-from tqdm import tqdm
-import boto3
 from pathlib import Path
-import logging
 import json
 import argparse
+import logging
+import boto3
+from botocore.exceptions import ClientError
 import os
 
 logging.basicConfig(
@@ -32,21 +32,16 @@ def create_bucket(s3_client, bucket_name, policy_path=None):
             s3_client.put_bucket_policy(Bucket=bucket_name, Policy=bucket_policy_str)
 
 
-def upload_folder_to_s3(s3_resource, path, bucket_name):
-    bucket = s3_resource.Bucket(bucket_name)
-    p = Path(path)
-    with tqdm(p.glob("**/*.jpeg")) as pbar:
-        logger.info("Starting upload ....")
-        project_name = p.stem
-        bucket.put_object(Key=(project_name + "/"))
-        for child in pbar:
-            label_name = child.parent.name
-            aws_path = project_name + "/" + label_name
-            key = aws_path + "/" + str(child.stem) + ".jpeg"
-            pbar.set_description(
-                f"Uploading {str(child)} to {aws_path} in S3 bucket {bucket_name}"
-            )
-            bucket.upload_file(str(child), key)
+def upload_files(path, bucket):
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            full_path = os.path.join(subdir, file)
+            object_name = os.path.relpath(full_path, path)
+            try:
+                s3_client.upload_file(full_path, bucket, object_name)
+            except ClientError as e:
+                logging.error(e)
+                return False
 
 
 def add_arguments(parser):
@@ -59,7 +54,7 @@ def add_arguments(parser):
         "--bucket_name", help="Name of bucket to create or upload data to"
     )
 
-    parser.add_argument("--local_dir", help="Local image folder path to upload")
+    parser.add_argument("--local_dir", help="Local folder path to upload")
     parser.add_argument("--policy_filename", help="filename of resource policy")
 
 
@@ -76,9 +71,10 @@ def main():
         create_bucket(s3_client, args.bucket_name, policy_path=policy_path)
     else:
         create_bucket(s3_client, args.bucket_name)
-    upload_folder_to_s3(s3_resource, args.local_dir, args.bucket_name)
+    dataset_path = os.path.join(str(Path(__file__).parents[1]), args.local_dir)
+    upload_files(dataset_path, args.bucket_name)
     logger.info(
-        f"Successfully uploaded all image folders in {args.local_dir} to S3  bucket {args.bucket_name}"
+        f"Successfully uploaded all files in {args.local_dir} to S3  bucket {args.bucket_name}"
     )
 
 

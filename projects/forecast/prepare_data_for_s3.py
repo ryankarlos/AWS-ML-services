@@ -24,8 +24,8 @@ def parse_dt_to_year(df):
 
 
 @dask.delayed
-def filter_df_by_year(df):
-    df_cleaned = df.loc[df["year"] == 2015, ["ds", "y"]].reset_index(drop=True)
+def filter_df_by_year(df, year=2015):
+    df_cleaned = df.loc[df["year"] >= year, ["ds", "y"]].reset_index(drop=True)
     return df_cleaned
 
 

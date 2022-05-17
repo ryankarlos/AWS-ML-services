@@ -119,7 +119,7 @@
     },
     "TranslateText": {
       "Type": "Task",
-      "Next": "Parallel",
+      "Next": "Save Response to S3",
       "Parameters": {
         "SourceLanguageCode.$": "$.SourceLanguageCode",
         "TargetLanguageCode.$": "$.TargetLanguageCode",
@@ -128,30 +128,88 @@
       "Resource": "arn:aws:states:::aws-sdk:translate:translateText",
       "ResultPath": "$.Result"
     },
+    "Save Response to S3": {
+      "Type": "Task",
+      "Next": "Parallel",
+      "Parameters": {
+        "Bucket.$": "$.BucketName",
+        "Body.$": "$.Result",
+        "Key.$": "$.TranslateOutputKey"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:putObject",
+      "ResultPath": "$.PutObjectResponse"
+    },
     "Parallel": {
       "Type": "Parallel",
       "Branches": [
         {
-          "StartAt": "StartSpeechSynthesisTask",
+          "StartAt": "Check Polly Engine Type for Voice Id",
           "States": {
-            "StartSpeechSynthesisTask": {
+            "Check Polly Engine Type for Voice Id": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.EngineType",
+                  "StringMatches": "neural",
+                  "Next": "Neural Speech Synthesis"
+                },
+                {
+                  "Variable": "$.EngineType",
+                  "StringMatches": "standard",
+                  "Next": "Standard Speech Synthesis"
+                }
+              ],
+              "Default": "Standard Speech Synthesis"
+            },
+            "Neural Speech Synthesis": {
               "Type": "Task",
-              "End": true,
               "Parameters": {
                 "Engine": "neural",
                 "OutputFormat": "mp3",
                 "OutputS3BucketName.$": "$.BucketName",
-                "OutputS3KeyPrefix.$": "$.PollyOutputKey",
+                "OutputS3KeyPrefix.$": "$.PollyVideoOutputKey",
                 "Text.$": "$.Result.TranslatedText",
                 "VoiceId.$": "$.VoiceId"
               },
-              "Resource": "arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask"
+              "Resource": "arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask",
+              "End": true
+            },
+            "Standard Speech Synthesis": {
+              "Type": "Task",
+              "Parameters": {
+                "Engine": "standard",
+                "OutputFormat": "mp3",
+                "OutputS3BucketName.$": "$.BucketName",
+                "OutputS3KeyPrefix.$": "$.PollyVideoOutputKey",
+                "Text.$": "$.Result.TranslatedText",
+                "VoiceId.$": "$.VoiceId"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask",
+              "ResultPath": "$.Result",
+              "End": true
             }
           }
         },
         {
-          "StartAt": "Comprehend Tasks",
+          "StartAt": "Skip Comprehend or not",
           "States": {
+            "Skip Comprehend or not": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.SkipComprehend",
+                  "BooleanEquals": true,
+                  "Next": "Pass"
+                }
+              ],
+              "Default": "Comprehend Tasks",
+              "Comment": "If lang codes not one of supported comprehend codes "
+            },
+            "Pass": {
+              "Type": "Pass",
+              "End": true,
+              "Comment": "Do nothing "
+            },
             "Comprehend Tasks": {
               "Type": "Parallel",
               "Branches": [
@@ -212,7 +270,18 @@
                   }
                 }
               ],
-              "End": true
+              "ResultPath": "$.Result",
+              "Next": "PutObject"
+            },
+            "PutObject": {
+              "Type": "Task",
+              "End": true,
+              "Parameters": {
+                "Bucket.$": "$.BucketName",
+                "Body.$": "$.Result",
+                "Key.$": "$.ComprehendOutputKey"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:s3:putObject"
             }
           }
         }

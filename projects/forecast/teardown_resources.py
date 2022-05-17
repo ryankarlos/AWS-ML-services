@@ -50,9 +50,13 @@ def delete_dataset_resources(dataset_name):
         print("No dataset resource exists")
 
 
-def delete_training_forecast_resources(**kwargs):
-    #  need to delete predictor first then forecast as
-    # predictor is referenced by forecast
+def delete_training_forecast_resources(auto_predictor=False,**kwargs):
+    '''
+    This will not work if resource is created from auto predictor action.
+    :param auto_predictor:
+    :param kwargs:
+    :return:
+    '''
     if "predictor" in kwargs.keys():
         pred_list = forecast.list_predictors()["Predictors"]
         if not pred_list:
@@ -80,3 +84,34 @@ def delete_training_forecast_resources(**kwargs):
                     forecast_arn = i["ForecastArn"]
                     print(f"Deleting {forecast_arn}")
                     forecast.delete_forecast(ForecastArn=forecast_arn)
+
+
+def delete_explainability_resource(arn):
+    print(f"Deleting explainability resource: {arn}")
+    forecast.delete_explainability(ExplainabilityArn=arn)
+
+
+def delete_export_jobs(**kwargs):
+    if kwargs.get("explain_arn"):
+        forecast.delete_explainability_export(ExplainabilityExportArn="string")
+    if kwargs.get("forecast_arn"):
+        forecast.delete_forecast_export_job(ForecastExportJobArn=kwargs["forecast_arn"])
+    if kwargs.get("predictor_arn"):
+        forecast.delete_predictor_backtest_export_job(
+            PredictorBacktestExportJobArn=kwargs["predictor_arn"]
+        )
+
+
+def delete_resource_tree(arn):
+    """
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/forecast.html#ForecastService.Client.delete_resource_tree
+    Deletes an entire resource tree. This operation will
+    delete the parent resource and its child resources.
+    parent << child resource hierarchies: Dataset << Dataset Group << Predictor << Forecast
+    e.g. in above predictor is parent and forecast is child
+
+    """
+    response = forecast.delete_resource_tree(
+        ResourceArn=arn
+    )
+    return response

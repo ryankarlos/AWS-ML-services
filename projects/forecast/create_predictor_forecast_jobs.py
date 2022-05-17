@@ -7,15 +7,58 @@ import numpy as np
 
 
 def train_aws_forecast_model(
-    predictor_name, forecast_length, dataset_frequency, dataset_group_arn
+    predictor_name,
+    forecast_length,
+    dataset_frequency,
+    dataset_group_arn,
+    auto_ml=True,
+    explain=False,
+    algorithm="NPTS",
+    backtest_windows=1,
+    holidays_code="US",
 ):
-    create_predictor_response = forecast.create_predictor(
-        PredictorName=predictor_name,
-        ForecastHorizon=forecast_length,
-        PerformAutoML=True,
-        InputDataConfig={"DatasetGroupArn": dataset_group_arn},
-        FeaturizationConfig={"ForecastFrequency": dataset_frequency},
-    )
+
+    if auto_ml:
+        create_predictor_response = forecast.create_auto_predictor(
+            PredictorName=predictor_name,
+            ForecastHorizon=forecast_length,
+            ForecastFrequency=dataset_frequency,
+            ExplainPredictor=explain,
+            DataConfig={
+                "DatasetGroupArn": dataset_group_arn,
+                "AttributeConfigs": [
+                    {
+                        "AttributeName": "target_value",
+                        "Transformations": {
+                            "aggregation": "sum",
+                            "middlefill": "zero",
+                            "backfill": "zero",
+                        },
+                    },
+                ],
+                "AdditionalDatasets": [
+                    {
+                        "Name": "holiday",
+                        "Configuration": {"CountryCode": [holidays_code]},
+                    }
+                ],
+            },
+        )
+    else:
+        create_predictor_response = forecast.create_predictor(
+            PredictorName=predictor_name,
+            ForecastHorizon=forecast_length,
+            AlgorithmArn=f"arn:aws:forecast:::algorithm/{algorithm}",
+            EvaluationParameters={
+                "NumberOfBacktestWindows": backtest_windows,
+            },
+            InputDataConfig={
+                "DatasetGroupArn": dataset_group_arn,
+                "SupplementaryFeatures": [{"Name": "holiday", "Value": holidays_code}],
+            },
+            FeaturizationConfig={"ForecastFrequency": dataset_frequency},
+        )
+
     predictor_arn = create_predictor_response["PredictorArn"]
     return create_predictor_response, predictor_arn
 
@@ -43,10 +86,10 @@ def create_forecast(forecast_name, predictor_arn):
 
 
 def run_forecast_query(forecast_arn, filters):
-    forecastResponse = forecastquery.query_forecast(
+    forecast_response = forecastquery.query_forecast(
         ForecastArn=forecast_arn, Filters=filters
     )
-    return forecastResponse
+    return forecast_response["Forecast"]["Predictions"]
 
 
 def create_forecast_plot(forecast_response):
@@ -104,6 +147,19 @@ def plot_backtest_metrics(error_metrics):
     )
     df.iloc[1::, :].plot(x="Metric", kind="bar", figsize=(15, 8), legend=True)
     return df
+
+
+def create_explainability_job(explain_name, predictor_arn):
+    response = forecast.create_explainability(
+        ExplainabilityName=explain_name,
+        ResourceArn=predictor_arn,
+        ExplainabilityConfig={
+            "TimeSeriesGranularity": "ALL",
+            "TimePointGranularity": "ALL",
+        },
+        EnableVisualization=True,
+    )
+    return response
 
 
 def save_results(basepath, *args):

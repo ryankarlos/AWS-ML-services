@@ -1,0 +1,202 @@
+[
+    {
+        "AlgorithmArn": "arn:aws:forecast:::algorithm/NPTS",
+        "TestWindows": [
+            {
+                "EvaluationType": "SUMMARY",
+                "Metrics": {
+                    "RMSE": 0.9500796163380247,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.043112319054006074
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.08503309441006753
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.043737500621949046
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.08877958491875101,
+                            "RMSE": 0.9500796163380247,
+                            "MASE": 1.991588691537655,
+                            "MAPE": 0.08469522007376176
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.05729430469534088
+                }
+            },
+            {
+                "TestWindowStart": "2015-10-03 01:00:00+01:00",
+                "TestWindowEnd": "2016-01-01 00:00:00+00:00",
+                "ItemCount": 1,
+                "EvaluationType": "COMPUTED",
+                "Metrics": {
+                    "RMSE": 1.1073006811604775,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.039264842393705444
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.06506499032075475
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.041382859416265454
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.05933582510599076,
+                            "RMSE": 1.1073006811604775,
+                            "MASE": 0.6895674902242476,
+                            "MAPE": 0.04434693164594451
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.048570897376908555
+                }
+            },
+            {
+                "TestWindowStart": "2015-07-05 01:00:00+01:00",
+                "TestWindowEnd": "2015-10-03 01:00:00+01:00",
+                "ItemCount": 1,
+                "EvaluationType": "COMPUTED",
+                "Metrics": {
+                    "RMSE": 0.8038452539179842,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.04372552520270474
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.08034553080221227
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.024954503984157536
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.08852074161348425,
+                            "RMSE": 0.8038452539179842,
+                            "MASE": 2.2431794783955588,
+                            "MAPE": 0.09165996217985024
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.049675186663024846
+                }
+            },
+            {
+                "TestWindowStart": "2015-04-06 01:00:00+01:00",
+                "TestWindowEnd": "2015-07-05 01:00:00+01:00",
+                "ItemCount": 1,
+                "EvaluationType": "COMPUTED",
+                "Metrics": {
+                    "RMSE": 1.1445413698636264,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.05814862169858019
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.13831842956196078
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.07907279478602615
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.1533261182042319,
+                            "RMSE": 1.1445413698636264,
+                            "MASE": 4.700248386066813,
+                            "MAPE": 0.15554785156006432
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.0918466153488557
+                }
+            },
+            {
+                "TestWindowStart": "2015-01-06 00:00:00+00:00",
+                "TestWindowEnd": "2015-04-06 01:00:00+01:00",
+                "ItemCount": 1,
+                "EvaluationType": "COMPUTED",
+                "Metrics": {
+                    "RMSE": 1.2064174151418974,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.04370567335348736
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.09892761968012656
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.04999520051088282
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.10303074524348954,
+                            "RMSE": 1.2064174151418974,
+                            "MASE": 1.5823568701193882,
+                            "MAPE": 0.09343183320043279
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.06420949784816558
+                }
+            },
+            {
+                "TestWindowStart": "2014-10-08 01:00:00+01:00",
+                "TestWindowEnd": "2015-01-06 00:00:00+00:00",
+                "ItemCount": 1,
+                "EvaluationType": "COMPUTED",
+                "Metrics": {
+                    "RMSE": 0.4882933616061375,
+                    "WeightedQuantileLosses": [
+                        {
+                            "Quantile": 0.9,
+                            "LossValue": 0.030716932621552655
+                        },
+                        {
+                            "Quantile": 0.5,
+                            "LossValue": 0.04250890168528332
+                        },
+                        {
+                            "Quantile": 0.1,
+                            "LossValue": 0.023282144412413247
+                        }
+                    ],
+                    "ErrorMetrics": [
+                        {
+                            "ForecastType": "mean",
+                            "WAPE": 0.03968449442655864,
+                            "RMSE": 0.4882933616061375,
+                            "MASE": 0.7425912328822661,
+                            "MAPE": 0.03848952178251689
+                        }
+                    ],
+                    "AverageWeightedQuantileLoss": 0.03216932623974974
+                }
+            }
+        ]
+    }
+]

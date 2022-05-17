@@ -19,6 +19,21 @@ we first need to create a bucket in S3 `awstestnlp` and then copy this data over
 $ aws s3 cp datasets/nlp/source/transcribe-sample.mp3 s3://awstestnlp/source/transcribe-sample.mp3
 ``
 
+
+For the next sections, first make sure you have activated virtual env added
+repo root to pythonpath
+
+```
+$ export PYTHONPATH=.
+$ pipenv shell
+
+Warning: Your Pipfile requires python_version 3.10, but you are using 3.9.1 (/Users/rk1103/.local/share/v/A/bin/python).
+  $ pipenv --rm and rebuilding the virtual environment may resolve the issue.
+  $ pipenv check will surely fail.
+Launching subshell in virtual environment...
+ . /Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/bin/activate
+```
+
 #### deploying lambda function 
 
 
@@ -26,7 +41,12 @@ We will first need to create a lambda function with packaged code in lambdas/par
 (returned  from AWS Transcription jon step in the state machine) and returns the output to the next stage for further 
 NLP processing by other AWS services
 
+
+
+Then run the following command
+
 ```
+
 $ python lambdas/deploy_lambda_function.py --function_name parses3json
  
 {

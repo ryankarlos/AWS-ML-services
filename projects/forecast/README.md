@@ -1,5 +1,7 @@
 ### AWS Forecast 
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/aws_forecast_architecture.png" height=500 width=1000></img>
+
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the Fbprophet library example
 dataset which is a time series of the Wikipedia page hits for Peyton Manning
 https://peerj.com/preprints/3190/

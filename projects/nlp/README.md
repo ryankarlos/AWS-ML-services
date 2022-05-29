@@ -10,6 +10,7 @@ This section will focus on pipelines combining the following AWS services:
 
 ### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/nlp/AWS_nlp_speech_translation_architecture.png"></img>
 
 The mp3 file we want to use is in `datasets/nlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3`
 and is just some english speech about ML. 

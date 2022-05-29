@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "This example template shows how to create an Amazon SQS queue"
+Resources:
+  ETLQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "etl"
+  MLQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "ML"
+Outputs:
+  ETLQueueARN:
+    Description: "ARN of new ETL AmazonSQS Queue"
+    Value:
+      Fn::GetAtt:
+        - "ETLQueue"
+        - "Arn"
+    Export:
+      Name: !Sub "${AWS::StackName}-etl"
+  MLQueueARN:
+    Description: "ARN of new ML AmazonSQS Queue"
+    Value:
+      Fn::GetAtt:
+        - "MLQueue"
+        - "Arn"
+    Export:
+      Name: !Sub "${AWS::StackName}-ML"

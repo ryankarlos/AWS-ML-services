@@ -1,0 +1,44 @@
+# Simple Detector resource containing inline Rule, EventType, Variable, EntityType and Label resource definitions
+Resources:
+  TestDetectorLogicalId:
+    Type: AWS::FraudDetector::Detector
+    Properties:
+      DetectorId: "sample_cfn_created_detector"
+      DetectorVersionStatus: "DRAFT"
+      Description: "A detector defined and created in a CloudFormation stack!"
+
+      Rules:
+        - RuleId: "over_threshold_investigate"
+          Description: "Automatically sends transactions of $10000 or more to an investigation queue"
+          DetectorId: "sample_cfn_created_detector"
+          Expression: "$amount >= 10000"
+          Language: "DETECTORPL"
+          Outcomes:
+            - Name: "investigate"
+              Inline: true
+        - RuleId: "under_threshold_approve"
+          Description: "Automatically approves transactions of less than $10000"
+          DetectorId: "sample_cfn_created_detector"
+          Expression: "$amount <10000"
+          Language: "DETECTORPL"
+          Outcomes:
+            - Name: "approve"
+              Inline: true
+      EventType:
+        Inline: "true"
+        Name: "online_transaction"
+        EventVariables:
+          - Name: "amount"
+            DataSource: 'EVENT'
+            DataType: 'FLOAT'
+            DefaultValue: '0'
+            VariableType: "PRICE"
+            Inline: 'true'
+        EntityTypes:
+          - Name: "customer"
+            Inline: 'true'
+        Labels:
+          - Name: "legitimate"
+            Inline: 'true'
+          - Name: "fraudulent"
+            Inline: 'true'

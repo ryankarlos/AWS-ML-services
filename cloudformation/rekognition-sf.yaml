@@ -1,0 +1,5 @@
+Resources:
+  TestDetectorLogicalId:
+    Type: AWS::Rekognition::Project
+    Properties:
+      ProjectName: Food

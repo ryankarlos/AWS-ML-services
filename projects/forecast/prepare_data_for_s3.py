@@ -37,7 +37,7 @@ def reformat_for_aws_forecast(df):
 
 
 def save_data_for_s3(df, basepath, filename):
-    filepath = Path(basepath).parents[0].joinpath("s3_upload", filename)
+    filepath = Path(basepath).parents[0].joinpath("data", filename)
     print(filepath)
     p = filepath.parents[0]
     destination_path = str(filepath)

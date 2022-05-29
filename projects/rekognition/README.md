@@ -11,7 +11,7 @@ permissions to acccess bucket. Pass the required resource policy filename
 (listed in `s3/resource_policies/`) to the arg `--policy_filename`
 
 ```
-$ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir datasets/cv/food101/food101_aws'--policy_filename rekognition_permissions.json   
+$ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir datasets/food101 --policy_filename rekognition_permissions.json   
 2022-05-15 00:46:40,095 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials
 2022-05-15 00:46:40,698 __main__ INFO:Creating new bucket with name:rekognition-cv
 2022-05-15 00:46:41,180 __main__ INFO:Creating bucket policy

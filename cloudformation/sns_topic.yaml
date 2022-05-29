@@ -1,0 +1,21 @@
+Resources:
+  SNSETL:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "etl"
+  SNSML:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "ML"
+Outputs:
+  SNSETLArn:
+    Value:
+      Ref: SNSETL
+    Export:
+      Name: !Sub "${AWS::StackName}-etl"
+  SNSMLArn:
+    Value:
+      Ref: SNSML
+    Export:
+      Name: !Sub "${AWS::StackName}-ML"
+

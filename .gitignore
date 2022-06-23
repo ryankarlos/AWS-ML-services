@@ -7,4 +7,4 @@ __pycache__
 *.jpeg
 train/
 aws_cli_commands.sh
-datasets/fraud-sample-data/dataset1/*.csv
+datasets/fraud-sample-data/dataset1/fraud*.csv

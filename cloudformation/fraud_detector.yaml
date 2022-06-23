@@ -1,7 +1,7 @@
 Description: "Simple Detector resource containing inline Rule, EventType, Variable, EntityType and Label resource definitions"
 Parameters:
   S3Path:
-    Default: "s3://fraud-sample-data/input"
+    Default: "s3://fraud-sample-data/input/"
     Description: "path to folder containing data in S3 for glue crawler"
     Type: "String"
 Resources:
@@ -140,15 +140,48 @@ Resources:
       Timeout: 10
       Name: glue-etl-fraud
       Role: !ImportValue RoleGlue-Arn
+  GlueClassifier:
+    Type: AWS::Glue::Classifier
+    Properties:
+      CsvClassifier:
+        ContainsHeader: PRESENT
+        Delimiter: ','
+        Header:
+          - index
+          - trans_date_trans_time
+          - cc_num
+          - merchant
+          - category
+          - amt
+          - first
+          - last
+          - gender
+          - street
+          - city
+          - state
+          - zip
+          - lat
+          - long
+          - city_pop
+          - job
+          - dob
+          - trans_num
+          - unix_time
+          - merch_lat
+          - merch_long
+          - is_fraud
+        Name: "FraudClassifier"
   TrainDataCrawler:
       Type: AWS::Glue::Crawler
       Properties:
         Name: "train-crawler-fraud"
         DatabaseName: "default"
+        Classifiers:
+          - !Ref GlueClassifier
         Targets:
           S3Targets:
             - Path: !Ref S3Path
-            - Exclusions: [!Sub "${S3Path}/fraudTest.csv"]
+            - Exclusions: ["fraudTest.csv"]
         SchemaChangePolicy:
           UpdateBehavior: "UPDATE_IN_DATABASE"
           DeleteBehavior: "DELETE_FROM_DATABASE"
@@ -160,10 +193,12 @@ Resources:
     Properties:
       Name: "test-crawler-fraud"
       DatabaseName: "default"
+      Classifiers:
+        - !Ref GlueClassifier
       Targets:
         S3Targets:
           - Path: !Ref S3Path
-          - Exclusions: [!Sub "${S3Path}/fraudTrain.csv"]
+          - Exclusions: ["fraudTrain.csv"]
       SchemaChangePolicy:
         UpdateBehavior: "UPDATE_IN_DATABASE"
         DeleteBehavior: "DELETE_FROM_DATABASE"

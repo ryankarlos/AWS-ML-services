@@ -39,7 +39,22 @@ Fraud detector model training requires some mandatory variables in the dataset:
 Using glue we transform the train and test datasets to conform to the AWS Fraud Detector 
 requirements
 
-### Upload raw ndata to S3 
+
+
+#### CloudFormation Templates
+
+
+* Detector Rules
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/detector-rules.png"></img>
+
+
+* Variables
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/variables.png"></img>
+
+
+### Upload raw data to S3 
 
 Run the following command specifying the local path to fraud test and train raw data to upload 
 and bucket name.  This creates a bucket (if it does not already exists) and then 
@@ -53,6 +68,24 @@ $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir data
 0it [00:00, ?it/s]
 2022-05-15 01:21:57,163 __main__ INFO:Successfully uploaded all files in datasets/fraud-sample-data/dataset1 to S3  bucket fraud-sample-data
 ```
+
+###  Model Training
+
+
+* Model verison 1
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-v1.png"></img>
+
+* Model version 2
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/modelv2-threshold500.png"></img>
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/modelv2-threshold-305.png"></img>
+
+
+* Model versions comparison
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-versions-performance.png"></img>
 
 
 ### Generate Predictions 

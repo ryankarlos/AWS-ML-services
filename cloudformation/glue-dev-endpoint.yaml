@@ -37,6 +37,7 @@ Resources:
         Path: /
         ManagedPolicyArns: [ "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                               "arn:aws:iam::aws:policy/service-role/AWSGlueServiceNotebookRole",
+                             "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess",
                               "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" ,
                               "arn:aws:iam::aws:policy/AmazonEC2FullAccess"]
     SagemakerNotebookRole:

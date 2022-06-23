@@ -1,44 +1,186 @@
-# Simple Detector resource containing inline Rule, EventType, Variable, EntityType and Label resource definitions
+Description: "Simple Detector resource containing inline Rule, EventType, Variable, EntityType and Label resource definitions"
+Parameters:
+  S3Path:
+    Default: "s3://fraud-sample-data/input"
+    Description: "path to folder containing data in S3 for glue crawler"
+    Type: "String"
 Resources:
-  TestDetectorLogicalId:
+  FraudDetector:
     Type: AWS::FraudDetector::Detector
     Properties:
-      DetectorId: "sample_cfn_created_detector"
-      DetectorVersionStatus: "DRAFT"
-      Description: "A detector defined and created in a CloudFormation stack!"
-
+      DetectorId: "fraud_detector_demo"
+      Description: "A detector defined and created in a CloudFormation stack"
+      DetectorVersionStatus: ACTIVE
       Rules:
-        - RuleId: "over_threshold_investigate"
-          Description: "Automatically sends transactions of $10000 or more to an investigation queue"
-          DetectorId: "sample_cfn_created_detector"
-          Expression: "$amount >= 10000"
+        - RuleId: "investigate"
+          Description: "investigate outcome if model score above 890"
+          DetectorId: "fraud_detector_demo"
+          Expression: "$amt > 900"
           Language: "DETECTORPL"
           Outcomes:
-            - Name: "investigate"
+            - Name: "high_risk"
               Inline: true
-        - RuleId: "under_threshold_approve"
-          Description: "Automatically approves transactions of less than $10000"
-          DetectorId: "sample_cfn_created_detector"
-          Expression: "$amount <10000"
+        - RuleId: "review"
+          Description: "reviews transactions between model score 700 and 900"
+          DetectorId: "fraud_detector_demo"
+          Expression: "$amt < 900 and $amt > 700"
           Language: "DETECTORPL"
           Outcomes:
-            - Name: "approve"
+            - Name: "medium_risk"
+              Inline: true
+        - RuleId: "approve"
+          Description: "automatically approve transaction below model score 700"
+          DetectorId: "fraud_detector_demo"
+          Expression: "$amt < 700"
+          Language: "DETECTORPL"
+          Outcomes:
+            - Name: "low_risk"
               Inline: true
       EventType:
         Inline: "true"
-        Name: "online_transaction"
+        Name: "credit_card_transaction"
         EventVariables:
-          - Name: "amount"
+          - Name: "trans_num"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "ORDER_ID"
+            Inline: 'true'
+          - Name: "city_pop"
             DataSource: 'EVENT'
             DataType: 'FLOAT'
-            DefaultValue: '0'
+            DefaultValue: '0.0'
+            VariableType: "NUMERIC"
+            Inline: 'true'
+          - Name: "amt"
+            DataSource: 'EVENT'
+            DataType: 'FLOAT'
+            DefaultValue: '0.0'
             VariableType: "PRICE"
+            Inline: 'true'
+          - Name: "street"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_ADDRESS_L1"
+            Inline: 'true'
+          - Name: "cc_num"
+            DataSource: 'EVENT'
+            DataType: 'FLOAT'
+            DefaultValue: '0.0'
+            VariableType: "NUMERIC"
+            Inline: 'true'
+          - Name: "gender"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "CATEGORICAL"
+            Inline: 'true'
+          - Name: "merchant"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "CATEGORICAL"
+            Inline: 'true'
+          - Name: "last"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_NAME"
+            Inline: 'true'
+          - Name: "first"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_NAME"
+            Inline: 'true'
+          - Name: "state"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_STATE"
+            Inline: 'true'
+          - Name: "city"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_CITY"
+            Inline: 'true'
+          - Name: "zip"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "BILLING_ZIP"
+            Inline: 'true'
+          - Name: "category"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "PRODUCT_CATEGORY"
             Inline: 'true'
         EntityTypes:
           - Name: "customer"
             Inline: 'true'
         Labels:
-          - Name: "legitimate"
+          - Name: "legit"
             Inline: 'true'
-          - Name: "fraudulent"
+          - Name: "fraud"
             Inline: 'true'
+  GlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/fraud-etl-glue.py"
+      DefaultArguments:
+        "--job-bookmark-option": "job-bookmark-disable"
+      ExecutionProperty:
+        MaxConcurrentRuns: 2
+      MaxRetries: 0
+      Timeout: 10
+      Name: glue-etl-fraud
+      Role: !ImportValue RoleGlue-Arn
+  TrainDataCrawler:
+      Type: AWS::Glue::Crawler
+      Properties:
+        Name: "train-crawler-fraud"
+        DatabaseName: "default"
+        Targets:
+          S3Targets:
+            - Path: !Ref S3Path
+            - Exclusions: [!Sub "${S3Path}/fraudTest.csv"]
+        SchemaChangePolicy:
+          UpdateBehavior: "UPDATE_IN_DATABASE"
+          DeleteBehavior: "DELETE_FROM_DATABASE"
+        RecrawlPolicy:
+          RecrawlBehavior: CRAWL_EVERYTHING
+        Role: !ImportValue RoleGlue-Arn
+  TestDataCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: "test-crawler-fraud"
+      DatabaseName: "default"
+      Targets:
+        S3Targets:
+          - Path: !Ref S3Path
+          - Exclusions: [!Sub "${S3Path}/fraudTrain.csv"]
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !ImportValue RoleGlue-Arn
+  FraudDetectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: frauddetector.amazonaws.com
+            Action: sts:AssumeRole
+      RoleName: FraudDetectorRoleS3Access
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess

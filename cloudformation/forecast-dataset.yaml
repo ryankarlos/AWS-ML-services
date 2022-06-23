@@ -1,0 +1,49 @@
+Parameters:
+  GlueScriptName:
+    Default: "manning_prep_for_forecast job.py"
+    Description: "Name of pyspark glue script."
+    Type: "String"
+Resources:
+  ForecastDataset:
+    Type: AWS::Forecast::Dataset
+    Properties:
+      DataFrequency: D
+      DatasetName: ForecastDataset
+      DatasetType: TARGET_TIME_SERIES
+      Domain: CUSTOM
+      Schema: {
+        "Attributes": [
+          {
+            "AttributeName": "timestamp",
+            "AttributeType": "timestamp"
+          },
+          {
+            "AttributeName": "target_value",
+            "AttributeType": "float"
+          },
+          {
+            "AttributeName": "item_id",
+            "AttributeType": "string"
+          }
+        ]
+      }
+  ForecastDatasetGroup:
+    Type: AWS::Forecast::DatasetGroup
+    Properties:
+      DatasetArns:
+        -  !GetAtt [ForecastDataset, Arn]
+      DatasetGroupName: ForecastGroupName
+      Domain: CUSTOM
+  GlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "aws-glue-assets-${AWS::Account}-${AWS::Region}/scripts/${GlueScriptName}"
+      DefaultArguments:
+        "--job-bookmark-option": "job-bookmark-enable"
+      ExecutionProperty:
+        MaxConcurrentRuns: 2
+      MaxRetries: 0
+      Name: glue-etl-fraud
+      Role: !ImportValue RoleGlue-Arn

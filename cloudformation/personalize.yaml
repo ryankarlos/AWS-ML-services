@@ -1,0 +1,70 @@
+Parameters:
+  S3InputPath:
+    Description: "Path to S3 training data path"
+    Type: "String"
+ç
+    PersonalizeDataset:
+        Type: AWS::Personalize::Dataset
+        Properties:
+          DatasetGroupArn: !GetAtt [PersonalizeDatasetGroup, Arn]
+          DatasetType: Interactions
+          Name: Recommend
+          SchemaArn: !GetAtt [PersonalizeSchema, SchemaArn]
+          DatasetImportJob:
+            JobName: Recommend-Job
+            DataSource:
+              DataLocation: !Ref S3InputPath
+            RoleArn: !GetAtt [PersonalizeRole, Arn]
+    PersonalizeDatasetGroup:
+        Type: AWS::Personalize::DatasetGroup
+        Properties:
+          Domain: ECOMMERCE
+          Name: RecommendGroup
+     PersonalizeSchema:
+        Type: AWS::Personalize::Schema
+        Properties:
+          Domain: ECOMMERCE
+          Name: RecommendSchema
+          Schema: |
+            {
+              "type": "record",
+              "name": "Interactions",
+              "namespace": "com.amazonaws.personalize.schema",
+              "fields": [
+                  {
+                      "name": "USER_ID",
+                      "type": "string"
+                  },
+                  {
+                      "name": "ITEM_ID",
+                      "type": "string"
+                  },
+                  {
+                      "name": "TIMESTAMP",
+                      "type": "long"
+                  }
+              ],
+              "version": "1.0"
+            }
+    PersonalizeSolution:
+        Type: AWS::Personalize::Solution
+        Properties:
+          DatasetGroupArn: !GetAtt [PersonalizeDatasetGroup, Arn]
+          Name: RecommendSolution
+          RecipeArn: arn:aws:personalize:::recipe/aws-user-personalization
+    PersonalizeRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: "PersonalizeRole"
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - personalize.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Path: /
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                               "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" ]

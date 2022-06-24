@@ -46,6 +46,12 @@ Resources:
             DefaultValue: 'null'
             VariableType: "ORDER_ID"
             Inline: 'true'
+          - Name: "job"
+            DataSource: 'EVENT'
+            DataType: 'STRING'
+            DefaultValue: 'null'
+            VariableType: "CATEGORICAL"
+            Inline: 'true'
           - Name: "city_pop"
             DataSource: 'EVENT'
             DataType: 'FLOAT'
@@ -131,13 +137,26 @@ Resources:
     Properties:
       Command:
         Name: glueetl
-        ScriptLocation: !Sub "aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/fraud-etl-glue.py"
+        PythonVersion: "3"
+        ScriptLocation: !Sub "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/fraud-etl-glue.py"
       DefaultArguments:
         "--job-bookmark-option": "job-bookmark-disable"
+        "--fraud_samples": 12
+        "--legit_samples": 130
+        "--bucket": "fraud-sample-data"
+        "--train-source-key": "s3://fraud-sample-data/input/fraudTrain.csv"
+        "--test-source-key": "s3://fraud-sample-data/input/fraudTest.csv'"
+        "--train-dest-key": "s3://fraud-sample-data/input/fraudTrain_glue_transformed.csv"
+        "--test-dest-key": "s3://fraud-sample-data/input/fraudTest_glue_transformed.csv"
+        "--train_max_cut_off": "2020-04-30 00:00:00"
+        "--test_min_cut_off": "2020-08-30 00:00:00"
       ExecutionProperty:
         MaxConcurrentRuns: 2
       MaxRetries: 0
-      Timeout: 10
+      GlueVersion: 3.0
+      WorkerType: Standard
+      NumberOfWorkers: 2
+      Timeout: 15
       Name: glue-etl-fraud
       Role: !ImportValue RoleGlue-Arn
   GlueClassifier:

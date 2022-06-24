@@ -1,16 +1,8 @@
 Parameters:
   Nodes:
-    Default: 5
+    Default: 3
     Description: "Number of DPU units"
     Type: "Number"
-  Workers:
-    Default: 8
-    Description: "Number of workers of type WorkerType"
-    Type: "Number"
-  WorkerType:
-    Default: G.1X
-    Description: "WorkerType e.g Standard, G.1X, G.2X"
-    Type: "String"
 Resources:
     GlueDevEndpoint:
         Type: AWS::Glue::DevEndpoint
@@ -18,9 +10,8 @@ Resources:
           Arguments: {"GLUE_PYTHON_VERSION": "3", "--enable-glue-datacatalog": ""}
           EndpointName: GlueTestEndpoint
           GlueVersion: "1.0"
-          NumberOfWorkers: !Ref Workers
+          NumberOfNodes: !Ref Nodes
           RoleArn: !GetAtt [GlueNotebookRole,Arn]
-          WorkerType: !Ref WorkerType
     GlueNotebookRole:
       Type: 'AWS::IAM::Role'
       Properties:

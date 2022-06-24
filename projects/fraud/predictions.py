@@ -142,7 +142,11 @@ def main(
         response = batch_predictions(
             s3input, s3output, event_name, role, detector_name, detector_version
         )
-        if response["batchPredictions"][0]['status'] in ["INPROGRESS", "IN_PROGRESS_INITIALIZING", "PENDING"]:
+        if response["batchPredictions"][0]["status"] in [
+            "INPROGRESS",
+            "IN_PROGRESS_INITIALIZING",
+            "PENDING",
+        ]:
             logger.info("Job submitted successfully")
     elif predictions == "realtime":
         logger.info("running realtime prediction")
@@ -153,10 +157,10 @@ def main(
             payload_path, event_name, detector_name, detector_version
         )
         print("")
-        print(json.dumps(response['modelScores'], default=str, indent=4))
+        print(json.dumps(response["modelScores"], default=str, indent=4))
 
 
 if __name__ == "__main__":
     main()
-    #response = fraudDetector.get_batch_prediction_jobs(jobId="credit-card-fraud-1655877151")
-    #print(response)
+    # response = fraudDetector.get_batch_prediction_jobs(jobId="credit-card-fraud-1655877151")
+    # print(response)

@@ -7,9 +7,9 @@ MODEL_NAME = "fraud_model"
 MODEL_TYPE = "ONLINE_FRAUD_INSIGHTS"
 
 
-def deploy_trained_model(model_name, version="1.0"):
+def deploy_trained_model(version):
     fraudDetector.update_model_version_status(
-        modelId=model_name,
+        modelId=MODEL_NAME,
         modelType=MODEL_TYPE,
         modelVersionNumber=version,
         status="ACTIVE",
@@ -48,10 +48,16 @@ def update_rule():
     type=click.Choice(["true", "false"]),
     help="whether to update detector business rules",
 )
-def main(update_rule):
+@click.option(
+    "--version",
+    "--option",
+    default="1.0",
+    help="model version to deploy",
+)
+def main(update_rule, version):
     if update_rule == "true":
         update_rule()
-    deploy_trained_model(model_name="fraud_model")
+    deploy_trained_model(version=version)
 
 
 if __name__ == "__main__":

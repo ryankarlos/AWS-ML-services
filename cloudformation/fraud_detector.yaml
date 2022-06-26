@@ -1,14 +1,74 @@
 Description: "Simple Detector resource containing inline Rule, EventType, Variable, EntityType and Label resource definitions"
 Parameters:
-  S3Path:
-    Default: "s3://fraud-sample-data/input/"
-    Description: "path to folder containing data in S3 for glue crawler"
+  Bucket:
+    Default: "fraud-sample-data"
+    Description: "S3 Bucket containing fraud data"
+    Type: "String"
+  Prefix:
+    Default: "input"
+    Description: "folder containing data in S3 for glue crawler"
+    Type: "String"
+  SQSTrainSourceKey:
+    Default: "glue_transformed/fraudTrain.csv"
+    Description: "path to fraud train file for which event change sends notification to SQS"
+    Type: "String"
+  DetectorName:
+    Default: "fraud_detector_demo"
+    Description: "fraud detector name"
+    Type: "String"
+  ModelName:
+    Default: "fraud_model"
+    Description: "fraud model name"
+    Type: "String"
+  EntityType:
+    Default: "customer"
+    Type: "String"
+  EventType:
+    Default: "credit_card_transaction"
+    Type: "String"
+  ModelType:
+    Default: "ONLINE_FRAUD_INSIGHTS"
+    Type: "String"
+  ModelVersion:
+    Default: "1"
+    Type: "String"
+  DetectorVersion:
+    Default: "1"
+    Type: "String"
+  Region:
+    Default: "us-east-1"
+    Type: "String"
+  RoleName:
+    Default: "FraudDetectorRoleS3Access"
+    Description: "path to fraud train file for which event change sends notification to SQS"
+    Type: "String"
+  TrainMode:
+    Default: "create"
+    AllowedValues:
+      - create
+      - update
+    Description: "Whether bump model major version or update existing major version (minor version bump)"
+    Type: "String"
+  PredictionMode:
+    Default: "batch"
+    AllowedValues:
+      - batch
+      - realtime
+    Description: "whether to make batch or realtime predictions"
+    Type: "String"
+  SQSPredictSourceKey:
+    Default: "batch_predict/fraudTest.csv"
+    Description: "S3 key corresponding to batch data set as source for SQS queue"
+    Type: "String"
+  FraudDetectorResultsKey:
+    Default: "batch_predict/DetectorBatchResults.csv"
+    Description: "S3 key for results from batch predict job"
     Type: "String"
 Resources:
   FraudDetector:
     Type: AWS::FraudDetector::Detector
     Properties:
-      DetectorId: "fraud_detector_demo"
+      DetectorId: !Ref DetectorName
       Description: "A detector defined and created in a CloudFormation stack"
       DetectorVersionStatus: ACTIVE
       Rules:
@@ -38,7 +98,7 @@ Resources:
               Inline: true
       EventType:
         Inline: "true"
-        Name: "credit_card_transaction"
+        Name: !Ref EventType
         EventVariables:
           - Name: "trans_num"
             DataSource: 'EVENT'
@@ -125,7 +185,7 @@ Resources:
             VariableType: "PRODUCT_CATEGORY"
             Inline: 'true'
         EntityTypes:
-          - Name: "customer"
+          - Name: !Ref EntityType
             Inline: 'true'
         Labels:
           - Name: "legit"
@@ -140,23 +200,31 @@ Resources:
         PythonVersion: "3"
         ScriptLocation: !Sub "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/fraud-etl-glue.py"
       DefaultArguments:
+        "--enable-continuous-cloudwatch-log": "true"
+        "--enable-glue-datacatalog": "true"
+        "--enable-job-insights": "true"
+        "--enable-metrics": "true"
         "--job-bookmark-option": "job-bookmark-disable"
-        "--fraud_samples": 12
-        "--legit_samples": 130
-        "--bucket": "fraud-sample-data"
-        "--train-source-key": "s3://fraud-sample-data/input/fraudTrain.csv"
-        "--test-source-key": "s3://fraud-sample-data/input/fraudTest.csv'"
-        "--train-dest-key": "s3://fraud-sample-data/input/fraudTrain_glue_transformed.csv"
-        "--test-dest-key": "s3://fraud-sample-data/input/fraudTest_glue_transformed.csv"
+        "--job-language": "python"
+        "--catalog_db": "default"
+        "--catalog_table": "fraud-raw-input"
+        "--bucket": !Ref Bucket
+        "--entity_type": "customer"
+        "--train_source_key": "input/fraudTrain.csv"
+        "--test_source_key": "input/fraudTest.csv"
+        "--train_dest_key": "glue_transformed/fraudTrain.csv"
+        "--test_dest_key": "glue_transformed/fraudTest.csv"
         "--train_max_cut_off": "2020-04-30 00:00:00"
         "--test_min_cut_off": "2020-08-30 00:00:00"
+        "--fraud_samples": "12"
+        "--legit_samples": "130"
       ExecutionProperty:
         MaxConcurrentRuns: 2
       MaxRetries: 0
       GlueVersion: 3.0
       WorkerType: Standard
       NumberOfWorkers: 2
-      Timeout: 15
+      Timeout: 10
       Name: glue-etl-fraud
       Role: !ImportValue RoleGlue-Arn
   GlueClassifier:
@@ -190,40 +258,23 @@ Resources:
           - merch_long
           - is_fraud
         Name: "FraudClassifier"
-  TrainDataCrawler:
+  FraudDataCrawler:
       Type: AWS::Glue::Crawler
       Properties:
-        Name: "train-crawler-fraud"
+        Name: "crawler-fraud-train-test"
         DatabaseName: "default"
         Classifiers:
           - !Ref GlueClassifier
         Targets:
           S3Targets:
-            - Path: !Ref S3Path
-            - Exclusions: ["fraudTest.csv"]
+            - Path: !Sub "s3://${Bucket}/{Prefix}"
         SchemaChangePolicy:
           UpdateBehavior: "UPDATE_IN_DATABASE"
           DeleteBehavior: "DELETE_FROM_DATABASE"
         RecrawlPolicy:
           RecrawlBehavior: CRAWL_EVERYTHING
         Role: !ImportValue RoleGlue-Arn
-  TestDataCrawler:
-    Type: AWS::Glue::Crawler
-    Properties:
-      Name: "test-crawler-fraud"
-      DatabaseName: "default"
-      Classifiers:
-        - !Ref GlueClassifier
-      Targets:
-        S3Targets:
-          - Path: !Ref S3Path
-          - Exclusions: ["fraudTrain.csv"]
-      SchemaChangePolicy:
-        UpdateBehavior: "UPDATE_IN_DATABASE"
-        DeleteBehavior: "DELETE_FROM_DATABASE"
-      RecrawlPolicy:
-        RecrawlBehavior: CRAWL_EVERYTHING
-      Role: !ImportValue RoleGlue-Arn
+        TablePrefix : "fraud-raw-"
   FraudDetectorRole:
     Type: AWS::IAM::Role
     Properties:
@@ -238,3 +289,351 @@ Resources:
       RoleName: FraudDetectorRoleS3Access
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      RoleName: LambdaRoleforGlue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess
+        - arn:aws:iam::aws:policy/AmazonFraudDetectorFullAccessPolicy
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+  GlueLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import logging
+          import boto3
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          client = boto3.client('glue')
+          glueJobName = "glue-etl-fraud"
+
+          def handler(event, context):
+            logger.info('## INITIATED BY S3 EVENT: ')
+            response = client.start_job_run(JobName = glueJobName)
+            logger.info('## STARTED GLUE JOB: ' + glueJobName)
+            logger.info('## GLUE JOB RUN ID: ' + response['JobRunId'])
+            return response
+      Handler: index.handler
+      FunctionName: TriggerGLue
+      Role:
+        Fn::GetAtt: [ LambdaRole , "Arn" ]
+      Runtime: python3.9
+      MemorySize: 256
+      Timeout: 60
+  FraudTrainingFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          s3_client = boto3.client("s3")
+          iam = boto3.client("iam")
+          fraudDetector = boto3.client("frauddetector")
+
+          INPUT_BUCKET = os.environ["INPUT_BUCKET"]
+          DATA_KEY = os.environ["DATA_KEY"]
+          DETECTOR_NAME = os.environ["DETECTOR_NAME"]
+          MODEL_NAME = os.environ["MODEL_NAME"]
+          ENTITY_TYPE = os.environ["ENTITY_TYPE"]
+          EVENT_TYPE = os.environ["EVENT_TYPE"]
+          MODEL_TYPE = os.environ["MODEL_TYPE"]
+          MODEL_VERSION = os.environ["MODEL_VERSION"]
+          DETECTOR_VERSION = os.environ["DETECTOR_VERSION"]
+          REGION = os.environ["REGION"]
+          ROLE_NAME = os.environ["ROLE_NAME"]
+          MODE= os.environ["MODE"]
+
+          def get_training_variables():
+              response = s3_client.get_object(Bucket=INPUT_BUCKET, Key=DATA_KEY)
+              variables_str = response.get("Body").read().decode("utf-8")
+              variables = variables_str.rstrip("\n").split(",")
+              variables.pop(-1)
+              variables.pop(-1)
+              return variables
+
+          def handler(event, context):
+            try:
+                fraudDetector.create_model(
+                    modelId=MODEL_NAME,
+                    eventTypeName=EVENT_TYPE,
+                    modelType=MODEL_TYPE,
+                )
+                print("Created model container for training")
+            except fraudDetector.exceptions.ValidationException:
+                print("Model container already exists so proceeding to model training ....")
+
+            variables = get_training_variables()
+
+            print(f"Starting model training with variables {variables}....")
+
+            try:
+                if MODE == "create":
+                    print(f"Training new model and incrementing major version")
+                    response = fraudDetector.create_model_version(
+                        modelId=MODEL_NAME,
+                        modelType=MODEL_TYPE,
+                        trainingDataSource="EXTERNAL_EVENTS",
+                        trainingDataSchema={
+                            "modelVariables": variables,
+                            "labelSchema": {"labelMapper": {"FRAUD": ["fraud"], "LEGIT": ["legit"]}},
+                        },
+                        externalEventsDetail={
+                            "dataLocation": f"s3://{INPUT_BUCKET}/{DATA_KEY}",
+                            "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"]["Arn"],
+                        },
+                    )
+                    return response
+                elif MODE == "update":
+                    print(f"Training model and updating existing major model version {MODEL_VERSION}")
+                    response = fraudDetector.update_model_version(
+                        modelId=MODEL_NAME,
+                        modelType=MODEL_TYPE,
+                        majorVersionNumber=MODEL_VERSION,
+                        externalEventsDetail={
+                            "dataLocation": f"s3://{INPUT_BUCKET}/{DATA_KEY}",
+                            "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"]["Arn"],
+                        },
+                    )
+                    return response
+            except fraudDetector.exceptions.ValidationException as e:
+                    print("Model Version already training")
+      Handler: index.handler
+      FunctionName: TrainFraudModel
+      Role:
+        Fn::GetAtt: [ LambdaRole , "Arn" ]
+      Runtime: python3.9
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          INPUT_BUCKET: !Ref Bucket
+          DATA_KEY: !Ref SQSTrainSourceKey
+          DETECTOR_NAME: !Ref DetectorName
+          MODEL_NAME: !Ref ModelName
+          ENTITY_TYPE: !Ref EntityType
+          EVENT_TYPE: !Ref EventType
+          MODEL_TYPE: !Ref ModelType
+          MODEL_VERSION: !Ref ModelVersion
+          DETECTOR_VERSION: !Ref DetectorVersion
+          REGION: !Ref Region
+          ROLE_NAME: !Ref RoleName
+          MODE: !Ref TrainMode
+  FraudPredictFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import logging
+          from logging import config
+          import time
+
+          fraudDetector = boto3.client("frauddetector")
+          iam = boto3.resource("iam")
+
+          INPUT_BUCKET = os.environ["INPUT_BUCKET"]
+          DATA_KEY = os.environ["DATA_KEY"]
+          OUTPUT_KEY = os.environ["OUTPUT_KEY"]
+          DETECTOR_NAME = os.environ["DETECTOR_NAME"]
+          EVENT_TYPE = os.environ["EVENT_TYPE"]
+          ENTITY_TYPE = os.environ["ENTITY_TYPE"]
+          DETECTOR_VERSION = os.environ["DETECTOR_VERSION"]
+          DETECTOR_ROLE = os.environ["DETECTOR_ROLE"]
+          PRED_MODE= os.environ["PRED_MODE"]
+
+          log_config = {
+              "version": 1,
+              "root": {"handlers": ["console"], "level": "INFO"},
+              "handlers": {
+                  "console": {
+                      "formatter": "std_out",
+                      "class": "logging.StreamHandler",
+                      "level": "INFO",
+                  }
+              },
+              "formatters": {
+                  "std_out": {
+                      "format": "%(asctime)s : %(levelname)s : %(module)s : %(funcName)s : %(lineno)d : %(message)s",
+                      "datefmt": "%d-%m-%Y %I:%M:%S",
+                  }
+              },
+          }
+
+          config.dictConfig(log_config)
+
+          logger = logging.getLogger(__name__)
+
+          def real_time_predictions(
+              payload
+          ):
+              variables = payload["variables"]
+              timestamp = payload["EVENT_TIMESTAMP"]
+              event_id = "unknown"
+              entity_id = payload["variables"]["trans_num"]
+              response = fraudDetector.get_event_prediction(
+                  detectorId=DETECTOR_NAME,
+                  eventId=event_id,
+                  detectorVersionId=DETECTOR_VERSION,
+                  eventTypeName=EVENT_TYPE,
+                  eventTimestamp=timestamp,
+                  entities=[{"entityType": ENTITY_TYPE, "entityId": entity_id}],
+                  eventVariables=variables,
+              )
+              return response
+
+          def batch_predictions():
+              role = iam.Role(DETECTOR_ROLE)
+              job_id = f"{EVENT_TYPE}-{str(int((time.time())))}"
+              input = f"s3://{INPUT_BUCKET}/{DATA_KEY}"
+              output = f"s3://{INPUT_BUCKET}/{OUTPUT_KEY}"
+
+              fraudDetector.create_batch_prediction_job(
+                  jobId=job_id,
+                  inputPath=input,
+                  outputPath=output,
+                  eventTypeName=EVENT_TYPE,
+                  detectorName=DETECTOR_NAME,
+                  detectorVersion=DETECTOR_VERSION,
+                  iamRoleArn=role.arn,
+              )
+              time.sleep(5)
+              response = fraudDetector.get_batch_prediction_jobs(jobId=job_id)
+              return response
+
+          def handler(event, context):
+              if predictions == "batch":
+                  logger.info("running batch prediction job")
+                  if not s3input or not s3output:
+                      logger.error(
+                          "s3 input and s3 output paths need to be specified for batch mode"
+                      )
+                      raise
+                  response = batch_predictions(
+                      s3input, s3output, event_name, role, detector_name, detector_version
+                  )
+                  if response["batchPredictions"][0]["status"] in [
+                      "INPROGRESS",
+                      "IN_PROGRESS_INITIALIZING",
+                      "PENDING",
+                  ]:
+                      logger.info("Job submitted successfully")
+              elif predictions == "realtime":
+                  logger.info("running realtime prediction")
+                  print("Received event: " + json.dumps(event, indent=2))
+                  data = json.loads(json.dumps(event))
+                  payload = data['data']
+                  print(payload)
+                  response = real_time_predictions(payload)
+                  print("")
+                  print(json.dumps(response["modelScores"], default=str, indent=4))
+      Handler: index.handler
+      FunctionName: PredictFraudModel
+      Role:
+        Fn::GetAtt: [ LambdaRole , "Arn" ]
+      Runtime: python3.9
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          PRED_MODE: !Ref PredictionMode
+          INPUT_BUCKET: !Ref Bucket
+          DATA_KEY: !Ref SQSPredictSourceKey
+          OUTPUT_KEY: !Ref FraudDetectorResultsKey
+          DETECTOR_NAME: !Ref DetectorName
+          EVENT_TYPE: !Ref EventType
+          ENTITY_TYPE: !Ref EntityType
+          DETECTOR_VERSION: !Ref DetectorVersion
+          DETECTOR_ROLE: !Ref FraudDetectorRole
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Trigger lambda function to execute glue job after crawler completes
+      Name: CrawlerSourceLambdaTarget
+      EventPattern:
+        source:
+          - "aws.glue"
+        detail-type:
+          - "Glue Crawler State Change"
+        detail:
+          crawlerName: [!Ref FraudDataCrawler]
+          state: ["Succeeded"]
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - "GlueLambdaFunction"
+              - "Arn"
+          Id: "TargetFunctionV1"
+  PermissionForEventsToInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Ref: "GlueLambdaFunction"
+        Action: "lambda:InvokeFunction"
+        Principal: "events.amazonaws.com"
+        SourceArn:
+          Fn::GetAtt:
+            - "EventRule"
+            - "Arn"
+  SQSQueueTrain:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      VisibilityTimeout: 120
+      QueueName: S3FraudTrainForLambda
+  SQSQueuePredict:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      VisibilityTimeout: 120
+      QueueName: S3FraudForLambdaPredict
+  SQSPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref SQSQueueTrain
+        - !Ref SQSQueuePredict
+      PolicyDocument:
+        Statement:
+          - Action: "SQS:SendMessage"
+            Effect: "Allow"
+            Principal:
+              Service: "s3.amazonaws.com"
+            Resource:
+                - !GetAtt [SQSQueueTrain, Arn]
+                - !GetAtt [SQSQueuePredict, Arn]
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Join ['', ['arn:aws:s3:*:*:', Ref: Bucket]]
+  LambdaFunctionEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt SQSQueueTrain.Arn
+      FunctionName: !GetAtt FraudTrainingFunction.Arn
+  LambdaPredictEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt SQSQueuePredict.Arn
+      FunctionName: !GetAtt FraudPredictFunction.Arn

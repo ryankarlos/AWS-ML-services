@@ -9,11 +9,6 @@ import boto3
 from pyspark.sql.functions import *
 import os
 
-
-sc = SparkContext.getOrCreate()
-glueContext = GlueContext(sc)
-spark = glueContext.spark_session
-job = Job(glueContext)
 args = getResolvedOptions(
     sys.argv,
     [
@@ -21,15 +16,23 @@ args = getResolvedOptions(
         "fraud_samples",
         "legit_samples",
         "bucket",
-        "train-source-key",
-        "test-source-key",
-        "train-dest-key",
-        "test-dest-key",
+        "entity_type",
+        "catalog_db",
+        "catalog_table",
+        "train_source_key",
+        "test_source_key",
+        "train_dest_key",
+        "test_dest_key",
         "train_max_cut_off",
         "test_min_cut_off",
     ],
 )
+sc = SparkContext.getOrCreate()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
+print(args)
 
 
 def sparkUnion(glueContext, unionType, mapping, transformation_ctx) -> DynamicFrame:
@@ -111,55 +114,91 @@ select * from
 
 
 bucket = args["bucket"]
-train_input_key = args["train-source-key"]
-test_input_key = args["test-source-key"]
+train_input_key = args["train_source_key"]
+test_input_key = args["test_source_key"]
+
+# Uncomment below if wanting to use S3 as source instead of glue data catalog
+
+#
+# train_dyF = glueContext.create_dynamic_frame.from_options(
+#     "s3", {"paths": [f"s3://{bucket}/{train_input_key}"]}, "csv", {"withHeader": True}
+# )
+# test_dyF = glueContext.create_dynamic_frame.from_options(
+#     "s3", {"paths": [f"s3://{bucket}/{test_input_key}"]}, "csv", {"withHeader": True}
+# )
+#
+#
+# Union_node_dyf = sparkUnion(
+#     glueContext,
+#     unionType="ALL",
+#     mapping={
+#         "source1": train_dyF,
+#         "source2": test_dyF,
+#     },
+#     transformation_ctx="Union_train_test",
+# )
+#
+#
+# Union_node_dyf.count()
+#
+# mappings = [
+#     ("trans_date_trans_time", "string", "trans_date_trans_time", "timestamp"),
+#     ("cc_num", "string", "cc_num", "bigint"),
+#     ("merchant", "string", "merchant", "string"),
+#     ("category", "string", "category", "string"),
+#     ("amt", "string", "amt", "float"),
+#     ("first", "string", "first", "string"),
+#     ("last", "string", "last", "string"),
+#     ("gender", "string", "gender", "string"),
+#     ("street", "string", "street", "string"),
+#     ("city", "string", "city", "string"),
+#     ("state", "string", "state", "string"),
+#     ("zip", "string", "zip", "int"),
+#     ("lat", "string", "lat", "float"),
+#     ("long", "string", "long", "float"),
+#     ("city_pop", "string", "city_pop", "int"),
+#     ("job", "string", "job", "string"),
+#     ("dob", "string", "dob", "date"),
+#     ("trans_num", "string", "trans_num", "string"),
+#     ("unix_time", "string", "unix_time", "int"),
+#     ("merch_lat", "string", "merch_lat", "float"),
+#     ("merch_long", "string", "merch_long", "float"),
+#     ("is_fraud", "string", "is_fraud", "binary"),
+# ]
 
 
-train_dyF = glueContext.create_dynamic_frame.from_options(
-    "s3", {"paths": [f"s3://{bucket}/{train_input_key}"]}, "csv", {"withHeader": True}
-)
-test_dyF = glueContext.create_dynamic_frame.from_options(
-    "s3", {"paths": [f"s3://{bucket}/{test_input_key}"]}, "csv", {"withHeader": True}
-)
-
-
-Union_node_dyf = sparkUnion(
-    glueContext,
-    unionType="ALL",
-    mapping={
-        "source1": train_dyF,
-        "source2": test_dyF,
-    },
-    transformation_ctx="Union_train_test",
-)
-
-
+# comment out this if uncommenting out the code above which reads from S3 as source
+Union_node_dyf = glueContext.create_dynamic_frame_from_catalog(
+    database = args["catalog_db"],
+    table_name = args["catalog_table"],
+    transformation_ctx = "Read fraud train and test combined data from catalog table ")
 Union_node_dyf.count()
 
-
+# This mapping is customised for catalog table inferred schema.
+# comment this out if uncommenting out the code above which reads from S3 as source
 mappings = [
     ("trans_date_trans_time", "string", "trans_date_trans_time", "timestamp"),
-    ("cc_num", "string", "cc_num", "bigint"),
+    ("cc_num", "bigint", "cc_num", "bigint"),
     ("merchant", "string", "merchant", "string"),
     ("category", "string", "category", "string"),
-    ("amt", "string", "amt", "float"),
+    ("amt", "double", "amt", "double"),
     ("first", "string", "first", "string"),
     ("last", "string", "last", "string"),
     ("gender", "string", "gender", "string"),
     ("street", "string", "street", "string"),
     ("city", "string", "city", "string"),
     ("state", "string", "state", "string"),
-    ("zip", "string", "zip", "int"),
-    ("lat", "string", "lat", "float"),
-    ("long", "string", "long", "float"),
-    ("city_pop", "string", "city_pop", "int"),
+    ("zip", "bigint", "zip", "int"),
+    ("lat", "double", "lat", "double"),
+    ("long", "double", "long", "double"),
+    ("city_pop", "bigint", "city_pop", "int"),
     ("job", "string", "job", "string"),
     ("dob", "string", "dob", "date"),
     ("trans_num", "string", "trans_num", "string"),
-    ("unix_time", "string", "unix_time", "int"),
-    ("merch_lat", "string", "merch_lat", "float"),
-    ("merch_long", "string", "merch_long", "float"),
-    ("is_fraud", "string", "is_fraud", "binary"),
+    ("unix_time", "bigint", "unix_time", "int"),
+    ("merch_lat", "double", "merch_lat", "double"),
+    ("merch_long", "double", "merch_long", "double"),
+    ("is_fraud", "bigint", "is_fraud", "binary"),
 ]
 
 # Script generated for node ApplyMapping
@@ -180,41 +219,48 @@ DropFields_dyf = DropFields.apply(
 
 DropFields_dyf.printSchema()
 
-# Script generated for node Rename Field
-RenameField_timestamp = RenameField.apply(
-    frame=DropFields_dyf,
-    old_name="trans_date_trans_time",
-    new_name="EVENT_TIMESTAMP",
-    transformation_ctx="RenameField_timestamp",
-)
 
-# Script generated for node Rename Field
-RenameField_label = RenameField.apply(
-    frame=RenameField_timestamp,
-    old_name="is_fraud",
-    new_name="EVENT_LABEL",
-    transformation_ctx="RenameField_label",
-)
+df = DropFields_dyf.toDF()
 
-RenameField_label.printSchema()
 
-df = RenameField_label.toDF()
+df = df.withColumn("EVENT_TIMESTAMP", col("trans_date_trans_time")).withColumn("EVENT_LABEL", col("is_fraud"))
+df.show()
 
-train_df = df.filter(df.EVENT_TIMESTAMP < "2020-04-30 00:00:00").withColumn(
+train_df = df.filter(col("EVENT_TIMESTAMP") < args['train_max_cut_off']).withColumn(
     "EVENT_LABEL",
-    when(df.EVENT_LABEL == "0", "legit").when(df.EVENT_LABEL == "1", "fraud "),
+    when(col("EVENT_LABEL") == "0", "legit").when(col("EVENT_LABEL") == "1", "fraud"),
 )
-test_df = df.filter(df.EVENT_TIMESTAMP > "2020-08-30 00:00:00").withColumn(
+test_df = df.filter(df.EVENT_TIMESTAMP > args["test_min_cut_off"]).withColumn(
     "EVENT_LABEL",
-    when(df.EVENT_LABEL == "0", "legit").when(df.EVENT_LABEL == "1", "fraud "),
+    when(col("EVENT_LABEL") == "0", "legit").when(col("EVENT_LABEL") == "1", "fraud"),
 )
+
 
 train_df.select(col("EVENT_TIMESTAMP"), col("EVENT_LABEL")).orderBy(
     desc("EVENT_TIMESTAMP")
 ).show(truncate=False)
 
-test_dyf = DynamicFrame.fromDF(test_df, glueContext, "test_dyf")
+
+test_df_adapted = test_df.withColumn("ENTITY_TYPE", lit(args["entity_type"])).withColumn("ENTITY_ID", lit("unknown")).withColumn("EVENT_ID", col("trans_num"))
+
+
+test_dyf = DynamicFrame.fromDF(test_df_adapted, glueContext, "test_dyf")
 train_dyf = DynamicFrame.fromDF(train_df, glueContext, "train_dyf")
+
+
+train_dyf = DropFields.apply(
+    frame=train_dyf,
+    paths=["is_fraud", "trans_date_trans_time"],
+    transformation_ctx="Drop_train_metadata_fields",
+)
+
+
+test_dyf = DropFields.apply(
+    frame=test_dyf,
+    paths=["is_fraud", "trans_date_trans_time"],
+    transformation_ctx="Drop_test_metadata_fields",
+)
+
 
 sampled_test_dyf = sparkSqlQuery(
     glueContext,
@@ -237,9 +283,9 @@ single_part_test_dyf = DynamicFrame.fromDF(
 )
 
 
-train_dest_split = args["train-dest-key"].split("/")
+train_dest_split = args["train_dest_key"].split("/")
 train_filename = train_dest_split.pop(-1)
-renamed_key = args["train-dest-key"]
+renamed_key = args["train_dest_key"]
 transformation_ctx = "S3bucket_write_train_dyf"
 prefix = "/".join(train_dest_split)
 s3_path = os.path.join("s3://", args["bucket"], prefix)
@@ -250,10 +296,9 @@ write_output_to_s3(
     single_part_train_dyf, s3_path, prefix, renamed_key, transformation_ctx
 )
 
-
-test_dest_split = args["test-dest-key"].split("/")
+test_dest_split = args["test_dest_key"].split("/")
 test_filename = test_dest_split.pop(-1)
-renamed_key = args["test-dest-key"]
+renamed_key = args["test_dest_key"]
 transformation_ctx = "S3bucket_write_test_dyf"
 prefix = "/".join(test_dest_split)
 

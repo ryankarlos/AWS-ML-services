@@ -40,9 +40,26 @@ Using glue we transform the train and test datasets to conform to the AWS Fraud 
 requirements
 
 
-
 #### CloudFormation Templates
 
+Cloudformation templates for creating glue development endpoint or the glue and fraud event resources 
+are stored in cloudformation folder. The stacks can be created by running the bash script 
+below and passing in either 'endpoint' or 'detector' argument to create a glue dve endpoint
+stack or frauddetectorglue stack
+
+```
+ sh projects/fraud/bash_scripts/create-resources.sh endpoint
+Creating glue dev endpoint 
+
+{
+    "StackId": "arn:aws:cloudformation:us-east-1:376337229415:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
+}
+
+```
+
+The FraudDetectorGlue stack creates the detector and associated rules, the variables, labels and outcomes
+for associating with the event type. We can check that these are as they should be from the 
+console as in screenshots below.
 
 * Detector Rules
 
@@ -71,6 +88,61 @@ $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir data
 
 ###  Model Training
 
+To commence model training, please run the following script. This will instantiate a model 
+via the CreateModel operation, which acts as a container for your model versions. If this already exists, then
+it will directly progress to the next step which is the CreateModelVersion operation. This starts the training 
+process, which results in a specific version of the model. Please refer to the AWS docs for more 
+details https://docs.aws.amazon.com/frauddetector/latest/ug/building-a-model.html
+
+The script fetches the variables for the training job from S3 path which contains the csv file 
+with the training data. 
+
+```
+$ python projects/fraud/training.py
+Starting model training with variables ['cc_num', 'merchant', 'category', 'amt', 'first', 'last', 'gender', 'street', 'city', 'state', 'zip', 'city_pop', 'job', 'trans_num']....
+{'modelId': 'fraud_model', 'modelType': 'ONLINE_FRAUD_INSIGHTS', 'modelVersionNumber': '1.0', 'status': 'TRAINING_IN_PROGRESS', 'ResponseMetadata': {'RequestId': 'a1fac915-282d-4dc6-93a5-4331e579f64a', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Sat, 25 Jun 2022 03:18:01 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '120', 'connection': 'keep-alive', 'x-amzn-requestid': 'a1fac915-282d-4dc6-93a5-4331e579f64a'}, 'RetryAttempts': 0}}
+```
+
+
+i have found that if the event metadata columns e.g. EVENT_TIMESTAMP and EVENT_LABEL
+are not ordered together in the csv file then you get the following exception when
+trying to run the training script to create a model version. This exception went away 
+after I ordered the columns so that all the event variables were at the start and the 
+last two columns were event metadata i.e. EVENT_TIMESTAMP, EVENT_LABEL
+
+```
+$  python projects/fraud/training.py
+Traceback (most recent call last):
+  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 60, in <module>
+    train_fraud_model()
+  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 44, in train_fraud_model
+    fraudDetector.create_model_version(
+  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 508, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 915, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ResourceNotFoundException: An error occurred (ResourceNotFoundException) when calling the CreateModelVersion operation: VariableIds: [EVENT_TIMESTAMP] do not exist.
+```
+
+If model training already in progress, and you run the python script, you will get the 
+following validation exception 
+
+```
+$  python projects/fraud/training.py
+
+Starting model training with variables ['cc_num', 'merchant', 'category', 'amt', 'first', 'last', 'gender', 'street', 'city', 'state', 'zip', 'city_pop', 'job', 'trans_num']....
+An error occurred (ValidationException) when calling the CreateModelVersion operation: Simultaneous training for the same major version not allowed.
+Traceback (most recent call last):
+  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 69, in <module>
+    train_fraud_model()
+  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 47, in train_fraud_model
+    fraudDetector.create_model_version(
+  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 508, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 915, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the CreateModelVersion operation: Simultaneous training for the same major version not allowed
+```
 
 * Model verison 1
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-v1.png"></img>
@@ -117,6 +189,66 @@ $ python projects/fraud/predictions.py --predictions realtime --payload_path dat
         }
     }
 ]
+```
+
+###Teardown resources 
+
+Run the bash script passing in the 'endpoint' or 'detector' command depending on 
+which resources you want to delete 
+
+For the endpoint resource:
+
+```
+sh projects/fraud/bash_scripts/teardown.sh endpoint
+echo "Deleting endpoint"
+
+```
+For tearing down the trained fraud model, detector (including rules), event type 
+(including outcomes, variables, labels), run the following:
+
+```
+sh projects/fraud/bash_scripts/teardown.sh
+
+Delete model versions
+
+Delete model
+
+Deleting detector version id 1
+
+Deleting rule investigate
+Deleting rule review
+Deleting rule approve
+
+Deleting detector id fraud_detector_demo
+
+Deleting event-type credit_card_transaction
+
+Deleting entity-type customer
+
+Deleting variable trans_num
+Deleting variable amt
+Deleting variable city_pop
+Deleting variable street
+Deleting variable job
+Deleting variable cc_num
+Deleting variable gender
+Deleting variable merchant
+Deleting variable last
+Deleting variable category
+Deleting variable zip
+Deleting variable city
+Deleting variable state
+Deleting variable first
+
+Deleting label legit
+Deleting label fraud
+
+Deleting outcome high_risk
+Deleting outcome low_risk
+Deleting outcome medium_risk
+
+Deleting cloud formation stack
+
 ```
 
 ### Delete S3 bucket

@@ -178,7 +178,7 @@ Union_node_dyf.count()
 # comment this out if uncommenting out the code above which reads from S3 as source
 mappings = [
     ("trans_date_trans_time", "string", "trans_date_trans_time", "timestamp"),
-    ("cc_num", "bigint", "cc_num", "bigint"),
+    ("cc_num", "long", "cc_num", "long"),
     ("merchant", "string", "merchant", "string"),
     ("category", "string", "category", "string"),
     ("amt", "double", "amt", "double"),
@@ -188,17 +188,17 @@ mappings = [
     ("street", "string", "street", "string"),
     ("city", "string", "city", "string"),
     ("state", "string", "state", "string"),
-    ("zip", "bigint", "zip", "int"),
+    ("zip", "long", "zip", "long"),
     ("lat", "double", "lat", "double"),
     ("long", "double", "long", "double"),
-    ("city_pop", "bigint", "city_pop", "int"),
+    ("city_pop", "long", "city_pop", "int"),
     ("job", "string", "job", "string"),
     ("dob", "string", "dob", "date"),
     ("trans_num", "string", "trans_num", "string"),
-    ("unix_time", "bigint", "unix_time", "int"),
+    ("unix_time", "long", "unix_time", "int"),
     ("merch_lat", "double", "merch_lat", "double"),
     ("merch_long", "double", "merch_long", "double"),
-    ("is_fraud", "bigint", "is_fraud", "binary"),
+    ("is_fraud", "long", "is_fraud", "short"), #seems to drop all rows if casting to binary so use short
 ]
 
 # Script generated for node ApplyMapping

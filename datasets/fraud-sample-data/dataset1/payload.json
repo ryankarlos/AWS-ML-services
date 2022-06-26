@@ -1,0 +1,19 @@
+{
+  "variables": {
+        "trans_num": "1765bb45b3aa3224b4cdcb6e7a96cee3",
+        "amt":	"38.13",
+        "zip":	"73034",
+        "city":	"Edmond",
+        "first": "Samuel",
+        "job":	"Media buyer",
+        "street": "830 Myers Plaza Apt. 384",
+        "category":	"entertainment",
+        "city_pop": "116001",
+        "gender": "M",
+        "cc_num": "4170689372027579",
+        "last":	"Frey",
+        "state": "OK",
+        "merchant":	"fraud_Dare-Marvin"
+  },
+  "EVENT_TIMESTAMP": "2020-12-31T23:59:34Z"
+}

@@ -160,13 +160,33 @@ botocore.errorfactory.ValidationException: An error occurred (ValidationExceptio
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-versions-performance.png"></img>
 
 
+### Deploying model
+
+
+```
+$ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_version 2                
+26-06-2022 04:50:34 : INFO : deploy : main : 121 : Updating rule version 1
+26-06-2022 04:50:34 : INFO : deploy : update_detector_rules : 71 : Updating Investigate rule ....
+{'detectorId': 'fraud_detector_demo', 'ruleId': 'investigate', 'ruleVersion': '2'}
+
+26-06-2022 04:50:35 : INFO : deploy : update_detector_rules : 80 : Updating review rule ....
+{'detectorId': 'fraud_detector_demo', 'ruleId': 'review', 'ruleVersion': '2'}
+
+26-06-2022 04:50:35 : INFO : deploy : update_detector_rules : 89 : Updating approve rule ....
+{'detectorId': 'fraud_detector_demo', 'ruleId': 'approve', 'ruleVersion': '2'}
+
+26-06-2022 04:50:35 : INFO : deploy : main : 123 : Deploying trained model version 1.0 to new detector version 
+{'detectorId': 'fraud_detector_demo', 'detectorVersionId': '2', 'status': 'DRAFT', 'ResponseMetadata': {'RequestId': 'da37d973-2c43-4c56-93e5-f9b9bd132bb3', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Sun, 26 Jun 2022 03:50:36 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '77', 'connection': 'keep-alive', 'x-amzn-requestid': 'da37d973-2c43-4c56-93e5-f9b9bd132bb3'}, 'RetryAttempts': 0}}
+
+```
+
 ### Generate Predictions 
 
 
 In batch mode
 
 ```
-python projects/fraud/predictions.py --predictions batch --s3input s3://fraud-sample-data/fraudTest_2020.csv --s3output s3://fraud-sample-data/output_fraudTest_2020.csv --role AmazonFraudDetectorRole
+python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/fraudTest_2020.csv --s3output s3://fraud-sample-data/output_fraudTest_2020.csv --role AmazonFraudDetectorRole
 22-06-2022 06:55:51 : INFO : predictions : main : 136 : running batch prediction job
 22-06-2022 06:55:57 : INFO : predictions : main : 146 : Job submitted successfully
 ```
@@ -174,18 +194,21 @@ python projects/fraud/predictions.py --predictions batch --s3input s3://fraud-sa
 In realtime mode 
 
 ```
-$ python projects/fraud/predictions.py --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --role AmazonFraudDetectorRole
-22-06-2022 06:27:36 : INFO : predictions : main : 125 : running realtime prediction
+
+$ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python projects/fraud/predictions.py \
+--predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
+--role AmazonFraudDetectorRole
+26-06-2022 04:13:54 : INFO : predictions : main : 152 : running realtime prediction
 
 [
     {
         "modelVersion": {
             "modelId": "fraud_model",
             "modelType": "ONLINE_FRAUD_INSIGHTS",
-            "modelVersionNumber": "2.0"
+            "modelVersionNumber": "1.0"
         },
         "scores": {
-            "fraud_model_insightscore": 56.0
+            "fraud_model_insightscore": 24.0
         }
     }
 ]

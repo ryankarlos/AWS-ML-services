@@ -43,9 +43,9 @@ def real_time_predictions(
         payload = json.load(f)
     variables = payload["variables"]
     timestamp = payload["EVENT_TIMESTAMP"]
-    event_id = payload["EVENT_ID"]
-    entity_id = payload["ENTITY_ID"]
-    entity_type = payload["ENTITY_TYPE"]
+    event_id = payload["variables"]["trans_num"]
+    entity_id = "unknown"
+    entity_type = "customer"
     response = fraudDetector.get_event_prediction(
         detectorId=detector_name,
         eventId=event_id,
@@ -108,15 +108,15 @@ def batch_predictions(
     help="needs to be specified if using realtime mode",
 )
 @click.option(
-    "--event_name", "--option", default="credit-card-fraud", help="event name"
+    "--event_name", "--option", default="credit_card_transaction", help="event name"
 )
 @click.option(
-    "--detector_name", "--option", default="fraud_detector", help="detector name"
+    "--detector_name", "--option", default="fraud_detector_demo", help="detector name"
 )
 @click.option(
     "--detector_version",
     "--option",
-    default="1",
+    default="2",
     help="Detector version. Realtime jobs require active status",
 )
 @click.option(
@@ -161,6 +161,8 @@ def main(
 
 
 if __name__ == "__main__":
+    import boto3
+    client = boto3.client('frauddetector')
     main()
     # response = fraudDetector.get_batch_prediction_jobs(jobId="credit-card-fraud-1655877151")
     # print(response)

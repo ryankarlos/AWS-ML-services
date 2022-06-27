@@ -1,20 +1,20 @@
 {
   "variables": {
-        "trans_num": "065591b986e32545dc57246dd9d597c0",
-        "amt":	"340.79",
-        "zip":	"19037",
-        "city":	"Chatham",
-        "first": "Lisa",
-        "job":	"shopping_net",
+        "trans_num": "6cee353a9d618adfbb12ecad9d427244",
+        "amt":	"245.97",
+        "zip":	"97383",
+        "city":	"Stayton",
+        "first": "Erica",
+        "job":	"Engineer, biomedical",
         "street": "213 Girll Expressway",
-        "category":	"entertainment",
+        "category":	"shopping_pos",
         "city_pop": "116001",
-        "gender": "M",
-        "cc_num": "4170689372027579",
-        "last":	"Garcia",
-        "state": "NY",
-        "merchant":	"fraud_Kuhic LLC"
+        "gender": "F",
+        "cc_num": "180046165512893",
+        "last":	"Walker",
+        "state": "OR",
+        "merchant":	"fraud_Macejkovic-Lesch"
   },
-  "EVENT_TIMESTAMP": "2020-10-05T11:31:55.0Z"
+  "EVENT_TIMESTAMP": "2020-10-13T09:21:53.000Z"
 }
 

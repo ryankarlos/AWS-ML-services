@@ -1,0 +1,19 @@
+{
+  "variables": {
+        "trans_num": "b10476e16589b9874b87ce223fa6bcb9",
+        "amt":	"20.94",
+        "zip":	"67020",
+        "city":	"Burrton",
+        "first": "Mary",
+        "job":	"Gaffer",
+        "street": "00315 Ashley Valleys",
+        "category":	"personal_care",
+        "city_pop": "1689",
+        "gender": "F",
+        "cc_num": "4599285557366057",
+        "last":	"Williams",
+        "state": "KS",
+        "merchant":	"fraud_Schmeler-Howe"
+  },
+  "EVENT_TIMESTAMP": "2020-10-25T23:48:26.000Z"
+}

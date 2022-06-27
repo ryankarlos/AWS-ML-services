@@ -1,5 +1,6 @@
 import boto3
 import re
+import pandas as pd
 
 s3_client = boto3.client("s3")
 iam = boto3.client("iam")

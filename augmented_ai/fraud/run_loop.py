@@ -10,7 +10,6 @@ sagemaker = boto3.client("sagemaker")
 
 
 def start_human_loop(human_loop_input, flow_def_arn):
-    print("Starting human loop - " + humanLoopName)
 
     response = a2i_runtime_client.start_human_loop(
         HumanLoopName=humanLoopName,

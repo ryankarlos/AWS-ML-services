@@ -3,7 +3,7 @@ import click
 import logging
 import json
 from logging import config
-from augmented_ai.fraud.run_loop import start_human_loop
+from augmented_ai.fraud.run_loop import start_human_loop, humanLoopName
 import time
 
 SCORE_THRESHOLD_MAX = 900
@@ -181,7 +181,7 @@ def main(
             FraudScore = response["modelScores"][0]["scores"][
                 "fraud_model_insightscore"
             ]
-            if SCORE_THRESHOLD_MIN < FraudScore < SCORE_THRESHOLD_MAX:
+            if SCORE_THRESHOLD_MIN <= FraudScore <= SCORE_THRESHOLD_MAX:
                 # Create the human loop input JSON object
                 logger.info(
                     f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
@@ -190,10 +190,9 @@ def main(
                     "score": response["modelScores"][0]["scores"],
                     "taskObject": payload,
                 }
-                logger.info("Human loop input:")
-                print(json.dumps(human_loop_input))
+                logger.info(f"Started human loop: {humanLoopName}")
                 response = start_human_loop(human_loop_input, flow_definition)
-                logger.info("Started human loop:")
+                print("")
                 print(response)
         return response
 

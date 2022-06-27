@@ -284,6 +284,14 @@ single_part_test_dyf = DynamicFrame.fromDF(
     sampled_test_dyf.toDF().repartition(1), glueContext, "single_partition_test_sample"
 )
 
+# we don't need event label column in sampled dataset as fraud detector batch prediction will not work
+# if event label is present
+single_part_test_dyf = DropFields.apply(
+    frame=single_part_test_dyf,
+    paths=["EVENT_LABEL"],
+    transformation_ctx="Drop_label_batch_sample",
+)
+
 
 train_dest_split = args["train_dest_key"].split("/")
 train_filename = train_dest_split.pop(-1)
@@ -303,6 +311,7 @@ test_filename = test_dest_split.pop(-1)
 renamed_key = args["test_dest_key"]
 transformation_ctx = "S3bucket_write_test_dyf"
 prefix = "/".join(test_dest_split)
+s3_path = os.path.join("s3://", args["bucket"], prefix)
 
 print("Saving test data ......")
 write_output_to_s3(

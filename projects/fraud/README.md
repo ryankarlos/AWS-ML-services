@@ -183,12 +183,17 @@ $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_ve
 ### Generate Predictions 
 
 
+To run script from local machine to call AWS Fraud Detector batch and realtime prediction api directly.
+
+
 In batch mode
 
 ```
 $ python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/glue_transformed/test/fraudTest.csv --s3output s3://fraud-sample-data/DetectorBatchResults.csv --role FraudDetectorRoleS3Access
-27-06-2022 01:18:05 : INFO : predictions : main : 149 : running batch prediction job
-27-06-2022 01:18:12 : INFO : predictions : main : 163 : Batch Job submitted successfully
+27-06-2022 02:35:38 : INFO : predictions : main : 149 : running batch prediction job
+27-06-2022 02:35:45 : INFO : predictions : main : 163 : Batch Job submitted successfully
+{'batchPredictions': [{'jobId': 'credit_card_transaction-1656293738', 'status': 'IN_PROGRESS_INITIALIZING', 'startTime': '2022-06-27T01:35:39Z', 'lastHeartbeatTime': '2022-06-27T01:35:39Z', 'inputPath': 's3://fraud-sample-data/glue_transformed/test/fraudTest.csv', 'outputPath': 's3://fraud-sample-data/DetectorBatchResults.csv', 'eventTypeName': 'credit_card_transaction', 'detectorName': 'fraud_detector_demo', 'detectorVersion': '2', 'iamRoleArn': 'arn:aws:iam::376337229415:role/FraudDetectorRoleS3Access', 'arn': 'arn:aws:frauddetector:us-east-1:376337229415:batch-prediction/credit_card_transaction-1656293738', 'processedRecordsCount': 0}], 'ResponseMetadata': {'RequestId': 'af585d00-23f0-4a05-82dc-712057c9f912', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:35:44 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '623', 'connection': 'keep-alive', 'x-amzn-requestid': 'af585d00-23f0-4a05-82dc-712057c9f912'}, 'RetryAttempts': 0}}
+
 ```
 
 In realtime mode 
@@ -212,6 +217,22 @@ $ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python pro
         }
     }
 ]
+```
+
+To trigger Fraud Detector Predictions via AWS Lambda 
+
+Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
+This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
+as target. 
+The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
+pass custom cli arguments when invoking lambdas. If the event source  is sqs, it will run a batch prediction job. 
+To run realtime  prediction, the function must be invoked by the end user  passing the payload (similar to structure 
+defined in  payload.json/payload2.json in datasets/dataset1 folder ). The code  will then check that it contains a 
+variables key to run realtime prediction api call. 
+
+```
+$ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
+copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
 ```
 
 #### Augmented AI for reviews 
@@ -240,10 +261,32 @@ Once we have done this, we can use the same script which we ran in the previous 
 However, we need to pass in an extra argument `--flow_definition` with the arn value to enable HumanLoop. This will 
 send all the predictions which have a fraud score between the default range (700-900) for human review. Note that this
 range was chosen as it matches the rules associated with fraud detector for labelling the prediction for review.
+The example below uses payload which was marked for review from the model after batch prediction. When passed this
+payload via the realtime api - it outputs the prediction results as well as starts a human loop.
 
 ```
-python projects/fraud/predictions.py --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
+$ python projects/fraud/predictions.py --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
 --role AmazonFraudDetectorRole --flow_definition <arn>
+27-06-2022 02:51:31 : INFO : predictions : main : 170 : running realtime prediction
+27-06-2022 02:51:31 : INFO : predictions : main : 186 : fraud score 858.0 between range thresholds 900 and 700
+27-06-2022 02:51:31 : INFO : predictions : main : 193 : Human loop input:
+27-06-2022 02:51:32 : INFO : predictions : main : 196 : Started human loop: Fraud-detector-1656294690802
+
+[
+    {
+        "modelVersion": {
+            "modelId": "fraud_model",
+            "modelType": "ONLINE_FRAUD_INSIGHTS",
+            "modelVersionNumber": "1.0"
+        },
+        "scores": {
+            "fraud_model_insightscore": 858.0
+        }
+    }
+]
+
+{'ResponseMetadata': {'RequestId': '0ccebd34-50be-4552-871b-d88912bf4c31', 'HTTPStatusCode': 201, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:51:31 GMT', 'content-type': 'application/json; charset=UTF-8', 'content-length': '240', 'connection': 'keep-alive', 'x-amzn-requestid': '0ccebd34-50be-4552-871b-d88912bf4c31', 'access-control-allow-origin': '*', 'x-amz-apigw-id': 'UW79mE9eoAMFY7A=', 'x-amzn-trace-id': 'Root=1-62b90d23-48517924671f237c42c46512'}, 'RetryAttempts': 0}, 'HumanLoopArn': 'arn:aws:sagemaker:us-east-1:376337229415:human-loop/Fraud-detector-1656294690802'}
+
 ```
 
 ###Teardown resources 

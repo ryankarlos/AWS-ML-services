@@ -30,10 +30,10 @@ Parameters:
     Default: "ONLINE_FRAUD_INSIGHTS"
     Type: "String"
   ModelVersion:
-    Default: "1"
+    Default: "2"
     Type: "String"
   DetectorVersion:
-    Default: "1"
+    Default: "2"
     Type: "String"
   Region:
     Default: "us-east-1"
@@ -49,13 +49,6 @@ Parameters:
       - update
     Description: "Whether bump model major version or update existing major version (minor version bump)"
     Type: "String"
-  PredictionMode:
-    Default: "batch"
-    AllowedValues:
-      - batch
-      - realtime
-    Description: "whether to make batch or realtime predictions"
-    Type: "String"
   SQSPredictSourceKey:
     Default: "batch_predict/fraudTest.csv"
     Description: "S3 key corresponding to batch data set as source for SQS queue"
@@ -64,6 +57,14 @@ Parameters:
     Default: "DetectorBatchResults.csv"
     Description: "S3 key for results from batch predict job"
     Type: "String"
+  ModelScoreThresholdMin:
+    Default: 700
+    Description: "Fraud Model Insight Socre Lower Threshold for Augmented AI. Default is set according to the lower limit in review rule"
+    Type: "Number"
+  ModelScoreThresholdMax:
+    Default: 900
+    Description: "Fraud Model Insight Score Upper Threshold for Augmented AI. Default is set according to the upper limit in review rule"
+    Type: "Number"
 Resources:
   FraudDetector:
     Type: AWS::FraudDetector::Detector
@@ -439,7 +440,7 @@ Resources:
         Fn::GetAtt: [ LambdaRole , "Arn" ]
       Runtime: python3.9
       MemorySize: 256
-      Timeout: 60
+      Timeout: 300
       Environment:
         Variables:
           INPUT_BUCKET: !Ref Bucket
@@ -464,19 +465,25 @@ Resources:
           import logging
           from logging import config
           import time
+          import os
 
           fraudDetector = boto3.client("frauddetector")
           iam = boto3.resource("iam")
 
-          INPUT_BUCKET = os.environ["INPUT_BUCKET"]
-          DATA_KEY = os.environ["DATA_KEY"]
-          OUTPUT_KEY = os.environ["OUTPUT_KEY"]
-          DETECTOR_NAME = os.environ["DETECTOR_NAME"]
-          EVENT_TYPE = os.environ["EVENT_TYPE"]
-          ENTITY_TYPE = os.environ["ENTITY_TYPE"]
-          DETECTOR_VERSION = os.environ["DETECTOR_VERSION"]
-          DETECTOR_ROLE = os.environ["DETECTOR_ROLE"]
-          PRED_MODE= os.environ["PRED_MODE"]
+          bucket = os.environ["INPUT_BUCKET"]
+          batch_input_key = os.environ["DATA_KEY"]
+          batch_output_key = os.environ["OUTPUT_KEY"]
+          detector_name = os.environ["DETECTOR_NAME"]
+          detector_version = os.environ["DETECTOR_VERSION"]
+          event_name = os.environ["EVENT_TYPE"]
+          entity_type = os.environ["ENTITY_TYPE"]
+          role = os.environ["DETECTOR_ROLE"]
+
+          SCORE_THRESHOLD_MAX = os.environ["SCORE_THRESHOLD_MAX"] 
+          SCORE_THRESHOLD_MIN = os.environ["SCORE_THRESHOLD_MIN"] 
+
+          s3input = f"s3://{bucket}/{batch_input_key}"
+          s3output = f"s3://{bucket}/{batch_output_key}"
 
           log_config = {
               "version": 1,
@@ -500,37 +507,48 @@ Resources:
 
           logger = logging.getLogger(__name__)
 
+
           def real_time_predictions(
-              payload
+              payload,
+              event_name="credit-card-fraud",
+              detector_name="fraud_detector",
+              detector_version="1",
           ):
               variables = payload["variables"]
               timestamp = payload["EVENT_TIMESTAMP"]
-              event_id = "unknown"
-              entity_id = payload["variables"]["trans_num"]
+              event_id = payload["variables"]["trans_num"]
+              entity_id = "unknown"
+              entity_type = "customer"
               response = fraudDetector.get_event_prediction(
-                  detectorId=DETECTOR_NAME,
+                  detectorId=detector_name,
                   eventId=event_id,
-                  detectorVersionId=DETECTOR_VERSION,
-                  eventTypeName=EVENT_TYPE,
+                  detectorVersionId=detector_version,
+                  eventTypeName=event_name,
                   eventTimestamp=timestamp,
-                  entities=[{"entityType": ENTITY_TYPE, "entityId": entity_id}],
+                  entities=[{"entityType": entity_type, "entityId": entity_id}],
                   eventVariables=variables,
               )
               return response
 
-          def batch_predictions():
-              role = iam.Role(DETECTOR_ROLE)
-              job_id = f"{EVENT_TYPE}-{str(int((time.time())))}"
-              input = f"s3://{INPUT_BUCKET}/{DATA_KEY}"
-              output = f"s3://{INPUT_BUCKET}/{OUTPUT_KEY}"
+
+          def batch_predictions(
+              s3input,
+              s3output,
+              event_name="credit-card-fraud",
+              role_name="FraudDetectorRoleS3Access",
+              detector_name="fraud_detector",
+              detector_version=2
+          ):
+              role = iam.Role(role_name)
+              job_id = f"{event_name}-{str(int((time.time())))}"
 
               fraudDetector.create_batch_prediction_job(
                   jobId=job_id,
-                  inputPath=input,
-                  outputPath=output,
-                  eventTypeName=EVENT_TYPE,
-                  detectorName=DETECTOR_NAME,
-                  detectorVersion=DETECTOR_VERSION,
+                  inputPath=s3input,
+                  outputPath=s3output,
+                  eventTypeName=event_name,
+                  detectorName=detector_name,
+                  detectorVersion=detector_version,
                   iamRoleArn=role.arn,
               )
               time.sleep(5)
@@ -538,41 +556,65 @@ Resources:
               return response
 
           def handler(event, context):
-              if predictions == "batch":
-                  logger.info("running batch prediction job")
-                  if not s3input or not s3output:
-                      logger.error(
-                          "s3 input and s3 output paths need to be specified for batch mode"
+                  if event['Records'][0]['eventSource'] == 'aws:sqs'
+                      predictions = "batch"
+                  elif 'variables' in event.keys():
+                      predictions = "realtime"
+                  if predictions == "batch":
+                      logger.info("running batch prediction job")
+                      if not s3input or not s3output:
+                          logger.error(
+                              "s3 input and s3 output paths need to be specified for batch mode"
+                          )
+                          raise
+                      response = batch_predictions(
+                          s3input, s3output, event_name, role, detector_name, detector_version
                       )
-                      raise
-                  response = batch_predictions(
-                      s3input, s3output, event_name, role, detector_name, detector_version
-                  )
-                  if response["batchPredictions"][0]["status"] in [
-                      "INPROGRESS",
-                      "IN_PROGRESS_INITIALIZING",
-                      "PENDING",
-                  ]:
-                      logger.info("Job submitted successfully")
-              elif predictions == "realtime":
-                  logger.info("running realtime prediction")
-                  print("Received event: " + json.dumps(event, indent=2))
-                  data = json.loads(json.dumps(event))
-                  payload = data['data']
-                  print(payload)
-                  response = real_time_predictions(payload)
-                  print("")
-                  print(json.dumps(response["modelScores"], default=str, indent=4))
+                      if response["batchPredictions"][0]["status"] in [
+                          "INPROGRESS",
+                          "IN_PROGRESS_INITIALIZING",
+                          "PENDING",
+                      ]:
+                          logger.info("Batch Job submitted successfully")
+                          print(response)
+                          return response
+                      else:
+                          logger.error("Batch job not submitted successfully as status not verified")
+                          raise
+                  elif predictions == "realtime":
+                      logger.info("running realtime prediction")
+                      response = real_time_predictions(
+                          event, event_name, detector_name, detector_version
+                      )
+                      print("")
+                      print(json.dumps(response["modelScores"], default=str, indent=4))
+                      if flow_definition:
+                          FraudScore = response["modelScores"][0]["scores"][
+                              "fraud_model_insightscore"
+                          ]
+                          if SCORE_THRESHOLD_MIN <= FraudScore <= SCORE_THRESHOLD_MAX:
+                              # Create the human loop input JSON object
+                              logger.info(
+                                  f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
+                              )
+                              human_loop_input = {
+                                  "score": response["modelScores"][0]["scores"],
+                                  "taskObject": payload,
+                              }
+                              logger.info(f"Started human loop: {humanLoopName}")
+                              response = start_human_loop(human_loop_input, flow_definition)
+                              print("")
+                              print(response)
+                      return response
       Handler: index.handler
       FunctionName: PredictFraudModel
       Role:
         Fn::GetAtt: [ LambdaRole , "Arn" ]
       Runtime: python3.9
       MemorySize: 256
-      Timeout: 60
+      Timeout: 300
       Environment:
         Variables:
-          PRED_MODE: !Ref PredictionMode
           INPUT_BUCKET: !Ref Bucket
           DATA_KEY: !Ref SQSPredictSourceKey
           OUTPUT_KEY: !Ref FraudDetectorResultsKey
@@ -581,6 +623,20 @@ Resources:
           ENTITY_TYPE: !Ref EntityType
           DETECTOR_VERSION: !Ref DetectorVersion
           DETECTOR_ROLE: !Ref FraudDetectorRole
+          SCORE_THRESHOLD_MAX: !Ref ModelScoreThresholdMax
+          SCORE_THRESHOLD_MIN: !Ref ModelScoreThresholdMin
+  TrainLambdaAsyncConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref FraudTrainingFunction
+      MaximumRetryAttempts: 0
+      Qualifier: $LATEST
+  TestLambdaAsyncConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref FraudPredictFunction
+      MaximumRetryAttempts: 0
+      Qualifier: $LATEST
   EventRule:
     Type: AWS::Events::Rule
     Properties:

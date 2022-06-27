@@ -16,7 +16,7 @@ MODEL_VERSION = "1"
 DETECTOR_VERSION = "1"
 REGION = "us-east-1"
 ROLE_NAME = "FraudDetectorRoleS3Access"
-MODE= "update"
+MODE = "update"
 
 
 def get_training_variables():
@@ -33,9 +33,7 @@ def get_training_variables():
 def train_fraud_model():
     try:
         fraudDetector.create_model(
-            modelId=MODEL_NAME,
-            eventTypeName=EVENT_TYPE,
-            modelType=MODEL_TYPE,
+            modelId=MODEL_NAME, eventTypeName=EVENT_TYPE, modelType=MODEL_TYPE,
         )
         print("Created model container for training")
     except fraudDetector.exceptions.ValidationException:
@@ -54,23 +52,31 @@ def train_fraud_model():
                 trainingDataSource="EXTERNAL_EVENTS",
                 trainingDataSchema={
                     "modelVariables": variables,
-                    "labelSchema": {"labelMapper": {"FRAUD": ["fraud"], "LEGIT": ["legit"]}},
+                    "labelSchema": {
+                        "labelMapper": {"FRAUD": ["fraud"], "LEGIT": ["legit"]}
+                    },
                 },
                 externalEventsDetail={
                     "dataLocation": f"s3://{INPUT_BUCKET}/{DATA_KEY}",
-                    "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"]["Arn"],
+                    "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"][
+                        "Arn"
+                    ],
                 },
             )
             return response
         elif MODE == "update":
-            print(f"Training model and updating existing major model version {MODEL_VERSION}")
+            print(
+                f"Training model and updating existing major model version {MODEL_VERSION}"
+            )
             response = fraudDetector.update_model_version(
                 modelId=MODEL_NAME,
                 modelType=MODEL_TYPE,
                 majorVersionNumber=MODEL_VERSION,
                 externalEventsDetail={
                     "dataLocation": f"s3://{INPUT_BUCKET}/{DATA_KEY}",
-                    "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"]["Arn"],
+                    "dataAccessRoleArn": iam.get_role(RoleName=ROLE_NAME)["Role"][
+                        "Arn"
+                    ],
                 },
             )
             return response

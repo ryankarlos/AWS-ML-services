@@ -50,13 +50,13 @@ def delete_dataset_resources(dataset_name):
         print("No dataset resource exists")
 
 
-def delete_training_forecast_resources(auto_predictor=False,**kwargs):
-    '''
+def delete_training_forecast_resources(auto_predictor=False, **kwargs):
+    """
     This will not work if resource is created from auto predictor action.
     :param auto_predictor:
     :param kwargs:
     :return:
-    '''
+    """
     if "predictor" in kwargs.keys():
         pred_list = forecast.list_predictors()["Predictors"]
         if not pred_list:
@@ -111,7 +111,5 @@ def delete_resource_tree(arn):
     e.g. in above predictor is parent and forecast is child
 
     """
-    response = forecast.delete_resource_tree(
-        ResourceArn=arn
-    )
+    response = forecast.delete_resource_tree(ResourceArn=arn)
     return response

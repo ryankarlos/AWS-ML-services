@@ -67,10 +67,7 @@ def write_output_to_s3(dyf, s3_path, prefix, renamed_key, transformation_ctx):
     )
 
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.copy
-    response = client.list_objects(
-        Bucket=args["bucket"],
-        Prefix=f"{prefix}/run-",
-    )
+    response = client.list_objects(Bucket=args["bucket"], Prefix=f"{prefix}/run-",)
 
     objectkey_to_rename = response["Contents"][0]["Key"]
 
@@ -169,9 +166,10 @@ test_input_key = args["test_source_key"]
 
 # comment out this if uncommenting out the code above which reads from S3 as source
 Union_node_dyf = glueContext.create_dynamic_frame_from_catalog(
-    database = args["catalog_db"],
-    table_name = args["catalog_table"],
-    transformation_ctx = "Read fraud train and test combined data from catalog table ")
+    database=args["catalog_db"],
+    table_name=args["catalog_table"],
+    transformation_ctx="Read fraud train and test combined data from catalog table ",
+)
 Union_node_dyf.count()
 
 # This mapping is customised for catalog table inferred schema.
@@ -203,9 +201,7 @@ mappings = [
 
 # Script generated for node ApplyMapping
 ApplyMapping_dyf = ApplyMapping.apply(
-    frame=Union_node_dyf,
-    mappings=mappings,
-    transformation_ctx="ApplyMapping",
+    frame=Union_node_dyf, mappings=mappings, transformation_ctx="ApplyMapping",
 )
 ApplyMapping_dyf.printSchema()
 
@@ -223,10 +219,12 @@ DropFields_dyf.printSchema()
 df = DropFields_dyf.toDF()
 
 
-df = df.withColumn("EVENT_TIMESTAMP", col("trans_date_trans_time")).withColumn("EVENT_LABEL", col("is_fraud"))
+df = df.withColumn("EVENT_TIMESTAMP", col("trans_date_trans_time")).withColumn(
+    "EVENT_LABEL", col("is_fraud")
+)
 df.show()
 
-train_df = df.filter(col("EVENT_TIMESTAMP") < args['train_max_cut_off']).withColumn(
+train_df = df.filter(col("EVENT_TIMESTAMP") < args["train_max_cut_off"]).withColumn(
     "EVENT_LABEL",
     when(col("EVENT_LABEL") == "0", "legit").when(col("EVENT_LABEL") == "1", "fraud"),
 )
@@ -241,7 +239,11 @@ train_df.select(col("EVENT_TIMESTAMP"), col("EVENT_LABEL")).orderBy(
 ).show(truncate=False)
 
 
-test_df_adapted = test_df.withColumn("ENTITY_TYPE", lit(args["entity_type"])).withColumn("ENTITY_ID", lit("unknown")).withColumn("EVENT_ID", col("trans_num"))
+test_df_adapted = (
+    test_df.withColumn("ENTITY_TYPE", lit(args["entity_type"]))
+    .withColumn("ENTITY_ID", lit("unknown"))
+    .withColumn("EVENT_ID", col("trans_num"))
+)
 
 
 test_dyf = DynamicFrame.fromDF(test_df_adapted, glueContext, "test_dyf")

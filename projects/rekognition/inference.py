@@ -179,8 +179,7 @@ def add_arguments():
     # get command line arguments
     parser = argparse.ArgumentParser(usage=argparse.SUPPRESS)
     parser.add_argument(
-        "--model_arn",
-        help="The ARN of the model that you want to use.",
+        "--model_arn", help="The ARN of the model that you want to use.",
     )
     parser.add_argument(
         "--project_arn",
@@ -229,9 +228,7 @@ def main():
         # start the model
         logger.info(f"Starting model")
         start_model(
-            args.project_arn,
-            args.model_arn,
-            args.min_inference_units,
+            args.project_arn, args.model_arn, args.min_inference_units,
         )
         logger.info(f"Finished starting model")
 

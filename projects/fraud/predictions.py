@@ -1,11 +1,13 @@
 import boto3
 import click
-import json
 import logging
+import json
 from logging import config
+from augmented_ai.fraud.run_loop import start_human_loop
 import time
 
-
+SCORE_THRESHOLD_MAX = 900
+SCORE_THRESHOLD_MIN = 700
 fraudDetector = boto3.client("frauddetector")
 iam = boto3.resource("iam")
 
@@ -33,14 +35,18 @@ config.dictConfig(log_config)
 logger = logging.getLogger(__name__)
 
 
+def parse_payload_from_json(payload_json_path):
+    with open(payload_json_path) as f:
+        payload = json.load(f)
+    return payload
+
+
 def real_time_predictions(
-    payload_json_path,
+    payload,
     event_name="credit-card-fraud",
     detector_name="fraud_detector",
     detector_version="1",
 ):
-    with open(payload_json_path) as f:
-        payload = json.load(f)
     variables = payload["variables"]
     timestamp = payload["EVENT_TIMESTAMP"]
     event_id = payload["variables"]["trans_num"]
@@ -64,7 +70,7 @@ def batch_predictions(
     event_name="credit-card-fraud",
     role_name="FraudDetectorRoleS3Access",
     detector_name="fraud_detector",
-    detector_version="1",
+    detector_version=2
 ):
     role = iam.Role(role_name)
     job_id = f"{event_name}-{str(int((time.time())))}"
@@ -122,6 +128,12 @@ def batch_predictions(
 @click.option(
     "--role", "--option", default="FraudDetectorRoleS3Access", help="name of role"
 )
+@click.option(
+    "--flow_definition",
+    "--option",
+    default="",
+    help="set flow definition name if you want to send results for review to augmented ai",
+)
 def main(
     predictions,
     s3input,
@@ -131,6 +143,7 @@ def main(
     detector_name,
     role,
     detector_version,
+    flow_definition,
 ):
     if predictions == "batch":
         logger.info("running batch prediction job")
@@ -147,22 +160,48 @@ def main(
             "IN_PROGRESS_INITIALIZING",
             "PENDING",
         ]:
-            logger.info("Job submitted successfully")
+            logger.info("Batch Job submitted successfully")
+            print(response)
+            return response
+        else:
+            logger.error("Batch job not submitted successfully as status not verified")
+            raise
     elif predictions == "realtime":
         logger.info("running realtime prediction")
         if not payload_path:
             logger.error("payload json path need to be specified for realtime mode")
             raise
+        payload = parse_payload_from_json(payload_path)
         response = real_time_predictions(
-            payload_path, event_name, detector_name, detector_version
+            payload, event_name, detector_name, detector_version
         )
         print("")
         print(json.dumps(response["modelScores"], default=str, indent=4))
+        if flow_definition:
+            FraudScore = response["modelScores"][0]["scores"][
+                "fraud_model_insightscore"
+            ]
+            if SCORE_THRESHOLD_MIN < FraudScore < SCORE_THRESHOLD_MAX:
+                # Create the human loop input JSON object
+                logger.info(
+                    f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
+                )
+                human_loop_input = {
+                    "score": response["modelScores"][0]["scores"],
+                    "taskObject": payload,
+                }
+                logger.info("Human loop input:")
+                print(json.dumps(human_loop_input))
+                response = start_human_loop(human_loop_input, flow_definition)
+                logger.info("Started human loop:")
+                print(response)
+        return response
 
 
 if __name__ == "__main__":
     import boto3
-    client = boto3.client('frauddetector')
+
+    client = boto3.client("frauddetector")
     main()
     # response = fraudDetector.get_batch_prediction_jobs(jobId="credit-card-fraud-1655877151")
     # print(response)

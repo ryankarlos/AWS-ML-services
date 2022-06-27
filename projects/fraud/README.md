@@ -186,9 +186,9 @@ $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_ve
 In batch mode
 
 ```
-python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/fraudTest_2020.csv --s3output s3://fraud-sample-data/output_fraudTest_2020.csv --role AmazonFraudDetectorRole
-22-06-2022 06:55:51 : INFO : predictions : main : 136 : running batch prediction job
-22-06-2022 06:55:57 : INFO : predictions : main : 146 : Job submitted successfully
+$ python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/glue_transformed/test/fraudTest.csv --s3output s3://fraud-sample-data/DetectorBatchResults.csv --role FraudDetectorRoleS3Access
+27-06-2022 01:18:05 : INFO : predictions : main : 149 : running batch prediction job
+27-06-2022 01:18:12 : INFO : predictions : main : 163 : Batch Job submitted successfully
 ```
 
 In realtime mode 
@@ -212,6 +212,38 @@ $ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python pro
         }
     }
 ]
+```
+
+#### Augmented AI for reviews 
+
+First we need to create a private workforce team and add youself to it
+Following these instructions, you can create a private workforce in Sagemaker console which uses AWS Cognito 
+as an identity provider. Once you add youself as a user (with email address), you will get an email notification
+with temporary credentials to log in 
+https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-console.html#create-workforce-sm-console
+
+Once the workforce is created, we can run the script below passing in the workforce arn as an arg to create 
+a human task UI using a custom worker template defined in `augmented_ai\fraud\constants.py`. Amazon A2I uses this 
+to generate the worker task UI, after passing it as argument to SageMaker API operation CreateHumanTaskUi. 
+For instructions on creating a custom template, see Create Custom Worker Task Template.
+https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-custom-templates.html
+The script also uses the `Create Flow Definition` API to create a workflow definition. 
+
+```
+$ python augmented_ai/fraud/create_workflow.py --workteam_arn <workforce-arn>
+Created human task ui with Arn: .......human-task-ui/fraud9079296d-f592-11ec-92fc-50ebf6424219
+Created flow definition with Arn: ..........flow-definition/fraud-detector-a2i-1656277037953
+
+```
+
+Once we have done this, we can use the same script which we ran in the previous section to generate realtime predictions.
+However, we need to pass in an extra argument `--flow_definition` with the arn value to enable HumanLoop. This will 
+send all the predictions which have a fraud score between the default range (700-900) for human review. Note that this
+range was chosen as it matches the rules associated with fraud detector for labelling the prediction for review.
+
+```
+python projects/fraud/predictions.py --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
+--role AmazonFraudDetectorRole --flow_definition <arn>
 ```
 
 ###Teardown resources 

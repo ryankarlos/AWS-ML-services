@@ -289,6 +289,22 @@ Resources:
       RoleName: FraudDetectorRoleS3Access
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  A2ISagemakerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      RoleName: A2ISagemakerExecutionRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        - arn:aws:iam::aws:policy/AmazonFraudDetectorFullAccessPolicy
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:

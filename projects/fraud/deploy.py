@@ -10,7 +10,6 @@ MODEL_NAME = "fraud_model"
 MODEL_TYPE = "ONLINE_FRAUD_INSIGHTS"
 
 
-
 log_config = {
     "version": 1,
     "root": {"handlers": ["console"], "level": "INFO"},
@@ -33,35 +32,30 @@ config.dictConfig(log_config)
 
 logger = logging.getLogger(__name__)
 
+
 def deploy_trained_model(model_version, rules_version):
     model_version = [
         {
-            'modelId': MODEL_NAME,
-            'modelType': MODEL_TYPE,
-            'modelVersionNumber': model_version,
+            "modelId": MODEL_NAME,
+            "modelType": MODEL_TYPE,
+            "modelVersionNumber": model_version,
         }
     ]
-    rules=[
+    rules = [
         {
-            'detectorId': DETECTOR_NAME,
-            'ruleId': 'investigate',
-            'ruleVersion': rules_version
+            "detectorId": DETECTOR_NAME,
+            "ruleId": "investigate",
+            "ruleVersion": rules_version,
         },
+        {"detectorId": DETECTOR_NAME, "ruleId": "review", "ruleVersion": rules_version},
         {
-            'detectorId': DETECTOR_NAME,
-            'ruleId': 'review',
-            'ruleVersion': rules_version
+            "detectorId": DETECTOR_NAME,
+            "ruleId": "approve",
+            "ruleVersion": rules_version,
         },
-        {
-            'detectorId': DETECTOR_NAME,
-            'ruleId': 'approve',
-            'ruleVersion': rules_version
-        }
     ]
     response = fraudDetector.create_detector_version(
-        detectorId=DETECTOR_NAME,
-        modelVersions=model_version,
-        rules=rules
+        detectorId=DETECTOR_NAME, modelVersions=model_version, rules=rules
     )
     return response
 
@@ -70,30 +64,42 @@ def update_detector_rules(rule_version):
     client = boto3.client("frauddetector")
     logging.info("Updating Investigate rule ....")
     response1 = client.update_rule_version(
-        rule={"detectorId": DETECTOR_NAME, "ruleId": "investigate", "ruleVersion": rule_version},
+        rule={
+            "detectorId": DETECTOR_NAME,
+            "ruleId": "investigate",
+            "ruleVersion": rule_version,
+        },
         expression=f"${MODEL_NAME}_insightscore > 900",
         language="DETECTORPL",
         outcomes=["high_risk"],
     )
-    print(response1['rule'])
+    print(response1["rule"])
     print("")
     logging.info("Updating review rule ....")
     response2 = client.update_rule_version(
-        rule={"detectorId": DETECTOR_NAME, "ruleId": "review", "ruleVersion": rule_version},
+        rule={
+            "detectorId": DETECTOR_NAME,
+            "ruleId": "review",
+            "ruleVersion": rule_version,
+        },
         expression=f"${MODEL_NAME}_insightscore < 900 and ${MODEL_NAME}_insightscore > 700",
         language="DETECTORPL",
         outcomes=["medium_risk"],
     )
-    print(response2['rule'])
+    print(response2["rule"])
     print("")
     logging.info("Updating approve rule ....")
     response3 = client.update_rule_version(
-        rule={"detectorId": DETECTOR_NAME, "ruleId": "approve", "ruleVersion": rule_version},
+        rule={
+            "detectorId": DETECTOR_NAME,
+            "ruleId": "approve",
+            "ruleVersion": rule_version,
+        },
         expression=f"${MODEL_NAME}_insightscore < 700",
         language="DETECTORPL",
         outcomes=["low_risk"],
     )
-    print(response3['rule'])
+    print(response3["rule"])
     print("")
 
 
@@ -120,11 +126,12 @@ def main(update_rule, rules_version, model_version):
     if update_rule:
         logging.info(f"Updating rule version {update_rule}")
         update_detector_rules(update_rule)
-    logging.info(f"Deploying trained model version {model_version} to new detector version ")
+    logging.info(
+        f"Deploying trained model version {model_version} to new detector version "
+    )
     response = deploy_trained_model(model_version, rules_version)
     print(response)
 
 
 if __name__ == "__main__":
     main()
-

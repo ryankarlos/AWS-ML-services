@@ -70,7 +70,7 @@ def batch_predictions(
     event_name="credit-card-fraud",
     role_name="FraudDetectorRoleS3Access",
     detector_name="fraud_detector",
-    detector_version=2
+    detector_version=2,
 ):
     role = iam.Role(role_name)
     job_id = f"{event_name}-{str(int((time.time())))}"

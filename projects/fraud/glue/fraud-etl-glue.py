@@ -196,7 +196,12 @@ mappings = [
     ("unix_time", "long", "unix_time", "int"),
     ("merch_lat", "double", "merch_lat", "double"),
     ("merch_long", "double", "merch_long", "double"),
-    ("is_fraud", "long", "is_fraud", "short"), #seems to drop all rows if casting to binary so use short
+    (
+        "is_fraud",
+        "long",
+        "is_fraud",
+        "short",
+    ),  # seems to drop all rows if casting to binary so use short
 ]
 
 # Script generated for node ApplyMapping

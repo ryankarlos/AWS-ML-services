@@ -1,11 +1,12 @@
 import boto3
+import re
 
 s3_client = boto3.client("s3")
 iam = boto3.client("iam")
 fraudDetector = boto3.client("frauddetector")
 
 INPUT_BUCKET = "fraud-sample-data"
-DATA_KEY = "glue_transformed/fraudTrain.csv"
+DATA_KEY = "glue_transformed/train/fraudTrain.csv"
 DETECTOR_NAME = "fraud_detector_demo"
 MODEL_NAME = "fraud_model"
 ENTITY_TYPE = "customer"
@@ -21,8 +22,9 @@ MODE= "update"
 def get_training_variables():
     s3_client = boto3.client("s3")
     response = s3_client.get_object(Bucket=INPUT_BUCKET, Key=DATA_KEY)
-    variables_str = response.get("Body").read().decode("utf-8")
-    variables = variables_str.rstrip("\n").split(",")
+    body = response.get("Body").read().decode("utf-8")
+    variables_str = body.split("\n")[0]
+    variables = variables_str.split(",")
     variables.pop(-1)
     variables.pop(-1)
     return variables
@@ -73,10 +75,9 @@ def train_fraud_model():
             )
             return response
     except fraudDetector.exceptions.ValidationException as e:
-        if "Simultaneous training" in e.value:
+        if re.search("Simultaneous training", str(e)):
             print("Model Version already training")
         else:
-            print(e)
             raise
 
 

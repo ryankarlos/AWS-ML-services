@@ -9,7 +9,7 @@ Parameters:
     Description: "folder containing data in S3 for glue crawler"
     Type: "String"
   SQSTrainSourceKey:
-    Default: "glue_transformed/fraudTrain.csv"
+    Default: "glue_transformed/train/fraudTrain.csv"
     Description: "path to fraud train file for which event change sends notification to SQS"
     Type: "String"
   DetectorName:
@@ -61,7 +61,7 @@ Parameters:
     Description: "S3 key corresponding to batch data set as source for SQS queue"
     Type: "String"
   FraudDetectorResultsKey:
-    Default: "batch_predict/DetectorBatchResults.csv"
+    Default: "DetectorBatchResults.csv"
     Description: "S3 key for results from batch predict job"
     Type: "String"
 Resources:
@@ -212,8 +212,8 @@ Resources:
         "--entity_type": "customer"
         "--train_source_key": "input/fraudTrain.csv"
         "--test_source_key": "input/fraudTest.csv"
-        "--train_dest_key": "glue_transformed/fraudTrain.csv"
-        "--test_dest_key": "glue_transformed/fraudTest.csv"
+        "--train_dest_key": "glue_transformed/train/fraudTrain.csv"
+        "--test_dest_key": "glue_transformed/test/fraudTest.csv"
         "--train_max_cut_off": "2020-04-30 00:00:00"
         "--test_min_cut_off": "2020-08-30 00:00:00"
         "--fraud_samples": "12"
@@ -359,9 +359,11 @@ Resources:
           MODE= os.environ["MODE"]
 
           def get_training_variables():
+              s3_client = boto3.client("s3")
               response = s3_client.get_object(Bucket=INPUT_BUCKET, Key=DATA_KEY)
-              variables_str = response.get("Body").read().decode("utf-8")
-              variables = variables_str.rstrip("\n").split(",")
+              body = response.get("Body").read().decode("utf-8")
+              variables_str = body.split("\n")[0]
+              variables = variables_str.split(",")
               variables.pop(-1)
               variables.pop(-1)
               return variables
@@ -411,7 +413,10 @@ Resources:
                     )
                     return response
             except fraudDetector.exceptions.ValidationException as e:
-                    print("Model Version already training")
+                    if re.search("Simultaneous training", str(e)):
+                        print("Model Version already training")
+                    else:
+                        raise
       Handler: index.handler
       FunctionName: TrainFraudModel
       Role:
@@ -596,12 +601,14 @@ Resources:
     Properties:
       DelaySeconds: 0
       VisibilityTimeout: 120
+      MessageRetentionPeriod: 300
       QueueName: S3FraudTrainForLambda
   SQSQueuePredict:
     Type: AWS::SQS::Queue
     Properties:
       DelaySeconds: 0
       VisibilityTimeout: 120
+      MessageRetentionPeriod: 300
       QueueName: S3FraudForLambdaPredict
   SQSPolicy:
     Type: AWS::SQS::QueuePolicy

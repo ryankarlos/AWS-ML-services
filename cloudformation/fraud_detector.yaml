@@ -358,6 +358,7 @@ Resources:
         ZipFile: |
           import boto3
           import os
+          import re
           s3_client = boto3.client("s3")
           iam = boto3.client("iam")
           fraudDetector = boto3.client("frauddetector")
@@ -439,7 +440,7 @@ Resources:
       Role:
         Fn::GetAtt: [ LambdaRole , "Arn" ]
       Runtime: python3.9
-      MemorySize: 256
+      MemorySize: 1024
       Timeout: 300
       Environment:
         Variables:
@@ -556,7 +557,7 @@ Resources:
               return response
 
           def handler(event, context):
-                  if event['Records'][0]['eventSource'] == 'aws:sqs'
+                  if event['Records'][0]['eventSource'] == 'aws:sqs':
                       predictions = "batch"
                   elif 'variables' in event.keys():
                       predictions = "realtime"

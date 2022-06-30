@@ -1,7 +1,15 @@
 Parameters:
   GlueScriptName:
-    Default: "manning_prep_for_forecast job.py"
+    Default: "raw_csv_to_input_aws_forecast.py"
     Description: "Name of pyspark glue script."
+    Type: "String"
+  Bucket:
+    Default: "aws-forecast-demo-examples"
+    Description: "S3 Bucket containing time series data"
+    Type: "String"
+  Key:
+    Default: "sample_manning.csv"
+    Description: "Object key"
     Type: "String"
 Resources:
   ForecastDataset:
@@ -34,16 +42,43 @@ Resources:
         -  !GetAtt [ForecastDataset, Arn]
       DatasetGroupName: ForecastGroupName
       Domain: CUSTOM
+  GlueClassifier:
+    Type: AWS::Glue::Classifier
+    Properties:
+      CsvClassifier:
+        ContainsHeader: PRESENT
+        Delimiter: ','
+        Header:
+          - index
+          - ds
+          - y
+        Name: "manning-classifier"
+  GlueDataCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: "manning-crawler"
+      DatabaseName: "default"
+      Classifiers:
+        - !Ref GlueClassifier
+      Targets:
+        S3Targets:
+          - Path: !Sub "s3://${Bucket}/{Key}"
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !ImportValue RoleGlue-Arn
   GlueJob:
     Type: AWS::Glue::Job
     Properties:
       Command:
         Name: glueetl
-        ScriptLocation: !Sub "aws-glue-assets-${AWS::Account}-${AWS::Region}/scripts/${GlueScriptName}"
+        ScriptLocation: !Sub "aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/${GlueScriptName}"
       DefaultArguments:
-        "--job-bookmark-option": "job-bookmark-enable"
+        "--job-bookmark-option": "job-bookmark-disable"
       ExecutionProperty:
         MaxConcurrentRuns: 2
       MaxRetries: 0
-      Name: glue-etl-fraud
+      Name: manning_prep_for_forecast job
       Role: !ImportValue RoleGlue-Arn

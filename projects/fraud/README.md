@@ -88,6 +88,9 @@ $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir data
 
 ###  Model Training
 
+#### Local Mode
+
+
 To commence model training, please run the following script. This will instantiate a model 
 via the CreateModel operation, which acts as a container for your model versions. If this already exists, then
 it will directly progress to the next step which is the CreateModelVersion operation. This starts the training 
@@ -160,6 +163,12 @@ botocore.errorfactory.ValidationException: An error occurred (ValidationExceptio
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-versions-performance.png"></img>
 
 
+
+#### Using AWS services workflow
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud_train_architecture.png"></img>
+
+
 ### Deploying model
 
 
@@ -221,6 +230,10 @@ $ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python pro
 
 To trigger Fraud Detector Predictions via AWS Lambda 
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
+
+
+
 Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
 This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
 as target. 
@@ -251,7 +264,12 @@ To create the API gateway
  amt, category, cc_num, city, city_pop, event_timestamp, first, flow_definition, gender, job, last, merchant, state, street, trans_num, zip
 ```
 
-10 back to the Method Execution pane.
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-method-request-console.png"></img>
+
+10 Go back to the Method Execution pane.It should look like below.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-method-execution-console.png"></img>
+
 11. Choose Integration Request.
 12. Choose the Mapping Templates dropdown and then choose Add mapping template.
 13. For the Content-Type field, enter application/json and then choose the check mark icon.
@@ -288,7 +306,10 @@ To create the API gateway
   "flow_definition":"$my_default_value"
 }
 ```
-17. Choose Save, and go back to MethodExecution pane. Click on Test
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-integration-request-console.png"></img>
+
+17. Choose Save, and go back to MethodExecution pane. Click on Test button on the left.
 18. In the Query Strings box paste the following
 
 ```
@@ -297,16 +318,13 @@ trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&fir
 
 If successful you should see the response and logs as in screenshot below. You can also navigate to CloudWatch log stream group for Lambda invocation and check it has run successfully.
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-get-method-test1-console.png"></img>
 
-
-
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-get-method-test2logs-console.png"></img>
 
 We can then proceed to deploying the API. Go back to Resources -> Actions and Deploy API. Select Deployment Stage 'New Stage' and choose name as 'dev'.
-You should see the API endpoint to invoke on the console (screenshot below)
-
-
+You should see the API endpoint to invoke on the console.
 To test the API's new endpoint, run the following curl command. Make sure that the curl command has the query string parameters at the end as below ('key=value' format and separated by &)
-
 
 
 #### Augmented AI for reviews 
@@ -363,6 +381,11 @@ $ python projects/fraud/predictions.py --predictions realtime --payload_path dat
 {'ResponseMetadata': {'RequestId': '0ccebd34-50be-4552-871b-d88912bf4c31', 'HTTPStatusCode': 201, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:51:31 GMT', 'content-type': 'application/json; charset=UTF-8', 'content-length': '240', 'connection': 'keep-alive', 'x-amzn-requestid': '0ccebd34-50be-4552-871b-d88912bf4c31', 'access-control-allow-origin': '*', 'x-amz-apigw-id': 'UW79mE9eoAMFY7A=', 'x-amzn-trace-id': 'Root=1-62b90d23-48517924671f237c42c46512'}, 'RetryAttempts': 0}, 'HumanLoopArn': 'arn:aws:sagemaker:us-east-1:376337229415:human-loop/Fraud-detector-1656294690802'}
 
 ```
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/human-loops-a2i.png"></img>
+
+
 
 ###Teardown resources 
 

@@ -189,66 +189,8 @@ $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_ve
 
 ```
 
-### Generate Predictions 
 
-
-To run script from local machine to call AWS Fraud Detector batch and realtime prediction api directly.
-
-
-In batch mode
-
-```
-$ python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/glue_transformed/test/fraudTest.csv --s3output s3://fraud-sample-data/DetectorBatchResults.csv --role FraudDetectorRoleS3Access
-27-06-2022 02:35:38 : INFO : predictions : main : 149 : running batch prediction job
-27-06-2022 02:35:45 : INFO : predictions : main : 163 : Batch Job submitted successfully
-{'batchPredictions': [{'jobId': 'credit_card_transaction-1656293738', 'status': 'IN_PROGRESS_INITIALIZING', 'startTime': '2022-06-27T01:35:39Z', 'lastHeartbeatTime': '2022-06-27T01:35:39Z', 'inputPath': 's3://fraud-sample-data/glue_transformed/test/fraudTest.csv', 'outputPath': 's3://fraud-sample-data/DetectorBatchResults.csv', 'eventTypeName': 'credit_card_transaction', 'detectorName': 'fraud_detector_demo', 'detectorVersion': '2', 'iamRoleArn': 'arn:aws:iam::376337229415:role/FraudDetectorRoleS3Access', 'arn': 'arn:aws:frauddetector:us-east-1:376337229415:batch-prediction/credit_card_transaction-1656293738', 'processedRecordsCount': 0}], 'ResponseMetadata': {'RequestId': 'af585d00-23f0-4a05-82dc-712057c9f912', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:35:44 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '623', 'connection': 'keep-alive', 'x-amzn-requestid': 'af585d00-23f0-4a05-82dc-712057c9f912'}, 'RetryAttempts': 0}}
-
-```
-
-In realtime mode 
-
-```
-
-$ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python projects/fraud/predictions.py \
---predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
---role AmazonFraudDetectorRole
-26-06-2022 04:13:54 : INFO : predictions : main : 152 : running realtime prediction
-
-[
-    {
-        "modelVersion": {
-            "modelId": "fraud_model",
-            "modelType": "ONLINE_FRAUD_INSIGHTS",
-            "modelVersionNumber": "1.0"
-        },
-        "scores": {
-            "fraud_model_insightscore": 24.0
-        }
-    }
-]
-```
-
-To trigger Fraud Detector Predictions via AWS Lambda 
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
-
-
-
-Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
-This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
-as target. 
-
-```
-$ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
-copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
-```
-
-The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
-pass custom cli arguments when invoking lambdas. If the event payload has 'Records' key, it indicates the event is coming from
-SQS and will run a batch prediction job. If the payload has 'variables' key, it will run realtime prediction.
-To run realtime  prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda.
-
-To create the API gateway 
+#### Setting up API gateway 
 
 1. Open the API Gateway console, and then choose your API.
 2. Select CreateAPI and select the type as RestAPI
@@ -256,7 +198,7 @@ To create the API gateway
 4. Select the API resource just created and select Create Method from the Resource Actions. Select Get
 5. In the Get-Setup, select Integration Type: lambda function and lambda function name 'PredictFraudModel'. Click save.
 6. In the Method Execution pane, choose Method Request.
-7. In settings, use Authorization: 'AWS IAM' and Request Validator: 'Validate query string parameters and headers'
+7. In settings, set Request Validator: 'Validate query string parameters and headers'. Leave Authorization as 'None'.
 8. Expand the URL Query String Parameters dropdown, then choose Add query string.
 9. Enter the following variables one by one as a separate name field. Mark all as required except for 'flow_definition' variable
 
@@ -324,16 +266,121 @@ If successful you should see the response and logs as in screenshot below. You c
 
 We can then proceed to deploying the API. Go back to Resources -> Actions and Deploy API. Select Deployment Stage 'New Stage' and choose name as 'dev'.
 You should see the API endpoint to invoke on the console.
-To test the API's new endpoint, run the following curl command. Make sure that the curl command has the query string parameters at the end as below ('key=value' format and separated by &)
+
+Finally make sure logging is setup to allow debugging errors in  the REST API, ny following the instructions here
+https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cloudwatch-logs/
+
+The setup should look like below. Note that when you add the iam role to gateway console, it should automatically add the log group 
+in the format 'API-Gateway-Execution-Logs_apiId/stageName'. The arn for the log group end with 'dev:*'. You need to only include the 
+arn upto the stagename 'dev' as shown in the screenshot below - otherwise it will throw issues with the validation checks.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/api-rest-stage-editor-logs-config.png"></img>
+
+
+To test the API's new endpoint, run the following curl command. Make sure that the curl command has the query string parameters at the end as below ('key=value' format and separated by &).
+Since the get method is configured in '/' root resource - we can invoke the api endpoint https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev
+
+```
+curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
+```
+
+You can check the log streams associated with the latest invocation in the cloudwatch log group for API gateway. This will show  messages 
+with the execution or access details of your request.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-cloudwatch-log-group.png"></img>
+
+Note: If any changes are made to the api configuration or parameters - it would need to be redployed for the changes to take effect.
+
+### Generate Predictions 
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
+
+
+Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
+This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
+as target. 
+
+```
+$ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
+copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
+```
+
+The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
+pass custom cli arguments when invoking lambdas. If the event payload has 'Records' key, it indicates the event is coming from
+SQS and will run a batch prediction job. If the payload has 'variables' key, it will run realtime prediction.
+To run realtime  prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda
+as explained in the previous section. This could be invoked by the following command 
+
+```
+curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
+```
+
+To run script from local machine to call AWS Fraud Detector batch and realtime prediction api directly. The scripts in the `projects/fraud/predictions.py`
+are adapted compared to the code in lambda (for realtime mode). This uses custom cli arguments to pass the path to payload path (for realtime mode),  
+and the method of execution ('realtime' or batch) via the 'prediction' arg
+
+* In batch mode
+
+```
+$ python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/glue_transformed/test/fraudTest.csv --s3output s3://fraud-sample-data/DetectorBatchResults.csv --role FraudDetectorRoleS3Access
+27-06-2022 02:35:38 : INFO : predictions : main : 149 : running batch prediction job
+27-06-2022 02:35:45 : INFO : predictions : main : 163 : Batch Job submitted successfully
+{'batchPredictions': [{'jobId': 'credit_card_transaction-1656293738', 'status': 'IN_PROGRESS_INITIALIZING', 'startTime': '2022-06-27T01:35:39Z', 'lastHeartbeatTime': '2022-06-27T01:35:39Z', 'inputPath': 's3://fraud-sample-data/glue_transformed/test/fraudTest.csv', 'outputPath': 's3://fraud-sample-data/DetectorBatchResults.csv', 'eventTypeName': 'credit_card_transaction', 'detectorName': 'fraud_detector_demo', 'detectorVersion': '2', 'iamRoleArn': 'arn:aws:iam::376337229415:role/FraudDetectorRoleS3Access', 'arn': 'arn:aws:frauddetector:us-east-1:376337229415:batch-prediction/credit_card_transaction-1656293738', 'processedRecordsCount': 0}], 'ResponseMetadata': {'RequestId': 'af585d00-23f0-4a05-82dc-712057c9f912', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:35:44 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '623', 'connection': 'keep-alive', 'x-amzn-requestid': 'af585d00-23f0-4a05-82dc-712057c9f912'}, 'RetryAttempts': 0}}
+
+```
+
+* In realtime mode 
+
+```
+
+$ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python projects/fraud/predictions.py \
+--predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
+--role AmazonFraudDetectorRole
+26-06-2022 04:13:54 : INFO : predictions : main : 152 : running realtime prediction
+
+[
+    {
+        "modelVersion": {
+            "modelId": "fraud_model",
+            "modelType": "ONLINE_FRAUD_INSIGHTS",
+            "modelVersionNumber": "1.0"
+        },
+        "scores": {
+            "fraud_model_insightscore": 24.0
+        }
+    }
+]
+```
 
 
 #### Augmented AI for reviews 
 
-First we need to create a private workforce team and add youself to it
-Following these instructions, you can create a private workforce in Sagemaker console which uses AWS Cognito 
-as an identity provider. Once you add youself as a user (with email address), you will get an email notification
-with temporary credentials to log in 
-https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-console.html#create-workforce-sm-console
+First need to create a user pool via AWS Cognito, and add yourself as user in the user group, so you can sign into the ]
+app using AWS Cognito
+https://docs.aws.amazon.com/cognito/latest/developerguide/tutorial-create-user-pool.html.
+Once you add yourself as a user (with email address), you will get an email notification  with temporary credentials to log in
+and verify email address listed. 
+Then we can create a private workforce and a private team associated with the user pool just created. Within a given private
+workforce, once can create multiple private teams, where a single private team is assigned the job of completing a 
+given human review or labelling task e.g. labelling medical images. By creating and managing 
+the private workforce using Amazon Cognito you avoid the overhead of managing worker credentials and authentication, as AWS Cognito, 
+provides authentication, authorization, and user management for the users in the workforce.
+Following these instructions under 'Create an Amazon Cognito Workforce Using the Labeling Workforces Page' section to
+create a private workforce in Sagemaker console which uses AWS Cognito as an identity provider 
+https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-console.html#create-workforce-sm-console. 
+
+After you import your private workforce, refresh the page to see the Private workforce summary page as in screenshot below.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screnshots/fraud/sagemaker-workforces-console.png"></img>
+
+On this page, you can see information about the Amazon Cognito user pool for your workforce,  the worker team name 'AugmentedAI-Default' 
+for your workforce, and a list of all the members of your private workforce. 
+This workforce is now available to use in both Amazon Augmented AI and Amazon SageMaker Ground Truth for 
+human review tasks and data labeling jobs respectively.
+If you click on the private team name 'AugmentedAI-Default' , you should see the Cognito user group linked to it
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/sagemaker-workforce-team.png"></img>
 
 Once the workforce is created, we can run the script below passing in the workforce arn as an arg to create 
 a human task UI using a custom worker template defined in `augmented_ai\fraud\constants.py`. Amazon A2I uses this 
@@ -382,10 +429,7 @@ $ python projects/fraud/predictions.py --predictions realtime --payload_path dat
 
 ```
 
-
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/human-loops-a2i.png"></img>
-
-
 
 ###Teardown resources 
 

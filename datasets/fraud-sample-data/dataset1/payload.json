@@ -15,6 +15,7 @@
         "state": "OR",
         "merchant":	"fraud_Macejkovic-Lesch"
   },
-  "EVENT_TIMESTAMP": "2020-10-13T09:21:53.000Z"
+  "EVENT_TIMESTAMP": "2020-10-13T09:21:53.000Z",
+   "flow_definition": "ignore"
 }
 

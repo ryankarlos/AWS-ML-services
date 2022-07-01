@@ -224,16 +224,90 @@ To trigger Fraud Detector Predictions via AWS Lambda
 Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
 This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
 as target. 
-The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
-pass custom cli arguments when invoking lambdas. If the event source  is sqs, it will run a batch prediction job. 
-To run realtime  prediction, the function must be invoked by the end user  passing the payload (similar to structure 
-defined in  payload.json/payload2.json in datasets/dataset1 folder ). The code  will then check that it contains a 
-variables key to run realtime prediction api call. 
 
 ```
 $ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
 copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
 ```
+
+The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
+pass custom cli arguments when invoking lambdas. If the event payload has 'Records' key, it indicates the event is coming from
+SQS and will run a batch prediction job. If the payload has 'variables' key, it will run realtime prediction.
+To run realtime  prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda.
+
+To create the API gateway 
+
+1. Open the API Gateway console, and then choose your API.
+2. Select CreateAPI and select the type as RestAPI
+3. Protocol: REST, Create New API and choose a name and optional description
+4. Select the API resource just created and select Create Method from the Resource Actions. Select Get
+5. In the Get-Setup, select Integration Type: lambda function and lambda function name 'PredictFraudModel'. Click save.
+6. In the Method Execution pane, choose Method Request.
+7. In settings, use Authorization: 'AWS IAM' and Request Validator: 'Validate query string parameters and headers'
+8. Expand the URL Query String Parameters dropdown, then choose Add query string.
+9. Enter the following variables one by one as a separate name field. Mark all as required except for 'flow_definition' variable
+
+```
+ amt, category, cc_num, city, city_pop, event_timestamp, first, flow_definition, gender, job, last, merchant, state, street, trans_num, zip
+```
+
+10 back to the Method Execution pane.
+11. Choose Integration Request.
+12. Choose the Mapping Templates dropdown and then choose Add mapping template.
+13. For the Content-Type field, enter application/json and then choose the check mark icon.
+14. In the pop-up that appears, choose Yes, secure this integration.
+15. For Request body passthrough, choose When there are no templates defined (recommended).
+16. In the mapping template editor, copy and replace the existing script with the following code:
+
+```
+#if("$input.params('flow_definition')" != "")
+#set( $my_default_value = "$input.params('flow_definition')")
+#else
+#set ($my_default_value = "ignore")
+#end
+
+
+{
+  "variables": {
+        "trans_num":"$input.params('trans_num')",
+        "amt":"$input.params('amt')",
+        "zip":"$input.params('zip')",
+        "city":"$input.params('city')",
+        "first":"$input.params('first')",
+        "job":"$input.params('job')",
+        "street":"$input.params('street')",
+        "category":"$input.params('category')",
+        "city_pop":"$input.params('city_pop')",
+        "gender":"$input.params('gender')",
+        "cc_num":"$input.params('cc_num')",
+        "last":"$input.params('last')",
+        "state":"$input.params('state')",
+        "merchant":"$input.params('merchant')"
+  },
+  "EVENT_TIMESTAMP":"$input.params('event_timestamp')",
+  "flow_definition":"$my_default_value"
+}
+```
+17. Choose Save, and go back to MethodExecution pane. Click on Test
+18. In the Query Strings box paste the following
+
+```
+trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job=Engineer, biomedical&street=213 Girll Expressway&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z&flow_definition=arn:aws:sagemaker:us-east-1:376337229415:flow-definition/fraud-detector-a2i-1656277295743
+```
+
+If successful you should see the response and logs as in screenshot below. You can also navigate to CloudWatch log stream group for Lambda invocation and check it has run successfully.
+
+
+
+
+
+We can then proceed to deploying the API. Go back to Resources -> Actions and Deploy API. Select Deployment Stage 'New Stage' and choose name as 'dev'.
+You should see the API endpoint to invoke on the console (screenshot below)
+
+
+To test the API's new endpoint, run the following curl command. Make sure that the curl command has the query string parameters at the end as below ('key=value' format and separated by &)
+
+
 
 #### Augmented AI for reviews 
 
@@ -251,6 +325,7 @@ https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-custom-templates.html
 The script also uses the `Create Flow Definition` API to create a workflow definition. 
 
 ```
+$ export PYTHONPATH=.
 $ python augmented_ai/fraud/create_workflow.py --workteam_arn <workforce-arn>
 Created human task ui with Arn: .......human-task-ui/fraud9079296d-f592-11ec-92fc-50ebf6424219
 Created flow definition with Arn: ..........flow-definition/fraud-detector-a2i-1656277037953

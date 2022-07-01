@@ -50,9 +50,10 @@ def real_time_predictions(
     variables = payload["variables"]
     timestamp = payload["EVENT_TIMESTAMP"]
     event_id = payload["variables"]["trans_num"]
+    flow_definition = payload['flow_definition']
     entity_id = "unknown"
     entity_type = "customer"
-    response = fraudDetector.get_event_prediction(
+    prediction_response = fraudDetector.get_event_prediction(
         detectorId=detector_name,
         eventId=event_id,
         detectorVersionId=detector_version,
@@ -61,7 +62,24 @@ def real_time_predictions(
         entities=[{"entityType": entity_type, "entityId": entity_id}],
         eventVariables=variables,
     )
-    return response
+    if flow_definition != "ignore":
+        FraudScore = prediction_response["modelScores"][0]["scores"][
+            "fraud_model_insightscore"
+        ]
+        if SCORE_THRESHOLD_MIN <= FraudScore <= SCORE_THRESHOLD_MAX:
+            # Create the human loop input JSON object
+            logger.info(
+                f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
+            )
+            human_loop_input = {
+                "score": prediction_response["modelScores"][0]["scores"],
+                "taskObject": payload,
+            }
+            logger.info(f"Started human loop: {humanLoopName}")
+            augai_response = start_human_loop(human_loop_input, flow_definition)
+            print("")
+            print(augai_response)
+    return prediction_response
 
 
 def batch_predictions(
@@ -128,12 +146,6 @@ def batch_predictions(
 @click.option(
     "--role", "--option", default="FraudDetectorRoleS3Access", help="name of role"
 )
-@click.option(
-    "--flow_definition",
-    "--option",
-    default="",
-    help="set flow definition name if you want to send results for review to augmented ai",
-)
 def main(
     predictions,
     s3input,
@@ -143,7 +155,6 @@ def main(
     detector_name,
     role,
     detector_version,
-    flow_definition,
 ):
     if predictions == "batch":
         logger.info("running batch prediction job")
@@ -177,23 +188,6 @@ def main(
         )
         print("")
         print(json.dumps(response["modelScores"], default=str, indent=4))
-        if flow_definition:
-            FraudScore = response["modelScores"][0]["scores"][
-                "fraud_model_insightscore"
-            ]
-            if SCORE_THRESHOLD_MIN <= FraudScore <= SCORE_THRESHOLD_MAX:
-                # Create the human loop input JSON object
-                logger.info(
-                    f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
-                )
-                human_loop_input = {
-                    "score": response["modelScores"][0]["scores"],
-                    "taskObject": payload,
-                }
-                logger.info(f"Started human loop: {humanLoopName}")
-                response = start_human_loop(human_loop_input, flow_definition)
-                print("")
-                print(response)
         return response
 
 

@@ -324,6 +324,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonFraudDetectorFullAccessPolicy
         - arn:aws:iam::aws:policy/AmazonSQSFullAccess
         - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAugmentedAIFullAccess
   GlueLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -470,6 +471,7 @@ Resources:
 
           fraudDetector = boto3.client("frauddetector")
           iam = boto3.resource("iam")
+          a2i_runtime_client = boto3.client("sagemaker-a2i-runtime")
 
           bucket = os.environ["INPUT_BUCKET"]
           batch_input_key = os.environ["DATA_KEY"]
@@ -482,6 +484,7 @@ Resources:
 
           SCORE_THRESHOLD_MAX = os.environ["SCORE_THRESHOLD_MAX"] 
           SCORE_THRESHOLD_MIN = os.environ["SCORE_THRESHOLD_MIN"] 
+          humanLoopName = "Fraud-detector-" + str(int(round(time.time() * 1000)))
 
           s3input = f"s3://{bucket}/{batch_input_key}"
           s3output = f"s3://{bucket}/{batch_output_key}"
@@ -555,9 +558,17 @@ Resources:
               time.sleep(5)
               response = fraudDetector.get_batch_prediction_jobs(jobId=job_id)
               return response
+        
+          def start_human_loop(human_loop_input, flow_def_arn):
+              response = a2i_runtime_client.start_human_loop(
+                  HumanLoopName=humanLoopName,
+                  FlowDefinitionArn=flow_def_arn,
+                  HumanLoopInput={"InputContent": json.dumps(human_loop_input)},
+              )
+              return response
 
           def handler(event, context):
-                  if event['Records'][0]['eventSource'] == 'aws:sqs':
+                  if 'Records' in event.keys():
                       predictions = "batch"
                   elif 'variables' in event.keys():
                       predictions = "realtime"
@@ -584,29 +595,29 @@ Resources:
                           raise
                   elif predictions == "realtime":
                       logger.info("running realtime prediction")
-                      response = real_time_predictions(
+                      pred_response = real_time_predictions(
                           event, event_name, detector_name, detector_version
                       )
                       print("")
-                      print(json.dumps(response["modelScores"], default=str, indent=4))
-                      if flow_definition:
-                          FraudScore = response["modelScores"][0]["scores"][
+                      print(json.dumps(pred_response["modelScores"], default=str, indent=4))
+                      if event["flow_definition"] != "ignore":
+                          FraudScore = pred_response["modelScores"][0]["scores"][
                               "fraud_model_insightscore"
                           ]
-                          if SCORE_THRESHOLD_MIN <= FraudScore <= SCORE_THRESHOLD_MAX:
+                          if int(SCORE_THRESHOLD_MIN) <= FraudScore <= int(SCORE_THRESHOLD_MAX):
                               # Create the human loop input JSON object
                               logger.info(
                                   f"fraud score {FraudScore} between range thresholds {SCORE_THRESHOLD_MAX} and {SCORE_THRESHOLD_MIN}"
                               )
                               human_loop_input = {
-                                  "score": response["modelScores"][0]["scores"],
-                                  "taskObject": payload,
+                                  "score": pred_response["modelScores"][0]["scores"],
+                                  "taskObject": event,
                               }
                               logger.info(f"Started human loop: {humanLoopName}")
-                              response = start_human_loop(human_loop_input, flow_definition)
+                              augai_response = start_human_loop(human_loop_input, event["flow_definition"])
                               print("")
-                              print(response)
-                      return response
+                              print(augai_response)
+                      return pred_response
       Handler: index.handler
       FunctionName: PredictFraudModel
       Role:

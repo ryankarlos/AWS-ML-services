@@ -1,8 +1,13 @@
 # AWS Fraud Detector 
 
-
-The datasets `datasets/fraud/dataset1/fraudTest.csv` and `datasets/fraud/dataset1/fraudTrain.csv`  contain  
-variables for each online account registration event as required for creating an event 
+Amazon Fraud Detector is a fully managed service that can identify potentially fraudulent online activities. 
+These can be situations such as the creation of fake accounts or online payment fraud. 
+Amazon Fraud Detector automates the time-consuming and expensive steps to build, train, and deploy an ML model for fraud 
+detection. It customizes each model it creates to your dataset, making the accuracy of models higher 
+than current one-size-fits-all ML solutions. And because you pay only for what you use, you can avoid large upfront expenses.
+The example below, uses simulated train and test datasets from Kaggle and can be downloaded from 
+https://www.kaggle.com/datasets/kartik2112/fraud-detection
+The datasets `fraudTest.csv` and `fraudTrain.csv`  contain variables for each online account registration event as required for creating an event 
 in AWS Fraud Detector https://docs.aws.amazon.com/frauddetector/latest/ug/create-event-dataset.html: 
 
 This contains the following variables:
@@ -38,7 +43,6 @@ Fraud detector model training requires some mandatory variables in the dataset:
 
 Using glue we transform the train and test datasets to conform to the AWS Fraud Detector 
 requirements
-
 
 #### CloudFormation Templates
 
@@ -88,17 +92,38 @@ $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir data
 
 ###  Model Training
 
-#### Local Mode
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud_train_architecture.png"></img>
 
 
-To commence model training, please run the following script. This will instantiate a model 
-via the CreateModel operation, which acts as a container for your model versions. If this already exists, then
+The architecture for model training has been generated using the diagrams package via script in screenshots\aws_diagrams\fraud_train.py
+These resources are already created and configured via the cloudformation stack. A Glue crawler run by the user crawls the train and test csv 
+files in the S3 bucket and creates a combined table with all the data. We have configured S3 to send notifications to SQS 
+
+This will instantiate a model  via the CreateModel operation, which acts as a container for your model versions. If this already exists, then
 it will directly progress to the next step which is the CreateModelVersion operation. This starts the training 
 process, which results in a specific version of the model. Please refer to the AWS docs for more 
 details https://docs.aws.amazon.com/frauddetector/latest/ug/building-a-model.html
-
 The script fetches the variables for the training job from S3 path which contains the csv file 
 with the training data. 
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/train-model-lambda-logs.png"></img>
+
+i have found that if the event metadata columns e.g. EVENT_TIMESTAMP and EVENT_LABEL
+are not ordered together in the csv file then you get the following exception. This exception went away 
+after I ordered the columns so that all the event variables were at the start and the 
+last two columns were event metadata i.e. EVENT_TIMESTAMP, EVENT_LABEL
+
+```
+botocore.errorfactory.ResourceNotFoundException: An error occurred (ResourceNotFoundException) when calling the CreateModelVersion operation: VariableIds: [EVENT_TIMESTAMP] do not exist.
+```
+
+If model training already in progress, and you run the python script to update the same model version, the logs should
+print out a message saying 'Model Version already training' and will exit.
+
+To start model training in local mode, run the following script stored in `projects/fraud/training.py`. This calls the FraudDetector 
+api directly after dong the necessary data processing from data in S3 (i.e. it avoids the use of Glue Crawler and Glue used in the architecture above). 
+This is useful for quick troubleshooting.
 
 ```
 $ python projects/fraud/training.py
@@ -106,26 +131,6 @@ Starting model training with variables ['cc_num', 'merchant', 'category', 'amt',
 {'modelId': 'fraud_model', 'modelType': 'ONLINE_FRAUD_INSIGHTS', 'modelVersionNumber': '1.0', 'status': 'TRAINING_IN_PROGRESS', 'ResponseMetadata': {'RequestId': 'a1fac915-282d-4dc6-93a5-4331e579f64a', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Sat, 25 Jun 2022 03:18:01 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '120', 'connection': 'keep-alive', 'x-amzn-requestid': 'a1fac915-282d-4dc6-93a5-4331e579f64a'}, 'RetryAttempts': 0}}
 ```
 
-
-i have found that if the event metadata columns e.g. EVENT_TIMESTAMP and EVENT_LABEL
-are not ordered together in the csv file then you get the following exception when
-trying to run the training script to create a model version. This exception went away 
-after I ordered the columns so that all the event variables were at the start and the 
-last two columns were event metadata i.e. EVENT_TIMESTAMP, EVENT_LABEL
-
-```
-$  python projects/fraud/training.py
-Traceback (most recent call last):
-  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 60, in <module>
-    train_fraud_model()
-  File "/Users/rk1103/Documents/AWS-ML-services/projects/fraud/training.py", line 44, in train_fraud_model
-    fraudDetector.create_model_version(
-  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 508, in _api_call
-    return self._make_api_call(operation_name, kwargs)
-  File "/Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/lib/python3.9/site-packages/botocore/client.py", line 915, in _make_api_call
-    raise error_class(parsed_response, operation_name)
-botocore.errorfactory.ResourceNotFoundException: An error occurred (ResourceNotFoundException) when calling the CreateModelVersion operation: VariableIds: [EVENT_TIMESTAMP] do not exist.
-```
 
 If model training already in progress, and you run the python script, you will get the 
 following validation exception 
@@ -147,7 +152,7 @@ Traceback (most recent call last):
 botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the CreateModelVersion operation: Simultaneous training for the same major version not allowed
 ```
 
-* Model verison 1
+* Model version 1
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-v1.png"></img>
 
 * Model version 2
@@ -163,14 +168,28 @@ botocore.errorfactory.ValidationException: An error occurred (ValidationExceptio
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-versions-performance.png"></img>
 
 
-
-#### Using AWS services workflow
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud_train_architecture.png"></img>
-
-
 ### Deploying model
 
+
+If we are happy with the model trained, we need to make it active by deploying it
+Scroll to the top of the Version details page and choose Actions, Deploy model version. On the Deploy model version p
+prompt that appears, choose Deploy version.
+The Version details shows a Status of Deploying. When the model is ready, the Status changes to Active.
+Once model has finished deploying and status changed to active, we will need to associate the model with Fraud Detector 
+for predictions.
+However, we will also need to update the rule expressions as the default Fraud Detector version 1 created from cloudformation 
+uses the variable 'amt' in the rule expression. We need to change this to model insight score which is a new variable created 
+after model training has completed. This variable is not available when the cloudformation stack is created as the model has not been 
+trained yet so we needed to have a placeholder existing variable so the rule expression is valid
+to avoid the stack for throwing an error
+
+We can run the following script to update the detector rules and associate the new model with it. This will carry out two steps.
+
+Firstly, it will update the existing rule version with the correct expression based on the number passed to the --update_rule argument. It will create 
+a new rule version (incremented from the original, eg 2 if the original is 1). Then it will create a new detector version 
+and associate the model version (--model_version arg) and the rules_version (--rules_version arg) which should be set to be 
+the increment of the existing rule version.
+This will automatically increment the detector version to 2.0 as the existing version is 1.0
 
 ```
 $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_version 2                
@@ -188,6 +207,9 @@ $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_ve
 {'detectorId': 'fraud_detector_demo', 'detectorVersionId': '2', 'status': 'DRAFT', 'ResponseMetadata': {'RequestId': 'da37d973-2c43-4c56-93e5-f9b9bd132bb3', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Sun, 26 Jun 2022 03:50:36 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '77', 'connection': 'keep-alive', 'x-amzn-requestid': 'da37d973-2c43-4c56-93e5-f9b9bd132bb3'}, 'RetryAttempts': 0}}
 
 ```
+
+The screenshots below show the model associated with the new version and the correct rules expressions which use the
+`fraud_model_insightscore` variable
 
 
 #### Setting up API gateway 
@@ -297,26 +319,48 @@ Note: If any changes are made to the api configuration or parameters - it would 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
 
 
+The architecture diagram above shows the two modes we can use for making predictions with Amazon Fraud Detector: batch and real-time.
+
+You can use a batch predictions job in Amazon Fraud Detector to get predictions for a set of events that do not require real-time scoring. 
+You may want to generate fraud predictions for a batch of events. These might be payment fraud, 
+account take over or compromise, and free tier misuse while performing an offline proof-of-concept. 
+You can also use batch predictions to evaluate the risk of events on an hourly, daily, or weekly basis depending upon your business need.
+If you want to analyze fraud transactions after the fact, you can perform batch fraud predictions using Amazon Fraud Detector. 
+Then you can store fraud prediction results in an Amazon S3 bucket. 
+Although beyond the scope of this example, we could have also used additional services like Amazon Athena  to help analyze 
+the fraud prediction results (once delivered in S3) and Amazon QuickSight for visualising the results on a dashboard.
 Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
-This will trigger notification to SQS queue which has Lambda function containing the code to run the batch and realtime predictions
-as target. 
+This will trigger notification to SQS queue which has Lambda function as target, which starts the batch prediction job in Fraud Detector
 
 ```
 $ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
 copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
 ```
 
-The code in the lambda is adapted compared to the local mode python scripts to check the event payload since we cannot 
-pass custom cli arguments when invoking lambdas. If the event payload has 'Records' key, it indicates the event is coming from
-SQS and will run a batch prediction job. If the payload has 'variables' key, it will run realtime prediction.
-To run realtime  prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda
+we can monitor the batch prediction jobs in Fraud Detector. Once complete,we should see the output in S3. An example of 
+a batch output is available in datasets/dataset1/results/DetectorBatchResult.csv
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/batch_prediction_jobs.png"></img>
+
+
+In realtime mode, we will make use of the API gateway created and integrated with the lambda function which makes the 
+'get_event_prediction' api call to FraudDetector. 
+In this example we are using the same lambda for batch and realtime predictions. The code in lamdba checks the  
+checks the event payload to see if certain keys are present which are expected from a request from API gateway (.i.e after the request 
+is transformed via the mapping template in api gateway). We have configured the mapping template to create a variables key, so 
+we can check if the payload has 'variables' key,  to run realtime prediction. If the event payload has 'Records' key, 
+it indicates the event is coming from  SQS and will run a batch prediction job. 
+Ideally, I could have had separate lambda for realtime and batch prediction to make it easier to manage. 
+
+To run realtime prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda
 as explained in the previous section. This could be invoked by the following command 
 
 ```
 curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
 ```
 
-To run script from local machine to call AWS Fraud Detector batch and realtime prediction api directly. The scripts in the `projects/fraud/predictions.py`
+To run batch and realtime prediction modes from local machine (for troubleshooting purposes) to call AWS Fraud Detector API directly, we can use the script in the `projects/fraud/predictions.py`
 are adapted compared to the code in lambda (for realtime mode). This uses custom cli arguments to pass the path to payload path (for realtime mode),  
 and the method of execution ('realtime' or batch) via the 'prediction' arg
 
@@ -341,7 +385,7 @@ $ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python pro
 
 [
     {
-        "modelVersion": {
+        "modelVersion": {, 
             "modelId": "fraud_model",
             "modelType": "ONLINE_FRAUD_INSIGHTS",
             "modelVersionNumber": "1.0"
@@ -397,10 +441,35 @@ Created flow definition with Arn: ..........flow-definition/fraud-detector-a2i-1
 
 ```
 
-Once we have done this, we can use the same script which we ran in the previous section to generate realtime predictions.
-However, we need to pass in an extra argument `--flow_definition` with the arn value to enable HumanLoop. This will 
-send all the predictions which have a fraud score between the default range (700-900) for human review. Note that this
-range was chosen as it matches the rules associated with fraud detector for labelling the prediction for review.
+
+We had configured API gateway to use an optional parameter as well 'flow_definition'. In the previous section this was not passed in
+and defaults to "ignore", which skips the step for checking whether the data should be sent for human review or not. 
+If an arn value for this is passed, then it will  also start a human loop for reviews if the model insight scores is
+between the set threshold (700-900) as set in the lambda environment variables.  SCORE_THRESHOLD_MIN and "SCORE_THRESHOLD_MAX.  Note that this
+range was chosen as it matches the rules associated with fraud detector for labelling the prediction for review. 
+This uses Augmented AI service (described in the next section), to send the model scores which are 
+within this range to check if the labels predicted from the model are accurate or need to be corrected via human review.
+We will need to append the extra parameter `flow_definition` to the end of the query string as below. Replace <arn> with the arn value for flow definition 
+which can be found from the console (navigate to AugmentedAI-> Human Review Workflow and use the workflow arn) from the human 
+review workflow which was created in the previous command.
+The choice of variables values below, should generate a fraud insight score within this range and hence trigger a human loop to be started.
+
+```
+curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000&flow_definition=<arn>
+```
+
+if this ran successfully, you should see the human loop in progress as in screenshot below.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/human-loops-a2i.png"></img>
+
+The log stream configured for lambda function can also be checked. The insight score is 872 and this should initiate the 
+call to StartHumanLoop action and can be confirmed from the 'Started human loop: Fraud-detector' log message
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/predict-lambda-logs-human-loop.png"></img>
+
+
+Similarly, to run this from the local machine, we can use the same script which we ran in the previous section to generate realtime predictions.
+However, we need to pass in an extra argument `--flow_definition` with the arn value to enable HumanLoop. 
 The example below uses payload which was marked for review from the model after batch prediction. When passed this
 payload via the realtime api - it outputs the prediction results as well as starts a human loop.
 
@@ -429,7 +498,7 @@ $ python projects/fraud/predictions.py --predictions realtime --payload_path dat
 
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/human-loops-a2i.png"></img>
+
 
 ###Teardown resources 
 

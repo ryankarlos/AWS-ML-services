@@ -5,6 +5,7 @@ These can be situations such as the creation of fake accounts or online payment 
 Amazon Fraud Detector automates the time-consuming and expensive steps to build, train, and deploy an ML model for fraud 
 detection. It customizes each model it creates to your dataset, making the accuracy of models higher 
 than current one-size-fits-all ML solutions. And because you pay only for what you use, you can avoid large upfront expenses.
+
 The example below, uses simulated train and test datasets from Kaggle and can be downloaded from 
 https://www.kaggle.com/datasets/kartik2112/fraud-detection
 The datasets `fraudTest.csv` and `fraudTrain.csv`  contain variables for each online account registration event as required for creating an event 
@@ -36,9 +37,10 @@ merch_lat - Latitude Location of Merchant
 merch_long - Longitude Location of Merchant
 is_fraud - Fraud Flag <--- Target Class
 
+We will create a workflow to read data from S3, perform ETL job, train a Fraud Detector model which will be deployed 
+and used to generate predictions for a sample of batch data as well as realtime predictions via a custom API.
 
-
-#### CloudFormation Templates
+### CloudFormation Templates
 
 Cloudformation templates for creating glue development endpoint or the glue and fraud event resources 
 are stored in cloudformation folder. The stacks can be created by running the bash script 
@@ -50,7 +52,7 @@ stack or frauddetectorglue stack
 Creating glue dev endpoint 
 
 {
-    "StackId": "arn:aws:cloudformation:us-east-1:376337229415:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
+    "StackId": "arn:aws:cloudformation:<region>:<account-id>:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
 }
 
 ```
@@ -546,7 +548,7 @@ https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-con
 
 After you import your private workforce, refresh the page to see the Private workforce summary page as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screnshots/fraud/sagemaker-workforces-console.png"></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/sagemaker-workforces-console.png"></img>
 
 On this page, you can see information about the Amazon Cognito user pool for your workforce,  the worker team name 'AugmentedAI-Default' 
 for your workforce, and a list of all the members of your private workforce. 

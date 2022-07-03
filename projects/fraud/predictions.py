@@ -50,7 +50,7 @@ def real_time_predictions(
     variables = payload["variables"]
     timestamp = payload["EVENT_TIMESTAMP"]
     event_id = payload["variables"]["trans_num"]
-    flow_definition = payload['flow_definition']
+    flow_definition = payload["flow_definition"]
     entity_id = "unknown"
     entity_type = "customer"
     prediction_response = fraudDetector.get_event_prediction(

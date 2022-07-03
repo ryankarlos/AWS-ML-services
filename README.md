@@ -3,8 +3,8 @@
 * Rekognition https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/rekognition#readme
 * NLP (Transcribe, Translate, Textract, Comprehend, Polly) https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/nlp/README.md
 * Forecast https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/README.md
-* Personalize #TODO
 * Fraud Detector https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/fraud/README.md
+* Personalize https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/README.md
 
 ### Environment and dependencies
 

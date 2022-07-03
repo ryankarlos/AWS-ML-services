@@ -13,29 +13,29 @@ in AWS Fraud Detector https://docs.aws.amazon.com/frauddetector/latest/ug/create
 
 This contains the following variables:
 
-index - Unique Identifier for each row
-transdatetrans_time - Transaction DateTime
-cc_num - Credit Card Number of Customer
-merchant - Merchant Name
-category - Category of Merchant
-amt - Amount of Transaction
-first - First Name of Credit Card Holder
-last - Last Name of Credit Card Holder
-gender - Gender of Credit Card Holder
-street - Street Address of Credit Card Holder
-city - City of Credit Card Holder
-state - State of Credit Card Holder
-zip - Zip of Credit Card Holder
-lat - Latitude Location of Credit Card Holder
-long - Longitude Location of Credit Card Holder
-city_pop - Credit Card Holder's City Population
-job - Job of Credit Card Holder
-dob - Date of Birth of Credit Card Holder
-trans_num - Transaction Number
-unix_time - UNIX Time of transaction
-merch_lat - Latitude Location of Merchant
-merch_long - Longitude Location of Merchant
-is_fraud - Fraud Flag <--- Target Class
+* index - Unique Identifier for each row
+* transdatetrans_time - Transaction DateTime
+* cc_num - Credit Card Number of Customer
+* merchant - Merchant Name
+* category - Category of Merchant
+* amt - Amount of Transaction
+* first - First Name of Credit Card Holder
+* last - Last Name of Credit Card Holder
+* gender - Gender of Credit Card Holder
+* street - Street Address of Credit Card Holder
+* city - City of Credit Card Holder
+* state - State of Credit Card Holder
+* zip - Zip of Credit Card Holder
+* lat - Latitude Location of Credit Card Holder
+* long - Longitude Location of Credit Card Holder
+* city_pop - Credit Card Holder's City Population
+* job - Job of Credit Card Holder
+* dob - Date of Birth of Credit Card Holder
+* trans_num - Transaction Number
+* unix_time - UNIX Time of transaction
+* merch_lat - Latitude Location of Merchant
+* merch_long - Longitude Location of Merchant
+* is_fraud - Fraud Flag <--- Target Class
 
 We will create a workflow to read data from S3, perform ETL job, train a Fraud Detector model which will be deployed 
 and used to generate predictions for a sample of batch data as well as realtime predictions via a custom API.
@@ -101,13 +101,13 @@ In the Event types section, we will only select all object create events. We cou
 'copy' or 'put' but given the large file size (approx 300MB), there is a possibility of s3 copy action from glue script using multipart upload to
 write the object (so we want to capture this action as well)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-train-data-s3.png"></img>
+<img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-train-data-s3.png"></img>
 
 In the Destination section, choose the event notification destination and select the destination type: SQS Queue.
 Specify the arn of the queue (which can be obtained from the SQS console)
 https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-event-notifications.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-s3-destination-sqs.png"></img>
+<center><img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-s3-destination-sqs.png"></center>
 
 Repeat the same for the next event configuration for the batch predictions to the prediction queue in SQS for lambda to be invoked tom
 create a batch prediction job.
@@ -115,17 +115,17 @@ The only change we will make is specifying a different prefix and suffix as we w
 the 'batch_predict' folder in the bucket having key 'batch_predict/fraudTest.csv'. So we set the prefix to 'batch_predict' and suffix to 
 'fraudTest.csv' or just 'csv' (as this is the only object in this folder)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-batch-predict-data-sqs.png"></img>
+<center><img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-batch-predict-data-sqs.png"></center>
 
 Once we have configured both event notifications for the two SQS queues we should see them in the EventNotifications section 
 in the bucket properties as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/s3_fraud_bucket_config_events.png"></img>
+<center><img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/s3_fraud_bucket_config_events.png"></center>
 
 In each SQS queue, we should see an access policy already configured via the cloudformation template which allows
 grants the Amazon S3 principal the necessary permissions to call the relevant API to publish messages to SQS queue. 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/access-policy-sqs.png"></img>
+<center><img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/access-policy-sqs.png"></center>
 
 ### ETL 
 
@@ -133,7 +133,7 @@ A Glue crawler run by the user crawls the train and test csv  files in the S3 bu
 The crawler uses a custom classifier, both of which are created automatically via cloudformation. These are configured as 
 below. The S3 path for the crawler is set to `s3://fraud-sample-data/input` which should include both the train and test csv files
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/custom-classifier.png"></img>
+<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/custom-classifier.png"></img>
 
 If the crawler runs successfully, you should see a table in glue data catalog. We can confirm that the headers and types 
 have been crawled correctly. 
@@ -143,7 +143,7 @@ have been crawled correctly.
 EventBridge rule is configured to the listen to glue crawler state change event (i.e. when crawler status is 'Succeeded')
 as configured in the eventpattern in the screenshot below. This uses the default eventbridge bus
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/eventbridge-rule-trigger-lambda.png"></img>
+<img width=500  src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/eventbridge-rule-trigger-lambda.png"></img>
 
 EventBridge target is the lambda function which starts the glue job
 
@@ -451,7 +451,7 @@ Note: If any changes are made to the api configuration or parameters - it would 
 
 ### Generate Predictions 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
+<img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
 
 The architecture diagram above shows the two modes we can use for making predictions with Amazon Fraud Detector: batch and real-time.
 You can use a batch predictions job in Amazon Fraud Detector to get predictions for a set of events that do not require real-time scoring. 

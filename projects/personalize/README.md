@@ -68,3 +68,41 @@ $ aws s3 cp lambdas/data_import_personalize.zip s3://recommendation-sample-data/
 ```
 $ aws s3 cp projects/personalize/glue/movies_glue_etl.py s3://aws-glue-assets-376337229415-us-east-1/scripts/personalize-glue-etl-movies.py
 ```
+
+
+### CloudFormation Templates
+
+Cloudformation templates for creating glue development endpoint or the glue and fraud event resources 
+are stored in cloudformation folder. The stacks can be created by running the bash script 
+below and passing in either 'endpoint' or 'detector' argument to create a glue dve endpoint
+stack or frauddetectorglue stack
+
+```
+ sh projects/fraud/bash_scripts/create-resources.sh endpoint
+Creating glue dev endpoint 
+
+{
+    "StackId": "arn:aws:cloudformation:<region>:<account-id>:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
+}
+
+```
+
+The FraudDetectorGlue stack creates the detector and associated rules, the variables, labels and outcomes
+for associating with the event type. It also creates the resources for the ETL jobs e.g. glue, crawler, lambda functions, 
+sqs, eventbridge etc. We can check that these are as they should be from the 
+console.
+
+
+### S3 to SNS event notification
+
+We also need to configure S3 to send notifications to SNS topic created from cloudformation, when the batch jobs from Personalize complete.
+We have configured email as subscriber to SNS via protocol set as email endpoint.
+The SNS messages will then send email to subscriber address when event message received from S3.
+
+From root of repo, run the following script to configure bucket notification to SNS. Note: There is currently not support
+for notifications to FIFO type SNS topics. 
+
+```
+python projects/personalize/put_notification_s3.py
+```
+

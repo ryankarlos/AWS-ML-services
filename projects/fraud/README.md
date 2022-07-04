@@ -434,13 +434,19 @@ arn upto the stagename 'dev' as shown in the screenshot below - otherwise it wil
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/api-rest-stage-editor-logs-config.png"></img>
 
-
-To test the API's new endpoint, run the following curl command. Make sure that the curl command has the query string parameters at the end as below ('key=value' format and separated by &).
-Since the get method is configured in '/' root resource - we can invoke the api endpoint https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev
+ To test the API's new endpoint, we can use postman for sending an API request 
+https://learning.postman.com/docs/getting-started/sending-the-first-request/
+Create postman account and select GET from the list of request types. TSince the get method is configured in '/' root resource - we can invoke the 
+ api endpoint https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev with the query string parameters appended at the end  ('key=value' format and separated by &).
+Paste the following command in the box as in screenshot below. You should see the parameters and values automatically parsed and populated in the KEY/VALUE rows below.
+Click send and you should see the response body at the bottom.
 
 ```
-curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
+https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
 ```
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/postman-api-gateway.png"></img>
+
 
 You can check the log streams associated with the latest invocation in the cloudwatch log group for API gateway. This will show  messages 
 with the execution or access details of your request.
@@ -486,11 +492,7 @@ it indicates the event is coming from  SQS and will run a batch prediction job.
 Ideally, I could have had separate lambda for realtime and batch prediction to make it easier to manage. 
 
 To run realtime prediction, API gateway REST API has been configured to accept query string parameters and send the request to lambda
-as explained in the previous section. This could be invoked by the following command 
-
-```
-curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
-```
+as explained in the previous section.
 
 To run batch and realtime prediction modes from local machine (for troubleshooting purposes) to call AWS Fraud Detector API directly, we can use the script in the `projects/fraud/predictions.py`
 are adapted compared to the code in lambda (for realtime mode). This uses custom cli arguments to pass the path to payload path (for realtime mode),  
@@ -510,7 +512,7 @@ $ python projects/fraud/predictions.py --predictions batch --detector_version 2 
 
 ```
 
-$ (AWS-ML-services) (base) rk1103@Ryans-MacBook-Air AWS-ML-services % python projects/fraud/predictions.py \
+$ python projects/fraud/predictions.py \
 --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
 --role AmazonFraudDetectorRole
 26-06-2022 04:13:54 : INFO : predictions : main : 152 : running realtime prediction
@@ -543,7 +545,7 @@ given human review or labelling task e.g. labelling medical images. By creating 
 the private workforce using Amazon Cognito you avoid the overhead of managing worker credentials and authentication, as AWS Cognito, 
 provides authentication, authorization, and user management for the users in the workforce.
 Following these instructions under 'Create an Amazon Cognito Workforce Using the Labeling Workforces Page' section to
-create a private workforce in Sagemaker console which uses AWS Cognito as an identity provider 
+create a private workforce in Sagemaker console which uses AWS CognitTo as an identity provider 
 https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-console.html#create-workforce-sm-console. 
 
 After you import your private workforce, refresh the page to see the Private workforce summary page as in screenshot below.
@@ -585,9 +587,10 @@ We will need to append the extra parameter `flow_definition` to the end of the q
 which can be found from the console (navigate to AugmentedAI-> Human Review Workflow and use the workflow arn) from the human 
 review workflow which was created in the previous command.
 The choice of variables values below, should generate a fraud insight score within this range and hence trigger a human loop to be started.
+Run the following url as Postman GET method (refer to bottom of 'Setting up API gateway' section above).
 
 ```
-curl -X GET https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000&flow_definition=<arn>
+https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000&flow_definition=<arn>
 ```
 
 if this ran successfully, you should see the human loop in progress as in screenshot below.

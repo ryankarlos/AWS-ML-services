@@ -100,7 +100,7 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
 )
 @click.option(
     "--s3_output_path",
-    help="path to output s3 folder for stroring batch prediction results",
+    help="path to output s3 folder for storing batch prediction results",
 )
 @click.option(
     "--job_name", help="Name of job",
@@ -117,14 +117,10 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
     help="number of users to predict for in each line of input data",
 )
 @click.option(
-    "--weight",
-    default=0.3,
-    help="User-Personalization recipe specific itemExplorationConfig hyperparameter, explorationWeight",
-)
-@click.option(
-    "--cutoff",
-    default=30,
-    help="User-Personalization recipe specific itemExplorationConfig hyperparameter, explorationcutoff",
+    "--exploration_config",
+    default=(0.3, 30),
+    type=(float, int),
+    help="User-Personalization recipe specific itemExplorationConfig hyperparameters: explorationWeight and explorationcutoff",
 )
 @click.option(
     "--campaign_arn", help="For realtime recommendation. Arn of campaign",
@@ -140,8 +136,8 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
 )
 @click.option(
     "--context",
-    defualt="{}",
-    help="optional context metadata for realt time prediction. If left as default, will run recommendations without "
+    default="{}",
+    help="optional context metadata for real time prediction. If left as default, will run recommendations without "
     "context and num_results param needs to be passed.",
 )
 @click.option(
@@ -158,14 +154,14 @@ def main(
     sol_arn,
     role_arn,
     num_users,
-    weight,
-    cutoff,
+    exploration_config,
     campaign_arn,
     user_id,
     num_results,
     context,
 ):
     if recommendation_mode == "batch_inference":
+        weight, cutoff = exploration_config
         return create_batch_inference_job(
             s3_input_path, s3_output_path, job_name, role_arn, sol_arn, weight, cutoff,
         )

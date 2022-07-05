@@ -1,0 +1,7 @@
+{
+  "S3input": "s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv",
+  "SolutionArn": "NONE",
+  "DatasetGroupArn": "",
+  "DatasetArn": "",
+  "RoleArn":""
+}

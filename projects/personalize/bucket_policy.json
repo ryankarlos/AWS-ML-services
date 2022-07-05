@@ -1,0 +1,22 @@
+{
+    "Version": "2012-10-17",
+    "Id": "Policy1656980455015",
+    "Statement": [
+        {
+            "Sid": "Stmt1656980452791",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "personalize.amazonaws.com"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::recommendation-sample-data/*",
+                "arn:aws:s3:::recommendation-sample-data"
+            ]
+        }
+    ]
+}

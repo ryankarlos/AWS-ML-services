@@ -633,8 +633,6 @@ $ python projects/fraud/predictions.py --predictions realtime --payload_path dat
 
 ```
 
-
-
 ### Teardown resources 
 
 Run the bash script passing in the 'endpoint' or 'detector' command depending on 

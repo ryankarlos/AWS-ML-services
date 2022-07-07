@@ -7,6 +7,13 @@ from awsglue.job import Job
 from awsglue.dynamicframe import DynamicFrameCollection
 from awsglue.dynamicframe import DynamicFrame
 
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args["JOB_NAME"], args)
+
 
 # Script generated for node Rename Interactions file in S3
 def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
@@ -23,7 +30,10 @@ def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
         connection_options={"path": S3_PATH},
     )
 
-    response = client.list_objects(Bucket=BUCKET_NAME, Prefix=PREFIX,)
+    response = client.list_objects(
+        Bucket=BUCKET_NAME,
+        Prefix=PREFIX,
+    )
     name = response["Contents"][0]["Key"]
     print(name)
 
@@ -49,7 +59,10 @@ def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
         connection_options={"path": S3_PATH},
     )
 
-    response = client.list_objects(Bucket=BUCKET_NAME, Prefix=PREFIX,)
+    response = client.list_objects(
+        Bucket=BUCKET_NAME,
+        Prefix=PREFIX,
+    )
     name = response["Contents"][0]["Key"]
     print(name)
 
@@ -60,13 +73,6 @@ def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
     )
     client.delete_object(Bucket=BUCKET_NAME, Key=name)
 
-
-args = getResolvedOptions(sys.argv, ["JOB_NAME"])
-sc = SparkContext()
-glueContext = GlueContext(sc)
-spark = glueContext.spark_session
-job = Job(glueContext)
-job.init(args["JOB_NAME"], args)
 
 # Script generated for node S3 input movies
 S3inputmovies_node1656882361110 = glueContext.create_dynamic_frame.from_options(
@@ -101,9 +107,24 @@ S3inputratings_node1656882568718 = glueContext.create_dynamic_frame.from_options
     transformation_ctx="S3inputratings_node1656882568718",
 )
 
+resampledratings_dyf = DynamicFrame.fromDF(
+    S3inputratings_node1656882568718.toDF().sample(False, 0.5, seed=0),
+    glueContext,
+    "resampled ratings",
+)
+
+repartitioned_df = resampledratings_dyf.toDF().repartition(100)
+
+repartitioned_dyf = DynamicFrame.fromDF(
+    repartitioned_df,
+    glueContext,
+    "repartitioned ratings",
+)
+
+
 # Script generated for node Renamed keys for Join
 RenamedkeysforJoin_node1656883045941 = ApplyMapping.apply(
-    frame=S3inputratings_node1656882568718,
+    frame=repartitioned_dyf,
     mappings=[
         ("userId", "bigint", "userId", "long"),
         ("movieId", "bigint", "`(right) movieId`", "long"),
@@ -121,6 +142,7 @@ Join_node1656883036773 = Join.apply(
     keys2=["`(right) movieId`"],
     transformation_ctx="Join_node1656883036773",
 )
+
 
 # Script generated for node Split Fields
 SplitFields_node1656884127492 = SplitFields.apply(
@@ -145,13 +167,14 @@ Dataframemoviemetadata_node1656884256844 = SelectFromCollection.apply(
     transformation_ctx="Dataframemoviemetadata_node1656884256844",
 )
 
+
 # Script generated for node Map field names interactions
 Mapfieldnamesinteractions_node1656884351305 = ApplyMapping.apply(
     frame=Dataframeinteractions_node1656884315834,
     mappings=[
-        ("movieId", "bigint", "ITEM_ID", "long"),
-        ("userId", "long", "USER_ID", "long"),
-        ("timestamp", "long", "TIMESTAMP", "long"),
+        ("movieId", "string", "ITEM_ID", "long"),
+        ("userId", "string", "USER_ID", "long"),
+        ("timestamp", "string", "TIMESTAMP", "long"),
     ],
     transformation_ctx="Mapfieldnamesinteractions_node1656884351305",
 )
@@ -162,10 +185,11 @@ Mapfieldnamemetdata_node1656884427706 = ApplyMapping.apply(
     mappings=[
         ("title", "string", "TITLE", "string"),
         ("genres", "string", "GENRES", "string"),
-        ("`(right) movieId`", "long", "ITEM_ID", "long"),
+        ("(right) movieId", "string", "ITEM_ID", "long"),
     ],
     transformation_ctx="Mapfieldnamemetdata_node1656884427706",
 )
+
 
 # Script generated for node Drop Duplicates Interactions
 DropDuplicatesInteractions_node1656884507578 = DynamicFrame.fromDF(
@@ -181,6 +205,7 @@ DropDuplicatesMetadata_node1656884924120 = DynamicFrame.fromDF(
     "DropDuplicatesMetadata_node1656884924120",
 )
 
+
 single_part_interactions_dyf = DynamicFrame.fromDF(
     DropDuplicatesInteractions_node1656884507578.toDF().repartition(1),
     glueContext,
@@ -192,6 +217,7 @@ single_part_metadata_dyf = DynamicFrame.fromDF(
     glueContext,
     "single_partition_metadata",
 )
+
 
 # Script generated for node Rename Interactions file in S3
 RenameInteractionsfileinS3_node1656886003325 = RenameS3ItemsUsersData(
@@ -208,5 +234,3 @@ RenameMetadatafileinS3_node1656885522913 = RenameS3Metadata(
         {"single_partition_metadata": single_part_metadata_dyf}, glueContext
     ),
 )
-
-job.commit()

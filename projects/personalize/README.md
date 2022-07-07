@@ -57,6 +57,8 @@ upload: datasets\personalize\ml-25m\ratings.csv to s3://recommendation-sample-da
 
 ```
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_raw_data.png"></img>
+
 Finally we need to add the glue script and lambda function to S3 bucket as well. This assumes the lambda function is zipped 
 as in `lambdas/data_import_personalize.zip` and you have a bucket with key `aws-glue-assets-376337229415-us-east-1/scripts`. If not adapt
 the query accordingly. Run the following commands from root of the repo
@@ -105,4 +107,48 @@ for notifications to FIFO type SNS topics.
 ```
 python projects/personalize/put_notification_s3.py
 ```
+
+#### Run GlueJob via Notebook and Train Solution Manually
+
+Create GlueDev endpoint using CloudFormation stack `cloudformation\glue-dev-endpoint.yaml`
+
+Set the parameters 
+* NumberofWorkers = 7
+* WorkerType = G.1X
+
+Then create notebook using this endpoint and upload `projects\personalize\glue\notebook\Personalize_GLue.ipynb`
+
+Once the notebook has finished running, you should see two folders in `s3://recommendation-sample-data/movie-lens/transformed/` as below. 
+Each of these will contain a csv file corresponding to the interactions data (which will be used for training solution) and 
+additional metadata (i.e. columns with movie genres, ratings etc)
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
+
+We can then import dataset into personalize by running the following script:
+
+```
+$ python projects/personalize/import_dataset.py --dataset_arn arn:aws:personalize:us-east-1:376337229415:dataset/RecommendGroup/INTERACTIONS --role_arn arn:aws:iam::376337229415:role/PersonalizeRole
+Dataset Import Job arn: arn:aws:personalize:us-east-1:376337229415:dataset-import-job/MoviesDatasetImport
+Name: MoviesDatasetImport
+ARN: arn:aws:personalize:us-east-1:376337229415:dataset-import-job/MoviesDatasetImport
+Status: CREATE PENDING
+```
+
+From the AWS console, create a training solution. Go to Solutions and Recipes -> Create Solution and fill in the 
+values as in the screenshot below and then click `Create and train solution`
+
+* Solution name: PersonalizeModel
+* Solutiontype: Item recommendation
+* Recipe: aws-user-personalization
+* Advanced Configuration - Turn on 'Perform HPO'. Leave the other parameter values as it is.
+
+The User-Personalization (aws-user-personalization) recipe is optimized for all User_Personalization recommendation scenarios. 
+When recommending items, this recipe uses automatic item exploration.
+https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
+
+Wait for solution version to print an ACTIVE status. The solution should train for about 1 hour. 
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO"></img>
 

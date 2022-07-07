@@ -113,5 +113,17 @@ Resources:
         DefinitionS3Location:
           Bucket: !Ref SFDefBucket
           Key: !Ref SFDefKey
+        LoggingConfiguration:
+          Destinations:
+            - CloudWatchLogsLogGroup: !Ref LogGroup
+            IncludeExecutionData: true
+            Level: ERROR
+        TracingConfiguration:
+            Enabled: true
         RoleArn: !GetAtt [StepFunctionRole, "Arn"]
+    LogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: !Sub "/aws/vendedlogs/states/${StateMachine.Name}-Logs"
+        RetentionInDays: 7
 

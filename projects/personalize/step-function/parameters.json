@@ -1,7 +1,9 @@
 {
   "S3input": "s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv",
   "SolutionArn": "NONE",
-  "DatasetGroupArn": "",
-  "DatasetArn": "",
-  "RoleArn":""
+  "DatasetGroupArn": "<add-group-arn>",
+  "DatasetArn": "<add-dataset-arn>",
+  "RoleArn":"<add-role-arn>",
+  "RecipeArn": "arn:aws:personalize:::recipe/aws-user-personalization"
 }
+

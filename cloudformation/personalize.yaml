@@ -3,13 +3,38 @@ Parameters:
     Default: Interactions
     Description: "Type of dataset resource to create in personalize"
     Type: "String"
-  SFDefBucket:
+  Bucket:
     Default: recommendation-sample-data
-    Description: "step function definition file S3 bucket"
+    Description: "S3 bucket for personalize project"
+    Type: "String"
+  LambdaKey:
+    Default: movie-lens/lambda/trigger_glue_personalize.zip
+    Description: "Key to lambda sfn trigger zip object"
     Type: "String"
   SFDefKey:
-    Default: movie-lens/sf-definition.json
+    Default: movie-lens/personalize-definition.json
     Description: "step function definition file S3 key"
+    Type: "String"
+  S3InputPrefix:
+    Default: "movie-lens/raw_data/input"
+    Description: "Key Prefix to ratings and movie csv objects in bucket"
+    Type: "String"
+  S3OutputPrefix:
+    Default: "movie-lens/transformed"
+    Description: "Key Prefix to glue outputs"
+    Type: "String"
+  RecipeArn:
+    Default: "movie-lens/transformed"
+    Description: "Key Prefix to glue outputs"
+    Type: "String"
+  DatasetImportInputS3Path:
+    Default: "s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv"
+    Description: "S3 path for interactions data for importing into personalize dataset with import job"
+    Type: "String"
+  SolutionArn:
+    Default: "NONE"
+    Description: "Pass arn if need to create solution version in existing solution resource. Defaults to 'NONE' which 
+    will create a new solution before creating solution version"
     Type: "String"
 Resources:
     PersonalizeDataset:
@@ -22,7 +47,7 @@ Resources:
     PersonalizeDatasetGroup:
         Type: AWS::Personalize::DatasetGroup
         Properties:
-          Name: RecommendGroup
+          Name: MoviesRecommendGroup
     PersonalizeSchema:
         Type: AWS::Personalize::Schema
         Properties:
@@ -71,7 +96,7 @@ Resources:
         Command:
           Name: glueetl
           PythonVersion: "3"
-          ScriptLocation: !Sub "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/personalize-glue-etl-movies.py"
+          ScriptLocation: !Sub "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/scripts/Personalize_Glue_Script.py"
         DefaultArguments:
           "--enable-continuous-cloudwatch-log": "true"
           "--enable-glue-datacatalog": "true"
@@ -79,6 +104,11 @@ Resources:
           "--enable-metrics": "true"
           "--job-bookmark-option": "job-bookmark-disable"
           "--job-language": "python"
+          "--bucket": !Ref Bucket
+          "--s3_input_path": !Sub "s3://${Bucket}/${S3InputPrefix}"
+          "--s3_output_prefix": !Ref  S3OutputPrefix
+          "--rating_repartition_number": 100
+          "--ratings_resample_fraction": 0.05
         ExecutionProperty:
           MaxConcurrentRuns: 2
         MaxRetries: 0
@@ -111,19 +141,65 @@ Resources:
       Properties:
         StateMachineName: GlueETLPersonalizeTraining
         DefinitionS3Location:
-          Bucket: !Ref SFDefBucket
+          Bucket: !Ref Bucket
           Key: !Ref SFDefKey
         LoggingConfiguration:
           Destinations:
-            - CloudWatchLogsLogGroup: !Ref LogGroup
-            IncludeExecutionData: true
-            Level: ERROR
+            - CloudWatchLogsLogGroup:
+                LogGroupArn: !GetAtt [LogGroup,Arn]
+          IncludeExecutionData: true
+          Level: ERROR
         TracingConfiguration:
-            Enabled: true
+          Enabled: true
         RoleArn: !GetAtt [StepFunctionRole, "Arn"]
     LogGroup:
       Type: AWS::Logs::LogGroup
       Properties:
-        LogGroupName: !Sub "/aws/vendedlogs/states/${StateMachine.Name}-Logs"
+        LogGroupName: !Sub "/aws/vendedlogs/states/GlueETLPersonalizeTraining-Logs"
         RetentionInDays: 7
+    LambdaSFNTrigger:
+      Type: AWS::Lambda::Function
+      Properties:
+        FunctionName: LambdaSFNTrigger
+        Handler: lambda_function.lambda_handler
+        Role:
+          Fn::GetAtt: [LambdaRole , "Arn" ]
+        Code:
+          S3Bucket: !Ref Bucket
+          S3Key: !Ref LambdaKey
+        Runtime: python3.9
+        Timeout: 60
+        MemorySize: 500
+        TracingConfig:
+          Mode: Active
+        Environment:
+          Variables:
+            SFN_NAME:
+              Fn::GetAtt: [StateMachine, Name]
+            S3_INPUT: !Ref DatasetImportInputS3Path
+            SOLUTION_ARN: !Ref SolutionArn
+            DATASET_GROUP_ARN:
+              Fn::GetAtt: [PersonalizeDatasetGroup, DatasetGroupArn]
+            DATASET_ARN:
+              Fn::GetAtt: [PersonalizeDataset, DatasetArn]
+            ROLE_ARN:
+              Fn::GetAtt: [PersonalizeRole , Arn]
+            RECIPE_ARN: !Ref RecipeArn
+    LambdaRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: "LambdaSFNTriggerRole"
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Path: /
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" ,
+                               "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess",
+                               "arn:aws:iam::aws:policy/AWSXrayFullAccess"]
 

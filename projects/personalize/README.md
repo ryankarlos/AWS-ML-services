@@ -50,10 +50,10 @@ $ aws configure set default.s3.max_concurrent_requests 20
 $ aws s3 cp datasets/personalize/ml-25m/ s3://recommendation-sample-data/movie-lens/raw_data/ --region us-east-1 --recursive --endpoint-url https://recommendation-sample-data.s3-accelerate.amazonaws.com
 
 upload: datasets\personalize\ml-25m\links.csv to s3://recommendation-sample-data/movie-lens/links.csv
-upload: datasets\personalize\ml-25m\movies.csv to s3://recommendation-sample-data/movie-lens/movies.csv
+upload: datasets\personalize\ml-25m\input\movies.csv to s3://recommendation-sample-data/movie-lens/movies.csv
 upload: datasets\personalize\ml-25m\README.txt to s3://recommendation-sample-data/movie-lens/README.txt
 upload: datasets\personalize\ml-25m\tags.csv to s3://recommendation-sample-data/movie-lens/tags.csv
-upload: datasets\personalize\ml-25m\ratings.csv to s3://recommendation-sample-data/movie-lens/ratings.csv
+upload: datasets\personalize\ml-25m\input\ratings.csv to s3://recommendation-sample-data/movie-lens/ratings.csv
 
 ```
 
@@ -64,49 +64,78 @@ as in `lambdas/data_import_personalize.zip` and you have a bucket with key `aws-
 the query accordingly. Run the following commands from root of the repo
 
 ```
-$ aws s3 cp lambdas/data_import_personalize.zip s3://recommendation-sample-data/lambda/data_import_personalize.zip
+$ aws s3 cp step_functions/personalize-definition.json s3://recommendation-sample-data/movie-lens/personalize-definition.json
+
+upload: step_functions/personalize-definition.json to s3://recommendation-sample-data/movie-lens/personalize-definition.json
+
 ```
 
 ```
-$ aws s3 cp projects/personalize/glue/movies_glue_etl.py s3://aws-glue-assets-376337229415-us-east-1/scripts/personalize-glue-etl-movies.py
+$ aws s3 cp lambdas/trigger_glue_personalize.zip s3://recommendation-sample-data/movie-lens/lambda/trigger_glue_personalize.zip
+
+upload: lambdas\trigger_glue_personalize.zip to s3://recommendation-sample-data/movie-lens/lambda/trigger_glue_personalize.zip
+
 ```
+
+```
+$ aws configure set default.s3.use_accelerate_endpoint false
+$ aws s3 cp projects/personalize/glue/Personalize_Glue_Script.py s3://aws-glue-assets-376337229415-us-east-1/scripts/Personalize_Glue_Script.py
+
+upload: projects\personalize\glue\Personalize_Glue_Script.py to s3://aws-glue-assets-376337229415-us-east-1/scripts/Personalize_Glue_Script.py
+
+```
+
+If not configured transfer acceleration for the default glue assets bucket then can set to false before running cp command.
+Otherwise, you will get the error
+`An error occurred (InvalidRequest) when calling the PutObject operation: S3 Transfer Acceleration is not configured on this bucket`
 
 
 ### CloudFormation Templates
 
-Cloudformation templates for creating glue development endpoint or the glue and fraud event resources 
-are stored in cloudformation folder. The stacks can be created by running the bash script 
-below and passing in either 'endpoint' or 'detector' argument to create a glue dve endpoint
-stack or frauddetectorglue stack
+Create cloudformation template which creates the follwing resources:
+
+* Glue Job 
+* Personalize resources (Dataset, DatasetGroup, Schema) and associated role 
+* Step Function (for running ETL and Personalize DatasetImport Job and Creating solution version) and associated role
+* lambda function (and associated role) for triggering step function execution with S3 event notification.
 
 ```
- sh projects/fraud/bash_scripts/create-resources.sh endpoint
-Creating glue dev endpoint 
+ $ aws cloudformation create-stack --stack-name PersonalizeGlue \
+ --template-body file://cloudformation/personalize.yaml \
+ --capabilities CAPABILITY_NAMED_IAM
 
 {
-    "StackId": "arn:aws:cloudformation:<region>:<account-id>:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
+    "StackId": "arn:aws:cloudformation:<region>:<account-id>:stack/PersonalizeGlue/2dc9cca0-fe63-11ec-b51b-0e44449cc4eb"
 }
 
 ```
 
-The FraudDetectorGlue stack creates the detector and associated rules, the variables, labels and outcomes
-for associating with the event type. It also creates the resources for the ETL jobs e.g. glue, crawler, lambda functions, 
-sqs, eventbridge etc. We can check that these are as they should be from the 
-console.
+### S3 event notifications
 
+We need to configure two S3 event notifications:
 
-### S3 to SNS event notification
+* S3 to lambda notification (for put raw data object event) to trigger the step function execution
+* send notifications to SNS topic created from cloudformation, when the batch jobs from Personalize complete.  
 
-We also need to configure S3 to send notifications to SNS topic created from cloudformation, when the batch jobs from Personalize complete.
-We have configured email as subscriber to SNS via protocol set as email endpoint.
+* For SNS, we have configured email as subscriber to SNS via protocol set as email endpoint.
 The SNS messages will then send email to subscriber address when event message received from S3.
 
-From root of repo, run the following script to configure bucket notification to SNS. Note: There is currently not support
-for notifications to FIFO type SNS topics. 
+From root of repo, run the following script to configure bucket notifications. 
 
 ```
-python projects/personalize/put_notification_s3.py
+$ python projects/personalize/put_notification_s3.py
+INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
+INFO:__main__:Lambda arn arn:aws:lambda:........:function:LambdaSFNTrigger for function LambdaSFNTrigger
+INFO:__main__:Topic arn arn:aws:sns:........:personalize-batch for personalize-batch
+INFO:__main__:HTTPStatusCode: 200
+INFO:__main__:RequestId: X6X9E99JE13YV6RH
+{'ResponseMetadata': {'RequestId': 'X6X9E99JE13YV6RH', 'HostId': 'yAseQ1ugcv9FKbRFxCps6MjeMnG7QFjQDVmRjhs5JQXeHjmYqzcCXH/+j1cOlz3vRiEBDhZPOnQ=', 
+'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amz-id-2': 'yAseQ1ugcv9FKbRFxCps6MjeMnG7QFjQDVmRjhs5JQXeHjmYqzcCXH/+j1cOlz3vRiEBDhZPOnQ=', 
+'x-amz-request-id': 'X6X9E99JE13YV6RH', 'date': 'Fri, 08 Jul 2022 03:04:55 GMT', 'server': 'AmazonS3', 'content-length': '0'}, 'RetryAttempts': 0}}
+
 ```
+
+Note: There is currently not support for notifications to FIFO type SNS topics. 
 
 #### Run GlueJob via Notebook and Train Solution Manually
 

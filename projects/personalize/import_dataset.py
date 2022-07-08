@@ -6,10 +6,12 @@ personalize = boto3.client("personalize")
 
 @click.command()
 @click.option(
-    "--s3_input_path",  default="s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv", help="path to input s3 for bulk import",
+    "--s3_input_path",
+    default="s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv",
+    help="path to input s3 for bulk import",
 )
 @click.option(
-    "--job_name",   default="MoviesDatasetImport", help="Name of job",
+    "--job_name", default="MoviesDatasetImport", help="Name of job",
 )
 @click.option(
     "--dataset_arn",

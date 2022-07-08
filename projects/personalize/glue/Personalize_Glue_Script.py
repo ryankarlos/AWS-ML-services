@@ -7,19 +7,31 @@ from awsglue.job import Job
 from awsglue.dynamicframe import DynamicFrameCollection
 from awsglue.dynamicframe import DynamicFrame
 
-args = getResolvedOptions(sys.argv, ["JOB_NAME"])
-sc = SparkContext()
+args = getResolvedOptions(
+    sys.argv,
+    [
+        "JOB_NAME",
+        "s3_input_path",
+        "bucket",
+        "s3_output_prefix",
+        "rating_repartition_number",
+        "ratings_resample_fraction",
+    ],
+)
+sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
+print(args)
+
+s3_input_path = args["s3_input_path"]
 
 
-# Script generated for node Rename Interactions file in S3
 def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
-    BUCKET_NAME = "recommendation-sample-data"
-    PREFIX = "movie-lens/transformed/model_input/run-"
-    S3_PATH = "s3://recommendation-sample-data/movie-lens/transformed/model_input/"
+    BUCKET_NAME = args["bucket"]
+    PREFIX = args["s3_output_prefix"]
+    S3_PATH = f"s3://{BUCKET_NAME}/{PREFIX}/model_input/"
     import boto3
 
     client = boto3.client("s3")
@@ -31,8 +43,7 @@ def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
     )
 
     response = client.list_objects(
-        Bucket=BUCKET_NAME,
-        Prefix=PREFIX,
+        Bucket=BUCKET_NAME, Prefix=f"{PREFIX}/model_input/run-",
     )
     name = response["Contents"][0]["Key"]
     print(name)
@@ -40,15 +51,15 @@ def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
     client.copy_object(
         Bucket=BUCKET_NAME,
         CopySource=f"{BUCKET_NAME}/{name}",
-        Key="movie-lens/transformed/model_input/interactions.csv",
+        Key=f"{PREFIX}/model_input/interactions.csv",
     )
     client.delete_object(Bucket=BUCKET_NAME, Key=name)
 
 
 def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
-    BUCKET_NAME = "recommendation-sample-data"
-    PREFIX = "movie-lens/transformed/metadata/run-"
-    S3_PATH = "s3://recommendation-sample-data/movie-lens/transformed/metadata/"
+    BUCKET_NAME = args["bucket"]
+    PREFIX = args["s3_output_prefix"]
+    S3_PATH = f"s3://{BUCKET_NAME}/{PREFIX}/metadata/"
     import boto3
 
     client = boto3.client("s3")
@@ -60,8 +71,7 @@ def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
     )
 
     response = client.list_objects(
-        Bucket=BUCKET_NAME,
-        Prefix=PREFIX,
+        Bucket=BUCKET_NAME, Prefix=f"{PREFIX}/metadata/run-",
     )
     name = response["Contents"][0]["Key"]
     print(name)
@@ -69,7 +79,7 @@ def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
     client.copy_object(
         Bucket=BUCKET_NAME,
         CopySource=f"{BUCKET_NAME}/{name}",
-        Key="movie-lens/transformed/metadata/metadata.csv",
+        Key=f"{PREFIX}/metadata/metadata.csv",
     )
     client.delete_object(Bucket=BUCKET_NAME, Key=name)
 
@@ -84,9 +94,7 @@ S3inputmovies_node1656882361110 = glueContext.create_dynamic_frame.from_options(
     },
     connection_type="s3",
     format="csv",
-    connection_options={
-        "paths": ["s3://recommendation-sample-data/movie-lens/raw_data/movies.csv"]
-    },
+    connection_options={"paths": [f"{s3_input_path}/movies.csv"]},
     transformation_ctx="S3inputmovies_node1656882361110",
 )
 
@@ -100,25 +108,24 @@ S3inputratings_node1656882568718 = glueContext.create_dynamic_frame.from_options
     },
     connection_type="s3",
     format="csv",
-    connection_options={
-        "paths": ["s3://recommendation-sample-data/movie-lens/raw_data/ratings.csv"],
-        "recurse": True,
-    },
+    connection_options={"paths": [f"{s3_input_path}/ratings.csv"], "recurse": True,},
     transformation_ctx="S3inputratings_node1656882568718",
 )
 
 resampledratings_dyf = DynamicFrame.fromDF(
-    S3inputratings_node1656882568718.toDF().sample(False, 0.5, seed=0),
+    S3inputratings_node1656882568718.toDF().sample(
+        False, float(args["ratings_resample_fraction"]), seed=0
+    ),
     glueContext,
     "resampled ratings",
 )
 
-repartitioned_df = resampledratings_dyf.toDF().repartition(100)
+repartitioned_df = resampledratings_dyf.toDF().repartition(
+    int(args["rating_repartition_number"])
+)
 
 repartitioned_dyf = DynamicFrame.fromDF(
-    repartitioned_df,
-    glueContext,
-    "repartitioned ratings",
+    repartitioned_df, glueContext, "repartitioned ratings",
 )
 
 
@@ -219,7 +226,6 @@ single_part_metadata_dyf = DynamicFrame.fromDF(
 )
 
 
-# Script generated for node Rename Interactions file in S3
 RenameInteractionsfileinS3_node1656886003325 = RenameS3ItemsUsersData(
     glueContext,
     DynamicFrameCollection(
@@ -227,10 +233,13 @@ RenameInteractionsfileinS3_node1656886003325 = RenameS3ItemsUsersData(
     ),
 )
 
-# Script generated for node Rename Metadata file in S3
+
 RenameMetadatafileinS3_node1656885522913 = RenameS3Metadata(
     glueContext,
     DynamicFrameCollection(
         {"single_partition_metadata": single_part_metadata_dyf}, glueContext
     ),
 )
+
+
+job.commit()

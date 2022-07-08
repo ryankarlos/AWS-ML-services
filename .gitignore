@@ -11,4 +11,4 @@ datasets/fraud-sample-data/dataset1/fraud*.csv
 datasets/personalize/ml-25m/genone-scores.csv
 datasets/personalize/ml-25m/genome-scores.csv
 datasets/personalize/ml-25m/tags.csv
-datasets/personalize/ml-25m/ratings.csv
+datasets/personalize/ml-25m/input/ratings.csv

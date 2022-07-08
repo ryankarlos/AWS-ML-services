@@ -10,7 +10,10 @@
         "MaxCapacity": 4
       },
       "Next": "Wait",
-      "ResultPath": "$.Results"
+      "ResultPath": "$.Results",
+      "ResultSelector": {
+        "Id.$": "$.JobRunId"
+      }
     },
     "Wait": {
       "Type": "Wait",
@@ -21,17 +24,21 @@
       "Type": "Task",
       "Parameters": {
         "JobName": "Recommendation-movies-transform",
-        "RunId.$": "$.Results.JobRunId"
+        "RunId.$": "$.Results.Id"
       },
       "Resource": "arn:aws:states:::aws-sdk:glue:getJobRun",
       "Next": "Check Glue Job Status Succeeded",
-      "ResultPath": "$.Results"
+      "ResultPath": "$.Results",
+      "ResultSelector": {
+        "Id.$": "$.JobRun.Id",
+        "JobRunState.$": "$.JobRun.JobRunState"
+      }
     },
     "Check Glue Job Status Succeeded": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.Results.status.JobRun.JobRunState",
+          "Variable": "$.Results.JobRunState",
           "StringEquals": "SUCCEEDED",
           "Next": "CreateDatasetImportJob"
         }
@@ -41,10 +48,12 @@
     "CreateDatasetImportJob": {
       "Type": "Task",
       "Parameters": {
-        "DataSource.$": "$.S3input",
+        "DataSource": {
+          "DataLocation.$": "$.S3input"
+        },
         "DatasetArn.$": "$.DatasetArn",
         "JobName": "MoviesImportJob",
-        "RoleArn": "$.RoleArn"
+        "RoleArn.$": "$.RoleArn"
       },
       "Resource": "arn:aws:states:::aws-sdk:personalize:createDatasetImportJob",
       "Next": "Wait before polling Import Job",
@@ -58,12 +67,13 @@
     "PollDatasetImportJobStatus": {
       "Type": "Task",
       "Parameters": {
-        "DatasetImportJobArn": "$.Results.datasetImportJobArn"
+        "DatasetImportJobArn.$": "$.Results.DatasetImportJobArn"
       },
       "Resource": "arn:aws:states:::aws-sdk:personalize:describeDatasetImportJob",
       "Next": "Check Import Job Status Succeeded",
       "ResultSelector": {
-        "Status.$": "$.datasetImportJob.status"
+        "Status.$": "$.DatasetImportJob.Status",
+        "DatasetImportJobArn.$": "$.DatasetImportJob.DatasetImportJobArn"
       },
       "ResultPath": "$.Results"
     },
@@ -72,7 +82,7 @@
       "Choices": [
         {
           "Variable": "$.Results.Status",
-          "StringEquals": "SUCCEEDED",
+          "StringEquals": "ACTIVE",
           "Next": "CreateSolutionChoice"
         }
       ],
@@ -86,7 +96,7 @@
             "Variable": "$.SolutionArn",
             "StringEquals": "NONE"
           },
-          "Next": "CreateSolutionVersion"
+          "Next": "CreateVersioninExistingSolution"
         }
       ],
       "Default": "CreateSolution"
@@ -94,18 +104,27 @@
     "CreateSolution": {
       "Type": "Task",
       "Parameters": {
-        "DatasetGroupArn": "$.DatasetGroupArn",
+        "DatasetGroupArn.$": "$.DatasetGroupArn",
         "Name": "MoviesModel",
-        "PerformAutoML": "true",
+        "RecipeArn.$": "$.RecipeArn",
         "PerformHPO": "true"
       },
       "Resource": "arn:aws:states:::aws-sdk:personalize:createSolution",
-      "End": true
+      "ResultPath": "$.Results",
+      "Next": "CreateVersioninNewSolution"
     },
-    "CreateSolutionVersion": {
+    "CreateVersioninNewSolution": {
+      "Type": "Task",
+      "End": true,
+      "Parameters": {
+        "SolutionArn.$": "$.Results.SolutionArn"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:personalize:createSolutionVersion"
+    },
+    "CreateVersioninExistingSolution": {
       "Type": "Task",
       "Parameters": {
-        "SolutionArn": "$.SolutionArn"
+        "SolutionArn.$": "$.SolutionArn"
       },
       "Resource": "arn:aws:states:::aws-sdk:personalize:createSolutionVersion",
       "End": true

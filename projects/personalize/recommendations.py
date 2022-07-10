@@ -47,7 +47,7 @@ def create_batch_segment_job(
 
 
 def create_batch_inference_job(
-    input_s3_path, output_s3_path, job_name, role_arn, sol_ver_arn, weight, cutoff,
+    input_s3_path, output_s3_path, job_name, role_arn, sol_ver_arn, num_results, config
 ):
     """
     Create a batch inference job to get batch item recommendations for users based on input data from Amazon S3.
@@ -61,16 +61,13 @@ def create_batch_inference_job(
     :param cutoff:User-Personalization recipe specific itemExplorationConfig hyperparameter, explorationcutoff. Defaults to 30
     :return:
     """
+    config = json.loads(config)
     response = personalize_rec.create_batch_inference_job(
         solutionVersionArn=sol_ver_arn,
         jobName=job_name,
         roleArn=role_arn,
-        batchInferenceJobConfig={
-            "itemExplorationConfig": {
-                "explorationWeight": f"{weight}",
-                "explorationItemAgeCutOff": f"{cutoff}",
-            }
-        },
+        numResults=num_results,
+        batchInferenceJobConfig=config,
         jobInput={"s3DataSource": {"path": input_s3_path}},
         jobOutput={"s3DataDestination": {"path": output_s3_path}},
     )
@@ -128,12 +125,12 @@ def get_movie_names_from_id(bucket, key, movie_id):
 )
 @click.option(
     "--batch_input_key",
-    default="movie-lens/batch/batch.csv",
+    default="movie-lens/batch/input/users.json",
     help="key for data for batch recommendations",
 )
 @click.option(
     "--batch_results_key",
-    default="movie-lens/batch/batch.csv",
+    default="movie-lens/batch/results/",
     help="key for batch prediction results",
 )
 @click.option(
@@ -142,7 +139,7 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="key for raw movies dataset containing movie titles and id mapping",
 )
 @click.option(
-    "--job_name", default="MoviesRealtimeRecommend", help="Name of job",
+    "--job_name", help="Name of job",
 )
 @click.option(
     "--sol_arn", help="arn of solution version to use",
@@ -157,9 +154,8 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="number of users to predict for in each line of input data",
 )
 @click.option(
-    "--exploration_config",
-    default=(0.3, 30),
-    type=(float, int),
+    "--config",
+    default='{"itemExplorationConfig": {"explorationWeight": "0.3", "explorationItemAgeCutOff": "30"}}',
     help="User-Personalization recipe specific itemExplorationConfig hyperparameters: explorationWeight and explorationcutoff",
 )
 @click.option(
@@ -197,7 +193,7 @@ def main(
     sol_arn,
     role_name,
     num_users,
-    exploration_config,
+    config,
     campaign_arn,
     user_id,
     num_results,
@@ -207,13 +203,9 @@ def main(
     s3_output_path = f"s3://{bucket}/{batch_results_key}"
     role_arn = iam.get_role(RoleName=role_name)["Role"]["Arn"]
     if recommendation_mode == "batch_inference":
-
-        weight, cutoff = exploration_config
-        logger.info(
-            f"Running batch inference job {job_name} with weight: {weight} and cutoff: {cutoff}"
-        )
+        logger.info(f"Running batch inference job {job_name} with config: {config}")
         return create_batch_inference_job(
-            s3_input_path, s3_output_path, job_name, role_arn, sol_arn, weight, cutoff,
+            s3_input_path, s3_output_path, job_name, role_arn, sol_arn, num_results, config
         )
     elif recommendation_mode == "batch_segment":
         logger.info(f"Running batch segment job {job_name} for {num_users} users")

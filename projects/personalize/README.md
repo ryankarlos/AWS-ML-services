@@ -289,11 +289,21 @@ https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html
 If you are getting batch recommendations, you don't need to create a campaign.
 
 ```
-python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> \
---config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.3\",\"explorationItemAgeCutOff\":\"30\"}}" --mode create
+$ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> --mode create
 
+2022-07-09 21:12:08,412 - deploy - INFO - Name: MoviesCampaign
+2022-07-09 21:12:08,412 - deploy - INFO - ARN: arn:aws:personalize:........:campaign/MoviesCampaign
+2022-07-09 21:12:08,412 - deploy - INFO - Status: CREATE PENDING
+```
+
+An additional arh `--config` can be passed, to set the explorationWeight and explorationItemAgeCutOff parameters for user
+personalizaion recipe https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html#bandit-hyperparameters
+These parameters default to 0.3 and 30.0 respectively if not passed (as in previous example)
+To set the explorationWeight and ItemAgeCutoff to 0.6 and 100 respectively, run the script as below:
+
+```
 $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> \
---config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.3\",\"explorationItemAgeCutOff\":\"30\"}}" --mode create
+--config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.6\",\"explorationItemAgeCutOff\":\"100\"}}" --mode create
 
 2022-07-09 21:12:08,412 - deploy - INFO - Name: MoviesCampaign
 2022-07-09 21:12:08,412 - deploy - INFO - ARN: arn:aws:personalize:........:campaign/MoviesCampaign
@@ -312,7 +322,6 @@ These scores represent the relative certainty that Amazon Personalize has in whe
 Higher scores represent greater certainty.
 https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
 
-
 Amazon Personalize scores all of the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
 all scores equals 1. For example, if you're getting movie recommendations for a user and there are three movies in the Items dataset, 
 their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
@@ -321,10 +330,10 @@ https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
 
 We can run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
 recommendation mode to realtime.
-So for user 1, the model recommends movies of drama/romance theme.
+So for user `1`, the model recommends movies of drama/romance theme.
 
 ```
-python projects/personalize/recommendations.py --sol_arn <solution-arn> --role_name PersonalizeRole \
+python projects/personalize/recommendations.py --job_name Moviesrealtimerecommend --sol_arn <solution-arn> --role_name PersonalizeRole \
 --campaign_arn <campaign-arn> --user_id 1 --recommendation_mode realtime
 2022-07-09 21:22:46,038 - recommendations - INFO - Generating 10 recommendations for user 1 using campaign arn:aws:personalize:........:campaign/MoviesCampaign
 2022-07-09 21:22:46,646 - recommendations - INFO - Recommended items:
@@ -341,7 +350,7 @@ Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004) (Drama|Myster
 In the Mood For Love (Fa yeung nin wa) (2000) (Drama|Romance)
 ```
 
-User 40 has been reommended crime/drama themed movies.
+User `40` has been recommended crime/drama themed movies.
 
 ```
 Kill Bill: Vol. 2 (2004) (Action|Drama|Thriller)
@@ -354,10 +363,9 @@ Mystic River (2003) (Crime|Drama|Mystery)
 No Country for Old Men (2007) (Crime|Drama)
 Sin City (2005) (Action|Crime|Film-Noir|Mystery|Thriller)
 Platoon (1986) (Drama|War)
-
 ```
 
-User 162540 is interesting and seems to have recommended a combination of children/comedy and action/thriller 
+User `162540` is interesting and seems to have recommended a combination of children/comedy and action/thriller 
 genre movies based on users interactions.
 
 ```
@@ -371,7 +379,6 @@ Fight Club (1999) (Action|Crime|Drama|Thriller)
 Night at the Museum (2006) (Action|Comedy|Fantasy|IMAX)
 Dark Knight, The (2008) (Action|Crime|Drama|IMAX)
 Hancock (2008) (Action|Adventure|Comedy|Crime|Fantasy)
-
 ```
 
 We can also limit the number of results by passing in value for arg `--num_results`, which defaults to 10.
@@ -384,11 +391,49 @@ Firm, The (1993) (Drama|Thriller)
 Wild Things (1998) (Crime|Drama|Mystery|Thriller)
 ```
 
-To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon S3 bucket, uses your solution version 
-to generate item recommendations, and then exports the recommendations to an Amazon S3 bucket.
-The input data can be a list of users or items or list of users each with a collection of items in JSON format. Use a batch inference job when you want to get batch item 
-recommendations for your users or find similar items across an inventory.
-To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon S3 bucket, uses your solution version
-trained with a USER_SEGMENTATION recipe to generate user segments for each row of input data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in 
-descending order based on the probability that each user will interact with items in your inventory.
-https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html
+To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon 
+S3 bucket, uses your solution version to generate item recommendations, and then exports the recommendations to an Amazon S3 bucket.
+The input data can be a list of users or items or list of users each with a collection of items in JSON format. Use a batch inference 
+job when you want to get batch item recommendations for your users or find similar items across an inventory.
+To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon
+S3 bucket, uses your solution version trained with a USER_SEGMENTATION recipe to generate user segments for each row of input 
+data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in descending order based on the probability that 
+each user will interact with items in your inventory. https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html
+
+The input data in S3 needs to be a json file with the data in a specific format as specified in https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples
+For this example we will use a sample as in `datasets\personalize\ml-25m\batch\input\users.json` and upload this to S3 bucket `recommendation-sample-data` in
+`movie-lens/batch/input/users.json`. The following script uses the default s3 bucket name `recommendation-sample-data` and input data key `movie-lens/batch/input/users.json`.
+These can be overridden by passing a value to the `--bucket` and `--batch_input_key` args respectively. The results output will be stored in `movie-lens/batch/results/`
+but a different path can be chosen by passing a path to `--batch_results_key` arg.
+
+```
+$ python projects/personalize/recommendations.py --job_name BatchInferenceMovies --num_results 25 --sol_arn arn:aws:personalize:.........:solution/PersonalizeModel/03c184cc --role_name PersonalizeRole
+2022-07-10 05:50:55,409 - recommendations - INFO - Running batch inference job BatchInferenceMovies with config: {"itemExplorationConfig": {"explorationWeight": "0.3", "explorationItemAgeCutOff": "30"}}
+2022-07-10 05:50:56,140 - recommendations - INFO - Response:
+
+ {
+     'batchInferenceJobArn': 'arn:aws:personalize:.......:batch-inference-job/BatchInferenceMovies', 
+     'ResponseMetadata': 
+        {
+            'RequestId': 'e9cf11a6-ce65-456b-b17c-a4c55d858e5a', 
+            'HTTPStatusCode': 200, 
+            'HTTPHeaders': 
+                {
+                    'date': 'Sun, 10 Jul 2022 04:50:57 GMT', 
+                    'content-type': 'application/x-amz-json-1.1', 
+                    'content-length': '110', 
+                    'connection': 'keep-alive', 
+                    'x-amzn-requestid': 'e9cf11a6-ce65-456b-b17c-a4c55d858e5a'
+                }, 
+                    'RetryAttempts': 0
+        }
+ }
+
+```
+
+The results file `users.json.out` should be stored in destination folder specified `movie-lens/batch/results/`.
+An example of the results is stored in `atasets\personalize\ml-25m\batch\results\users.json.out`
+The format is as described https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples
+and each line contains a json with the input user id and the output recommended item ids, in this case 25 recommendations since we specified this in api call.
+
+We can then retrieve the movie title and genres by mapping the `item_id` to title in movies.csv file.

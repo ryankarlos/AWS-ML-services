@@ -156,19 +156,17 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 #### Trigger Workflow for Training Solution
 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
-
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
 
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/train_app_service_map_xray.png"></img>
 
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_lambda.png"></img>
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_sfn.png"></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_traces_sfn.png"></img>
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline1.png"></img>
 
@@ -209,8 +207,6 @@ resampledratings_dyf = DynamicFrame.fromDF(
 resampledratings_dyf.toDF().count()
 ```
 
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
 
 We can then import dataset into personalize by running the following script:
 
@@ -256,7 +252,7 @@ Amazon Personalize then creates the solution version using the training set. Aft
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
 newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
+<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
 
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter

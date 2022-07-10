@@ -156,6 +156,27 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 #### Trigger Workflow for Training Solution
 
 
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
+
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_lambda.png"></img>
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_sfn.png"></img>
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline1.png"></img>
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline2.png"></img>
+
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/sfn_successful_run_create_new_sol.png"></img>
 
 
 #### Run GlueJob via Notebook and Train Solution Manually
@@ -235,7 +256,7 @@ Amazon Personalize then creates the solution version using the training set. Aft
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
 newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO"></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
 
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter
@@ -311,6 +332,10 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 ```
 
 #### Recommendations
+
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_recommendation_workflow.png"></img>
+
 
 You get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
 To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, when you get recommendations or get a personalized ranking.

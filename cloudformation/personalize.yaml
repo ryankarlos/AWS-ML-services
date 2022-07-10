@@ -24,8 +24,16 @@ Parameters:
     Description: "Key Prefix to glue outputs"
     Type: "String"
   RecipeArn:
-    Default: "movie-lens/transformed"
-    Description: "Key Prefix to glue outputs"
+    Default: "arn:aws:personalize:::recipe/aws-user-personalization"
+    Description: "Recipe for training solution in Personalize"
+    Type: "String"
+  RepartionNumber:
+    Default: 100
+    Description: "The number of partitions to split the larger ratings csv dataset into when processing in glue pyspark"
+    Type: "Number"
+  RatingsResampleFraction:
+    Default: 0.05
+    Description: "Fraction of ratings csv to keep after resampling. The default results in 1 million rows approximately"
     Type: "String"
   DatasetImportInputS3Path:
     Default: "s3://recommendation-sample-data/movie-lens/transformed/model_input/interactions.csv"
@@ -35,6 +43,10 @@ Parameters:
     Default: "NONE"
     Description: "Pass arn if need to create solution version in existing solution resource. Defaults to 'NONE' which 
     will create a new solution before creating solution version"
+    Type: "String"
+  SolutionName:
+    Default: "MoviesModel"
+    Description: "If SolutionArn not specified, creates new solution with this name."
     Type: "String"
 Resources:
     PersonalizeDataset:
@@ -107,8 +119,8 @@ Resources:
           "--bucket": !Ref Bucket
           "--s3_input_path": !Sub "s3://${Bucket}/${S3InputPrefix}"
           "--s3_output_prefix": !Ref  S3OutputPrefix
-          "--rating_repartition_number": 100
-          "--ratings_resample_fraction": 0.05
+          "--rating_repartition_number": !Ref RepartionNumber
+          "--ratings_resample_fraction": !Ref RatingsResampleFraction
         ExecutionProperty:
           MaxConcurrentRuns: 2
         MaxRetries: 0
@@ -178,6 +190,7 @@ Resources:
               Fn::GetAtt: [StateMachine, Name]
             S3_INPUT: !Ref DatasetImportInputS3Path
             SOLUTION_ARN: !Ref SolutionArn
+            SOLUTION_NAME: !Ref SolutionName
             DATASET_GROUP_ARN:
               Fn::GetAtt: [PersonalizeDatasetGroup, DatasetGroupArn]
             DATASET_ARN:

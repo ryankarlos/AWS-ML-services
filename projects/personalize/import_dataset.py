@@ -1,7 +1,16 @@
 import boto3
 import click
+import logging
+import sys
 
 personalize = boto3.client("personalize")
+
+logger = logging.getLogger("dataset_import")
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 @click.command()
@@ -30,15 +39,15 @@ def import_datatset_to_personalize(s3_input_path, job_name, dataset_arn, role_ar
 
     dsij_arn = response["datasetImportJobArn"]
 
-    print("Dataset Import Job arn: " + dsij_arn)
+    logger.info("Dataset Import Job arn: " + dsij_arn)
 
     description = personalize.describe_dataset_import_job(datasetImportJobArn=dsij_arn)[
         "datasetImportJob"
     ]
 
-    print("Name: " + description["jobName"])
-    print("ARN: " + description["datasetImportJobArn"])
-    print("Status: " + description["status"])
+    logger.info("Name: " + description["jobName"])
+    logger.info("ARN: " + description["datasetImportJobArn"])
+    logger.info("Status: " + description["status"])
     return response
 
 

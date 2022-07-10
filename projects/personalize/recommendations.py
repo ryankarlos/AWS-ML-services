@@ -1,9 +1,23 @@
 import boto3
 import click
 import json
+import logging
+import sys
+import pandas as pd
+import s3fs
+import io
 
 personalize_rec = boto3.client(service_name="personalize")
 personalizeRt = boto3.client("personalize-runtime")
+s3 = boto3.client("s3")
+iam = boto3.client("iam")
+
+logger = logging.getLogger("recommendations")
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def create_batch_segment_job(
@@ -28,6 +42,7 @@ def create_batch_segment_job(
         jobInput={"s3DataSource": {"path": input_s3_path}},
         jobOutput={"s3DataDestination": {"path": output_s3_path}},
     )
+    logger.info(f"Response: \n\n {response}")
     return response
 
 
@@ -59,10 +74,13 @@ def create_batch_inference_job(
         jobInput={"s3DataSource": {"path": input_s3_path}},
         jobOutput={"s3DataDestination": {"path": output_s3_path}},
     )
+    logger.info(f"Response: \n\n {response}")
     return response
 
 
-def get_real_time_recommendations(campaign_arn, user_id, num_results, **context):
+def get_real_time_recommendations(
+    campaign_arn, user_id, bucket, movies_key, num_results, **context
+):
     """
     To get personalized recommendations or similar item recommendations from an Amazon Personalize campaign.
     If your campaign uses contextual metadata (for requirements see Increasing recommendation relevance with
@@ -88,32 +106,54 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
             campaignArn=campaign_arn, userId=user_id, numResults=num_results
         )
 
-    print("Recommended items")
+    logger.info("Recommended items: \n")
     for item in response["itemList"]:
-        print(item["itemId"])
+        movie_id = int(item["itemId"])
+        title, genre = get_movie_names_from_id(bucket, movies_key, movie_id)
+        print(f"{title} ({genre})")
     return response
+
+
+def get_movie_names_from_id(bucket, key, movie_id):
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    df = pd.read_csv(io.BytesIO(obj["Body"].read()))
+    title = df.loc[df["movieId"] == movie_id, ["title"]].values.flatten()[0]
+    genre = df.loc[df["movieId"] == movie_id, ["genres"]].values.flatten()[0]
+    return title, genre
 
 
 @click.command()
 @click.option(
-    "--s3_input_path", help="path to input s3 data for batch recommendations",
+    "--bucket", default="recommendation-sample-data", help="bucket name",
 )
 @click.option(
-    "--s3_output_path",
-    help="path to output s3 folder for storing batch prediction results",
+    "--batch_input_key",
+    default="movie-lens/batch/batch.csv",
+    help="key for data for batch recommendations",
 )
 @click.option(
-    "--job_name", help="Name of job",
+    "--batch_results_key",
+    default="movie-lens/batch/batch.csv",
+    help="key for batch prediction results",
+)
+@click.option(
+    "--movies_data_key",
+    default="movie-lens/raw_data/input/movies.csv",
+    help="key for raw movies dataset containing movie titles and id mapping",
+)
+@click.option(
+    "--job_name", default="MoviesRealtimeRecommend", help="Name of job",
 )
 @click.option(
     "--sol_arn", help="arn of solution version to use",
 )
 @click.option(
-    "--role_arn", help="arn of role which has access to S3",
+    "--role_name", default="PersonalizeRole", help="role name which has access to S3",
 )
 @click.option(
     "--num_users",
     default=10,
+    type=click.INT,
     help="number of users to predict for in each line of input data",
 )
 @click.option(
@@ -132,6 +172,7 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
 @click.option(
     "--num_results",
     default=10,
+    type=click.INT,
     help="number of recommended items for real time recommendation",
 )
 @click.option(
@@ -148,11 +189,13 @@ def get_real_time_recommendations(campaign_arn, user_id, num_results, **context)
 )
 def main(
     recommendation_mode,
-    s3_input_path,
-    s3_output_path,
+    bucket,
+    batch_input_key,
+    batch_results_key,
+    movies_data_key,
     job_name,
     sol_arn,
-    role_arn,
+    role_name,
     num_users,
     exploration_config,
     campaign_arn,
@@ -160,19 +203,35 @@ def main(
     num_results,
     context,
 ):
+    s3_input_path = f"s3://{bucket}/{batch_input_key}"
+    s3_output_path = f"s3://{bucket}/{batch_results_key}"
+    role_arn = iam.get_role(RoleName=role_name)["Role"]["Arn"]
     if recommendation_mode == "batch_inference":
+
         weight, cutoff = exploration_config
+        logger.info(
+            f"Running batch inference job {job_name} with weight: {weight} and cutoff: {cutoff}"
+        )
         return create_batch_inference_job(
             s3_input_path, s3_output_path, job_name, role_arn, sol_arn, weight, cutoff,
         )
     elif recommendation_mode == "batch_segment":
+        logger.info(f"Running batch segment job {job_name} for {num_users} users")
         return create_batch_segment_job(
             s3_input_path, s3_output_path, job_name, num_users, role_arn, sol_arn
         )
     elif recommendation_mode == "realtime":
         context = json.loads(context)
+        if len(context) == 0:
+            logger.info(
+                f"Generating {num_results} recommendations for user {user_id} using campaign {campaign_arn}"
+            )
+        else:
+            logger.info(
+                f"Generating recommendations for user {user_id} using campaign {campaign_arn}, with provided context: \n\n {context}"
+            )
         return get_real_time_recommendations(
-            campaign_arn, user_id, num_results, **context
+            campaign_arn, user_id, bucket, movies_data_key, num_results, **context
         )
     else:
         raise ValueError(

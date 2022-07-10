@@ -1,34 +1,31 @@
+import sys
+import logging
 import boto3
 import click
+
+logger = logging.getLogger("evaluate")
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 personalize = boto3.client("personalize")
 
 
 @click.command()
 @click.option(
-    "--solution_arn", help="solution version arn for evaluating metrics",
+    "--solution_version_arn",
+    help="solution version arn for active solution version for evaluating metrics",
 )
-def evaluate_solution_metrics(solution_arn):
+def evaluate_solution_metrics(solution_version_arn):
 
     solution_version_description = personalize.describe_solution_version(
-        solutionVersionArn=solution_arn
+        solutionVersionArn=solution_version_arn
     )["solutionVersion"]
-    print("Solution version status: " + solution_version_description["status"])
-
-    # Use the solution ARN to get the solution status.
-    solution_description = personalize.describe_solution(solutionArn=solution_arn)[
-        "solution"
-    ]
-    solution_status = solution_description["status"]
-    print("Solution status: " + solution_status)
-
-    if solution_status == "ACTIVE":
-        response = personalize.get_solution_metrics(solutionVersionArn=solution_arn)
-        print(response["metrics"])
-    else:
-        print(
-            f"cannot get solution metrics as solution status is not 'ACTIVE'. Solution status is in {solution_status} mode"
-        )
+    logger.info("Solution version status: " + solution_version_description["status"])
+    response = personalize.get_solution_metrics(solutionVersionArn=solution_version_arn)
+    logger.info(f"Metrics: \n\n {response['metrics']}")
 
 
 if __name__ == "__main__":

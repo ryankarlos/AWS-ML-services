@@ -105,7 +105,7 @@
       "Type": "Task",
       "Parameters": {
         "DatasetGroupArn.$": "$.DatasetGroupArn",
-        "Name": "MoviesModel",
+        "Name.$": "$.SolutionName",
         "RecipeArn.$": "$.RecipeArn",
         "PerformHPO": "true"
       },

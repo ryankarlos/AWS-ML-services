@@ -92,7 +92,7 @@ Otherwise, you will get the error
 
 ### CloudFormation Templates
 
-Create cloudformation template which creates the follwing resources:
+Create cloudformation template which creates the following resources:
 
 * Glue Job 
 * Personalize resources (Dataset, DatasetGroup, Schema) and associated role 
@@ -109,6 +109,21 @@ Create cloudformation template which creates the follwing resources:
 }
 
 ```
+
+If successful, we should see the following resources successfully created in the resources tab
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_parameters_tab.png"></img>
+
+If we run the command as above, just using the default parameters, we should see the key value pairs listed in the parameters
+tab as in screenshot below.
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_resources_tab.png"></img>
+
+We should see that all the services should be created. For example navigate to the Step function console and click on the 
+sfn name `GlueETLPersonalizeTraining`
+
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/step_function_diagram_with_definition_console.png"></img>
+
 
 ### S3 event notifications
 
@@ -137,6 +152,12 @@ INFO:__main__:RequestId: X6X9E99JE13YV6RH
 
 Note: There is currently not support for notifications to FIFO type SNS topics. 
 
+
+#### Trigger Workflow for Training Solution
+
+
+
+
 #### Run GlueJob via Notebook and Train Solution Manually
 
 Create GlueDev endpoint using CloudFormation stack `cloudformation\glue-dev-endpoint.yaml`
@@ -150,6 +171,23 @@ Then create notebook using this endpoint and upload `projects\personalize\glue\n
 Once the notebook has finished running, you should see two folders in `s3://recommendation-sample-data/movie-lens/transformed/` as below. 
 Each of these will contain a csv file corresponding to the interactions data (which will be used for training solution) and 
 additional metadata (i.e. columns with movie genres, ratings etc)
+
+NOTE: The notebook by default samples half the number of rows in the ratings csv which is still around 12.5 million rows.
+This can result in a large bill if training a model (as mentioned in previous section).
+You may want to adjust the fraction parameter to sample method, to a lower value (e.g. 0.05) and check the ratings 
+dataframe row count afterwards.
+
+```
+resampledratings_dyf = DynamicFrame.fromDF(
+    S3inputratings_node1656882568718.toDF().sample(False, 0.5, seed=0),
+    glueContext,
+    "resampled ratings",
+)
+
+
+resampledratings_dyf.toDF().count()
+```
+
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
 
@@ -177,7 +215,180 @@ https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PE
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
 
-Wait for solution version to print an ACTIVE status. The solution should train for about 1 hour. 
+Wait for solution version to print an ACTIVE status. Training can take a while, depending on the dataset size and number of user-item
+interactions. If using AutoMl this can take longer. Be careful, that the training time (hrs) value is  based on 1 hr of compute capacity 
+(default is 4CPU and 8GiB memory). However, this can be automatically adjusted if more efficient instance type is chosen to 
+train the data in order to complete the job more quickly. In this case, the training hours metric computed will be adjusted and increased , 
+resulting in a larger bill. Assume the interactions dataset is created from 12 million rows of the ratings csv in glue ETL job (e.g. if we set
+the glue parameter ,
+this can result in 560 training hours, and over $130 bill ! 
+
+#### Evaluating solution metrics 
+
+You can use offline metrics to evaluate the performance of the trained model before you create a campaign and provide recommendations. 
+Offline metrics allow you to view the effects of modifying a solution's hyperparameters or compare results from models trained with the same data.
+https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+To get performance metrics, Amazon Personalize splits the input interactions data into a training set and a testing set. The split depends on the type of recipe you choose:
+For USER_SEGMENTATION recipes, the training set consists of 80% of each user's interactions data and the testing set consists of 20% of each user's interactions data.
+For all other recipe types, the training set consists of 90% of your users and their interactions data. The testing set consists of the remaining 10% of users and their interactions data.
+Amazon Personalize then creates the solution version using the training set. After training completes, Amazon Personalize gives the new solution version the oldest 90% of each user’s 
+data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
+newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO"></img>
 
+You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
+`solutionVersionArn` parameter
+
+```
+python projects/personalize/evaluate_solution.py --solution_version_arn <solution-version-arn>
+2022-07-09 20:31:24,671 - evaluate - INFO - Solution version status: ACTIVE
+2022-07-09 20:31:24,787 - evaluate - INFO - Metrics:
+
+ {'coverage': 0.1233, 'mean_reciprocal_rank_at_25': 0.1208, 'normalized_discounted_cumulative_gain_at_10': 0.1396, 'normalized_discounted_cumulative_gain_at_25': 0.1996, 'normalized_discounted_cumulative_gain_at_5': 0.1063, 'precision_at_10': 0.0367, 'precision_at_25': 0.0296, 'precision_at_5': 0.0423}
+```
+
+The above metrics are described below :
+
+* coverage : An evaluation metric that tells you the proportion of unique items that Amazon Personalize might recommend using your model 
+out of the total number of unique items in Interactions and Items datasets. To make sure Amazon Personalize recommends more of your items, 
+use a model with a higher coverage score. Recipes that feature item exploration, such as User-Personalization, have higher coverage than those that 
+don’t, such as popularity-count.
+https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+
+* mean reciprocal rank at 25
+An evaluation metric that assesses the relevance of a model’s highest ranked recommendation. Amazon Personalize calculates this metric 
+using the average accuracy of the model when ranking the most relevant recommendation out of the top 25 recommendations over all requests for recommendations.
+This metric is useful if you're interested in the single highest ranked recommendation.
+https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+
+
+* normalized discounted cumulative gain (NCDG) at K (5/10/25)
+An evaluation metric that tells you about the relevance of your model’s highly ranked recommendations, where K is a sample size of 5, 10, or 25 recommendations. 
+Amazon Personalize calculates this by assigning weight to recommendations based on their position in a ranked list, where each recommendation is 
+discounted (given a lower weight) by a factor dependent on its position. The normalized discounted cumulative gain at K assumes that recommendations that 
+are lower on a list are less relevant than recommendations higher on the list.
+Amazon Personalize uses a weighting factor of 1/log(1 + position), where the top of the list is position 1.
+This metric rewards relevant items that appear near the top of the list, because the top of a list usually draws more attention.
+https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+
+
+* precision at K
+An evaluation metric that tells you how relevant your model’s recommendations are based on a sample size of K (5, 10, or 25) recommendations. 
+Amazon Personalize calculates this metric based on the number of relevant recommendations out of the top K recommendations, divided by K, 
+where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items.
+https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+
+  
+#### Creating Campaign for realtime recommendations
+
+A campaign is a deployed solution version (trained model) with provisioned dedicated transaction capacity for creating 
+real-time recommendations for your application users.  After you complete Preparing and importing data and Creating a solution, you are ready to 
+deploy your solution version by creating an AWS Personalize Campaign
+https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html
+If you are getting batch recommendations, you don't need to create a campaign.
+
+```
+python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> \
+--config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.3\",\"explorationItemAgeCutOff\":\"30\"}}" --mode create
+
+$ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> \
+--config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.3\",\"explorationItemAgeCutOff\":\"30\"}}" --mode create
+
+2022-07-09 21:12:08,412 - deploy - INFO - Name: MoviesCampaign
+2022-07-09 21:12:08,412 - deploy - INFO - ARN: arn:aws:personalize:........:campaign/MoviesCampaign
+2022-07-09 21:12:08,412 - deploy - INFO - Status: CREATE PENDING
+```
+
+#### Recommendations
+
+You get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
+To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, when you get recommendations or get a personalized ranking.
+https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html
+
+
+With the User-Personalization recipe, Amazon Personalize generates scores for items based on a user's interaction data and metadata. 
+These scores represent the relative certainty that Amazon Personalize has in whether the user will interact with the item next. 
+Higher scores represent greater certainty.
+https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
+
+
+Amazon Personalize scores all of the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
+all scores equals 1. For example, if you're getting movie recommendations for a user and there are three movies in the Items dataset, 
+their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
+small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.
+https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
+
+We can run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
+recommendation mode to realtime.
+So for user 1, the model recommends movies of drama/romance theme.
+
+```
+python projects/personalize/recommendations.py --sol_arn <solution-arn> --role_name PersonalizeRole \
+--campaign_arn <campaign-arn> --user_id 1 --recommendation_mode realtime
+2022-07-09 21:22:46,038 - recommendations - INFO - Generating 10 recommendations for user 1 using campaign arn:aws:personalize:........:campaign/MoviesCampaign
+2022-07-09 21:22:46,646 - recommendations - INFO - Recommended items:
+
+Bad Education (La mala educaci▒n) (2004) (Drama|Thriller)
+Eternal Sunshine of the Spotless Mind (2004) (Drama|Romance|Sci-Fi)
+Nobody Knows (Dare mo shiranai) (2004) (Drama)
+Good bye, Lenin! (2003) (Comedy|Drama)
+Man Without a Past, The (Mies vailla menneisyytt▒) (2002) (Comedy|Crime|Drama)
+Amelie (Fabuleux destin d'Am▒lie Poulain, Le) (2001) (Comedy|Romance)
+Talk to Her (Hable con Ella) (2002) (Drama|Romance)
+Motorcycle Diaries, The (Diarios de motocicleta) (2004) (Adventure|Drama)
+Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004) (Drama|Mystery|Romance|War)
+In the Mood For Love (Fa yeung nin wa) (2000) (Drama|Romance)
+```
+
+User 40 has been reommended crime/drama themed movies.
+
+```
+Kill Bill: Vol. 2 (2004) (Action|Drama|Thriller)
+Little Miss Sunshine (2006) (Adventure|Comedy|Drama)
+Snatch (2000) (Comedy|Crime|Thriller)
+There Will Be Blood (2007) (Drama|Western)
+Last King of Scotland, The (2006) (Drama|Thriller)
+Trainspotting (1996) (Comedy|Crime|Drama)
+Mystic River (2003) (Crime|Drama|Mystery)
+No Country for Old Men (2007) (Crime|Drama)
+Sin City (2005) (Action|Crime|Film-Noir|Mystery|Thriller)
+Platoon (1986) (Drama|War)
+
+```
+
+User 162540 is interesting and seems to have recommended a combination of children/comedy and action/thriller 
+genre movies based on users interactions.
+
+```
+Ice Age 2: The Meltdown (2006) (Adventure|Animation|Children|Comedy)
+I Am Legend (2007) (Action|Horror|Sci-Fi|Thriller|IMAX)
+Shrek the Third (2007) (Adventure|Animation|Children|Comedy|Fantasy)
+2 Fast 2 Furious (Fast and the Furious 2, The) (2003) (Action|Crime|Thriller)
+Saw II (2005) (Horror|Thriller)
+300 (2007) (Action|Fantasy|War|IMAX)
+Fight Club (1999) (Action|Crime|Drama|Thriller)
+Night at the Museum (2006) (Action|Comedy|Fantasy|IMAX)
+Dark Knight, The (2008) (Action|Crime|Drama|IMAX)
+Hancock (2008) (Action|Adventure|Comedy|Crime|Fantasy)
+
+```
+
+We can also limit the number of results by passing in value for arg `--num_results`, which defaults to 10.
+So for example, for `--user_id 15000` , we can get the top 4 results   
+
+```
+Kiss the Girls (1997) (Crime|Drama|Mystery|Thriller)
+Scream (1996) (Comedy|Horror|Mystery|Thriller)
+Firm, The (1993) (Drama|Thriller)
+Wild Things (1998) (Crime|Drama|Mystery|Thriller)
+```
+
+To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon S3 bucket, uses your solution version 
+to generate item recommendations, and then exports the recommendations to an Amazon S3 bucket.
+The input data can be a list of users or items or list of users each with a collection of items in JSON format. Use a batch inference job when you want to get batch item 
+recommendations for your users or find similar items across an inventory.
+To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon S3 bucket, uses your solution version
+trained with a USER_SEGMENTATION recipe to generate user segments for each row of input data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in 
+descending order based on the probability that each user will interact with items in your inventory.
+https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html

@@ -156,7 +156,7 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 #### Trigger Workflow for Training Solution
 
 
-<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+<img width=800 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
 
 
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
@@ -230,7 +230,7 @@ The User-Personalization (aws-user-personalization) recipe is optimized for all 
 When recommending items, this recipe uses automatic item exploration.
 https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
+<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
 
 Wait for solution version to print an ACTIVE status. Training can take a while, depending on the dataset size and number of user-item
 interactions. If using AutoMl this can take longer. Be careful, that the training time (hrs) value is  based on 1 hr of compute capacity 
@@ -252,7 +252,7 @@ Amazon Personalize then creates the solution version using the training set. Aft
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
 newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
-<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
+<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
 
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter

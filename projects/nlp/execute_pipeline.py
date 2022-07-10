@@ -49,7 +49,9 @@ COMPREHEND_LANG_CODES = [
     help="s3 bucket containing the source and output files",
 )
 @click.option(
-    "--source_filename", default="transcribe-sample.mp3", help="filename of source mp3",
+    "--source_filename",
+    default="transcribe-sample.mp3",
+    help="filename of source mp3",
 )
 @click.option(
     "--source_lang_code", default="en-US", help="language code for source video"

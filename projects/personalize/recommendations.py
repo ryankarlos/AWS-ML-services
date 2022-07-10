@@ -121,7 +121,9 @@ def get_movie_names_from_id(bucket, key, movie_id):
 
 @click.command()
 @click.option(
-    "--bucket", default="recommendation-sample-data", help="bucket name",
+    "--bucket",
+    default="recommendation-sample-data",
+    help="bucket name",
 )
 @click.option(
     "--batch_input_key",
@@ -139,13 +141,17 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="key for raw movies dataset containing movie titles and id mapping",
 )
 @click.option(
-    "--job_name", help="Name of job",
+    "--job_name",
+    help="Name of job",
 )
 @click.option(
-    "--sol_arn", help="arn of solution version to use",
+    "--sol_arn",
+    help="arn of solution version to use",
 )
 @click.option(
-    "--role_name", default="PersonalizeRole", help="role name which has access to S3",
+    "--role_name",
+    default="PersonalizeRole",
+    help="role name which has access to S3",
 )
 @click.option(
     "--num_users",
@@ -159,7 +165,8 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="User-Personalization recipe specific itemExplorationConfig hyperparameters: explorationWeight and explorationcutoff",
 )
 @click.option(
-    "--campaign_arn", help="For realtime recommendation. Arn of campaign",
+    "--campaign_arn",
+    help="For realtime recommendation. Arn of campaign",
 )
 @click.option(
     "--user_id",
@@ -205,7 +212,13 @@ def main(
     if recommendation_mode == "batch_inference":
         logger.info(f"Running batch inference job {job_name} with config: {config}")
         return create_batch_inference_job(
-            s3_input_path, s3_output_path, job_name, role_arn, sol_arn, num_results, config
+            s3_input_path,
+            s3_output_path,
+            job_name,
+            role_arn,
+            sol_arn,
+            num_results,
+            config,
         )
     elif recommendation_mode == "batch_segment":
         logger.info(f"Running batch segment job {job_name} for {num_users} users")

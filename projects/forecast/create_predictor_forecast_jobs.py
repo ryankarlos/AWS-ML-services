@@ -49,7 +49,9 @@ def train_aws_forecast_model(
             PredictorName=predictor_name,
             ForecastHorizon=forecast_length,
             AlgorithmArn=f"arn:aws:forecast:::algorithm/{algorithm}",
-            EvaluationParameters={"NumberOfBacktestWindows": backtest_windows,},
+            EvaluationParameters={
+                "NumberOfBacktestWindows": backtest_windows,
+            },
             InputDataConfig={
                 "DatasetGroupArn": dataset_group_arn,
                 "SupplementaryFeatures": [{"Name": "holiday", "Value": holidays_code}],

@@ -30,13 +30,22 @@ with Diagram("Diagram", show=True):
         Fraud_Detector = FraudDetector("Fraud Detector")
         Fraud_Detector - Edge(color="brown", style="dotted") - fraud_detector_input
 
-    User1 >> S31 >> SQS_predict >> Lambda_Batch >> Edge(
-        color="red", style="bold"
-    ) >> Fraud_Detector
+    (
+        User1
+        >> S31
+        >> SQS_predict
+        >> Lambda_Batch
+        >> Edge(color="red", style="bold")
+        >> Fraud_Detector
+    )
     Fraud_Detector >> Edge(color="red", style="bold") >> S32
-    User2 >> APIGateway >> Lambda_RealTime >> Edge(
-        color="blue", style="bold"
-    ) >> Fraud_Detector
+    (
+        User2
+        >> APIGateway
+        >> Lambda_RealTime
+        >> Edge(color="blue", style="bold")
+        >> Fraud_Detector
+    )
     AugAi << Edge(color="blue", style="bold") << Fraud_Detector
     Lambda_RealTime >> APIGateway >> User2
     User3 >> Cognito >> AugAi

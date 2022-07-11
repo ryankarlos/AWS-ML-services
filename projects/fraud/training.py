@@ -34,9 +34,7 @@ def get_training_variables():
 def train_fraud_model():
     try:
         fraudDetector.create_model(
-            modelId=MODEL_NAME,
-            eventTypeName=EVENT_TYPE,
-            modelType=MODEL_TYPE,
+            modelId=MODEL_NAME, eventTypeName=EVENT_TYPE, modelType=MODEL_TYPE,
         )
         print("Created model container for training")
     except fraudDetector.exceptions.ValidationException:

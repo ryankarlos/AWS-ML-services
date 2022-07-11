@@ -67,10 +67,7 @@ def write_output_to_s3(dyf, s3_path, prefix, renamed_key, transformation_ctx):
     )
 
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.copy
-    response = client.list_objects(
-        Bucket=args["bucket"],
-        Prefix=f"{prefix}/run-",
-    )
+    response = client.list_objects(Bucket=args["bucket"], Prefix=f"{prefix}/run-",)
 
     objectkey_to_rename = response["Contents"][0]["Key"]
 
@@ -209,9 +206,7 @@ mappings = [
 
 # Script generated for node ApplyMapping
 ApplyMapping_dyf = ApplyMapping.apply(
-    frame=Union_node_dyf,
-    mappings=mappings,
-    transformation_ctx="ApplyMapping",
+    frame=Union_node_dyf, mappings=mappings, transformation_ctx="ApplyMapping",
 )
 ApplyMapping_dyf.printSchema()
 

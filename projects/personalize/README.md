@@ -329,21 +329,18 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 
 #### Recommendations
 
-
 <img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_recommendation_workflow.png"></img>
-
 
 You get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
 To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, when you get recommendations or get a personalized ranking.
 https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html
-
 
 With the User-Personalization recipe, Amazon Personalize generates scores for items based on a user's interaction data and metadata. 
 These scores represent the relative certainty that Amazon Personalize has in whether the user will interact with the item next. 
 Higher scores represent greater certainty.
 https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
 
-Amazon Personalize scores all of the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
+Amazon Personalize scores all the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
 all scores equals 1. For example, if you're getting movie recommendations for a user and there are three movies in the Items dataset, 
 their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
 small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.

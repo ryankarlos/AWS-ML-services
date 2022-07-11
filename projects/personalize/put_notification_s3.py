@@ -23,9 +23,7 @@ def get_sns_topic_arn(topic_name):
 
 
 def get_lambda_arn(lambda_function_name):
-    response = awslambda.get_function(
-        FunctionName=lambda_function_name,
-    )
+    response = awslambda.get_function(FunctionName=lambda_function_name,)
     lambda_arn = response["Configuration"]["FunctionArn"]
     logger.info(f"Lambda arn {lambda_arn} for function {lambda_function_name}")
     return lambda_arn
@@ -56,10 +54,7 @@ def create_bucket_notification_config(
                     "Filter": {
                         "Key": {
                             "FilterRules": [
-                                {
-                                    "Name": "prefix",
-                                    "Value": object_prefix_sns,
-                                },
+                                {"Name": "prefix", "Value": object_prefix_sns,},
                                 {"Name": "suffix", "Value": ".csv"},
                             ]
                         }
@@ -74,10 +69,7 @@ def create_bucket_notification_config(
                     "Filter": {
                         "Key": {
                             "FilterRules": [
-                                {
-                                    "Name": "prefix",
-                                    "Value": object_prefix_lambda,
-                                },
+                                {"Name": "prefix", "Value": object_prefix_lambda,},
                                 {"Name": "suffix", "Value": ".csv"},
                             ]
                         }

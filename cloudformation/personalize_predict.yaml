@@ -1,0 +1,190 @@
+Parameters:
+    SolutionArn:
+      Description: "Arn of solution version"
+      Type: "String"
+    CampaignArn:
+      Description: "Arn of campaign for real time recommendation"
+      Type: "String"
+    Email:
+      Description: "Email address to send SNS notification to, when batch job completes"
+      Type: "String"
+    Bucket:
+      Default: recommendation-sample-data
+      Description: "S3 bucket for personalize project"
+      Type: "String"
+    BatchTriggerLambdaKey:
+      Default: movie-lens/lambda/trigger_personalize_batch.zip
+      Description: "Key to lambda personalize batch trigger zip object"
+      Type: "String"
+    BatchTransformLambdaKey:
+      Default: movie-lens/lambda/personalize_batch_transform.zip
+      Description: "Key to lambda personalize batch transform zip object"
+      Type: "String"
+    RealTimeTriggerLambdaKey:
+      Default: movie-lens/lambda/trigger_personalize_realtime.zip
+      Description: "Key to lambda realtime personalize trigger zip object"
+      Type: "String"
+    BatchResultsPath:
+      Default: /movie-lens/batch/results/
+      Description: "Path to folder in S3 bucket where results from batch job will be stored"
+      Type: "String"
+    MoviesMetadataKey:
+      Default: movie-lens/raw_data/input/movies.csv
+      Description: "key for data object containing movies title and genre mapping for movie id"
+      Type: "String"
+    BatchInferenceJobName:
+      Default: "BatchInferenceMovies"
+      Description: "Batch Inference Job Name"
+      Type: "String"
+    BatchSegmentJobName:
+      Default: "BatchSegmentMovies"
+      Description: "Batch Segment Job Name"
+      Type: "String"
+    NumResults:
+      Default: 10
+      Description: "Num of recommendation results to generate for batch inference or real time recommendation"
+      Type: "Number"
+    NumUsers:
+      Default: 10
+      Description: "Number of Users to recommend for batch segment job"
+      Type: "Number"
+    Config:
+      Default: '{"itemExplorationConfig": {"explorationWeight": "0.3", "explorationItemAgeCutOff": "30"}}'
+      Description: "User-Personalization recipe specific itemExplorationConfig hyperparameters: explorationWeight and explorationcutoff"
+      Type: "String"
+    ApiGatewayName:
+      Type: String
+      Default: Movie-Recommender-API
+    ApiGatewayStageName:
+      Type: String
+      AllowedPattern: "[a-z0-9]+"
+      Default: dev
+Resources:
+    LambdaBatchTrigger:
+        Type: AWS::Lambda::Function
+        Properties:
+          FunctionName: LambdaBatchTrigger
+          Handler: lambda_function.lambda_handler
+          Role: !ImportValue Personalize-LambdaRoleArn
+          Code:
+            S3Bucket: !Ref Bucket
+            S3Key: !Ref BatchTriggerLambdaKey
+          Runtime: python3.9
+          Timeout: 60
+          MemorySize: 500
+          TracingConfig:
+            Mode: Active
+          Environment:
+            Variables:
+              SOLUTION_ARN: !Ref SolutionArn
+              JOB_NAME: !Ref BatchJobName
+              ROLE_NAME: PersonalizeRole
+              NUM_RESULTS: !Ref NumResults
+              NUM_USERS: !Ref NumUsers
+              CONFIG: !Ref Config
+              BATCH_RESULTS_KEY: !Ref BatchResultsPath
+    LambdaBatchTransform:
+        Type: AWS::Lambda::Function
+        Properties:
+          FunctionName: LambdaBatchTransform
+          Handler: lambda_function.lambda_handler
+          Role: !ImportValue Personalize-LambdaRoleArn
+          Code:
+            S3Bucket: !Ref Bucket
+            S3Key: !Ref BatchTransformLambdaKey
+          Runtime: python3.9
+          Timeout: 60
+          MemorySize: 500
+          TracingConfig:
+            Mode: Active
+          Environment:
+            Variables:
+              METADATA_KEY: !Ref MoviesMetadataKey
+    LambdaRealTimeTrigger:
+        Type: AWS::Lambda::Function
+        Properties:
+          FunctionName: LambdaRealTimeAPI
+          Handler: lambda_function.lambda_handler
+          Role: !ImportValue Personalize-LambdaRoleArn
+          Code:
+            S3Bucket: !Ref Bucket
+            S3Key: !Ref RealTimeTriggerLambdaKey
+          Runtime: python3.9
+          Timeout: 60
+          MemorySize: 500
+          TracingConfig:
+            Mode: Active
+          Environment:
+            Variables:
+              BUCKET: !Ref Bucket
+              METADATA_KEY: !Ref MoviesMetadataKey
+              SOLUTION_ARN: !Ref SolutionArn
+              CAMPAIGN_ARN: !Ref CampaignArn
+              NUM_RESULTS: !Ref NumResults
+    Asyncconfig:
+      Type: AWS::Lambda::EventInvokeConfig
+      Properties:
+        DestinationConfig:
+          OnSuccess:
+            Destination: !Ref MySNSTopic
+        FunctionName: !Ref LambdaBatchTransform
+        MaximumRetryAttempts: 1
+        Qualifier: $LATEST
+    MySNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        Subscription:
+          - Endpoint: !Ref Email
+            Protocol: email
+        TopicName: "PersonalizeBatch"
+    ApiGateway:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Description: Example API Gateway
+        EndpointConfiguration:
+          Types:
+            - REGIONAL
+        Name: !Ref apiGatewayName
+    ApiGatewayModel:
+      Type: 'AWS::ApiGateway::Model'
+      Properties:
+        RestApiId: !Ref ApiGateway
+        ContentType: application/json
+        Description: Schema for Movies Recommender API payload
+        Name: MoviesModelSchema
+        Schema:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: MoviesRecommend
+          type: array
+          items:
+            type: object
+            properties:
+              user_id:
+                type: integer
+    RequestValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: ValidateMoviesRequest
+        RestApiId: !Ref ApiGateway
+        ValidateRequestParameters: true
+    ApiGatewayRootMethod:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        AuthorizationType: NONE
+        HttpMethod: GET
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS
+          Uri: !Sub >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaRealTimeTrigger.Arn}/invocations
+        ResourceId: !GetAtt [ApiGateway, RootResourceId]
+        RestApiId: !Ref ApiGateway
+        RequestParameters:
+          method.request.querystring.user_id: true
+    ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      DependsOn:
+        - apiGatewayRootMethod
+      Properties:
+        RestApiId: !Ref ApiGateway
+        StageName: !Ref ApiGatewayStageName

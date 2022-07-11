@@ -49,9 +49,7 @@ def create_flow_definition(flow_definition_name, human_task_arn, workteam_arn):
 
 @click.command()
 @click.option(
-    "--workteam_arn",
-    "--option",
-    help="real or batch fraud predictions",
+    "--workteam_arn", "--option", help="real or batch fraud predictions",
 )
 def main(workteam_arn):
     human_task_arn = create_task_ui(taskUIName, fraud_template)

@@ -20,17 +20,14 @@ logger.addHandler(handler)
     help="path to input s3 for bulk import",
 )
 @click.option(
-    "--job_name",
-    default="MoviesDatasetImport",
-    help="Name of job",
+    "--job_name", default="MoviesDatasetImport", help="Name of job",
 )
 @click.option(
     "--dataset_arn",
     help="arn of dataset resource created in personalize to import data into ",
 )
 @click.option(
-    "--role_arn",
-    help="arn of role which has access to S3",
+    "--role_arn", help="arn of role which has access to S3",
 )
 def import_datatset_to_personalize(s3_input_path, job_name, dataset_arn, role_arn):
     response = personalize.create_dataset_import_job(

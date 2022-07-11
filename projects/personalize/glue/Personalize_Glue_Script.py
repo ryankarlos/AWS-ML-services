@@ -43,8 +43,7 @@ def RenameS3ItemsUsersData(glueContext, dfc) -> DynamicFrameCollection:
     )
 
     response = client.list_objects(
-        Bucket=BUCKET_NAME,
-        Prefix=f"{PREFIX}/model_input/run-",
+        Bucket=BUCKET_NAME, Prefix=f"{PREFIX}/model_input/run-",
     )
     name = response["Contents"][0]["Key"]
     print(name)
@@ -72,8 +71,7 @@ def RenameS3Metadata(glueContext, dfc) -> DynamicFrameCollection:
     )
 
     response = client.list_objects(
-        Bucket=BUCKET_NAME,
-        Prefix=f"{PREFIX}/metadata/run-",
+        Bucket=BUCKET_NAME, Prefix=f"{PREFIX}/metadata/run-",
     )
     name = response["Contents"][0]["Key"]
     print(name)
@@ -110,10 +108,7 @@ S3inputratings_node1656882568718 = glueContext.create_dynamic_frame.from_options
     },
     connection_type="s3",
     format="csv",
-    connection_options={
-        "paths": [f"{s3_input_path}/ratings.csv"],
-        "recurse": True,
-    },
+    connection_options={"paths": [f"{s3_input_path}/ratings.csv"], "recurse": True,},
     transformation_ctx="S3inputratings_node1656882568718",
 )
 
@@ -130,9 +125,7 @@ repartitioned_df = resampledratings_dyf.toDF().repartition(
 )
 
 repartitioned_dyf = DynamicFrame.fromDF(
-    repartitioned_df,
-    glueContext,
-    "repartitioned ratings",
+    repartitioned_df, glueContext, "repartitioned ratings",
 )
 
 

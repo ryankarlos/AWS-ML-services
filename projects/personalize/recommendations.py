@@ -4,7 +4,6 @@ import json
 import logging
 import sys
 import pandas as pd
-import s3fs
 import io
 
 personalize_rec = boto3.client(service_name="personalize")
@@ -121,9 +120,7 @@ def get_movie_names_from_id(bucket, key, movie_id):
 
 @click.command()
 @click.option(
-    "--bucket",
-    default="recommendation-sample-data",
-    help="bucket name",
+    "--bucket", default="recommendation-sample-data", help="bucket name",
 )
 @click.option(
     "--batch_input_key",
@@ -141,17 +138,13 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="key for raw movies dataset containing movie titles and id mapping",
 )
 @click.option(
-    "--job_name",
-    help="Name of job",
+    "--job_name", help="Name of job",
 )
 @click.option(
-    "--sol_arn",
-    help="arn of solution version to use",
+    "--sol_arn", help="arn of solution version to use",
 )
 @click.option(
-    "--role_name",
-    default="PersonalizeRole",
-    help="role name which has access to S3",
+    "--role_name", default="PersonalizeRole", help="role name which has access to S3",
 )
 @click.option(
     "--num_users",
@@ -165,8 +158,7 @@ def get_movie_names_from_id(bucket, key, movie_id):
     help="User-Personalization recipe specific itemExplorationConfig hyperparameters: explorationWeight and explorationcutoff",
 )
 @click.option(
-    "--campaign_arn",
-    help="For realtime recommendation. Arn of campaign",
+    "--campaign_arn", help="For realtime recommendation. Arn of campaign",
 )
 @click.option(
     "--user_id",

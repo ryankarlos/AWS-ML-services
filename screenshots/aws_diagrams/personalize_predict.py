@@ -21,7 +21,11 @@ with Diagram("Diagram", show=False, direction="LR"):
         Xray2 = XRay("XRay Traces")
         SNS = SNS("SNS")
         BatchJob = Personalize("Personalize Batch Recommendation Job")
-        User1 >> Edge(color="red", style="bold", label="Put raw data S3") >> S31 >> LambdaBatch1 >> Edge(style="bold",                                                                                        label="async invocation") >> BatchJob
+        User1 >> Edge(
+            color="red", style="bold", label="Put raw data S3"
+        ) >> S31 >> LambdaBatch1 >> Edge(
+            style="bold", label="async invocation"
+        ) >> BatchJob
         BatchJob >> S32 >> LambdaBatch2 >> S33 >> SNS
         LambdaBatch1 >> Xray1
         LambdaBatch2 >> Xray2
@@ -37,10 +41,3 @@ with Diagram("Diagram", show=False, direction="LR"):
         LambdaRealTime >> APIGateway >> Edge(color="blue", style="bold") >> User2
         LambdaRealTime >> Xray3
         APIGateway >> Xray3
-
-
-
-
-
-
-

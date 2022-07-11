@@ -16,13 +16,10 @@ logger.addHandler(handler)
 
 @click.command()
 @click.option(
-    "--campaign_name",
-    default="MoviesCampaign",
-    help="campaign name",
+    "--campaign_name", default="MoviesCampaign", help="campaign name",
 )
 @click.option(
-    "--sol_version_arn",
-    help="solution version arn",
+    "--sol_version_arn", help="solution version arn",
 )
 @click.option(
     "--config",

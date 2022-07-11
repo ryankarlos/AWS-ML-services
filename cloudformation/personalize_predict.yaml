@@ -65,7 +65,8 @@ Resources:
         Properties:
           FunctionName: LambdaBatchTrigger
           Handler: lambda_function.lambda_handler
-          Role: !ImportValue Personalize-LambdaRoleArn
+          Role:
+            Fn::GetAtt: [LambdaRole , "Arn" ]
           Code:
             S3Bucket: !Ref Bucket
             S3Key: !Ref BatchTriggerLambdaKey
@@ -77,7 +78,7 @@ Resources:
           Environment:
             Variables:
               SOLUTION_ARN: !Ref SolutionArn
-              JOB_NAME: !Ref BatchJobName
+              JOB_NAME: BatchMovies
               ROLE_NAME: PersonalizeRole
               NUM_RESULTS: !Ref NumResults
               NUM_USERS: !Ref NumUsers
@@ -88,7 +89,8 @@ Resources:
         Properties:
           FunctionName: LambdaBatchTransform
           Handler: lambda_function.lambda_handler
-          Role: !ImportValue Personalize-LambdaRoleArn
+          Role:
+            Fn::GetAtt: [LambdaRole , "Arn" ]
           Code:
             S3Bucket: !Ref Bucket
             S3Key: !Ref BatchTransformLambdaKey
@@ -105,7 +107,8 @@ Resources:
         Properties:
           FunctionName: LambdaRealTimeAPI
           Handler: lambda_function.lambda_handler
-          Role: !ImportValue Personalize-LambdaRoleArn
+          Role:
+            Fn::GetAtt: [LambdaRole , "Arn" ]
           Code:
             S3Bucket: !Ref Bucket
             S3Key: !Ref RealTimeTriggerLambdaKey
@@ -144,7 +147,7 @@ Resources:
         EndpointConfiguration:
           Types:
             - REGIONAL
-        Name: !Ref apiGatewayName
+        Name: !Ref ApiGatewayName
     ApiGatewayModel:
       Type: 'AWS::ApiGateway::Model'
       Properties:
@@ -184,7 +187,31 @@ Resources:
     ApiGatewayDeployment:
       Type: AWS::ApiGateway::Deployment
       DependsOn:
-        - apiGatewayRootMethod
+        - ApiGatewayRootMethod
       Properties:
         RestApiId: !Ref ApiGateway
         StageName: !Ref ApiGatewayStageName
+    LambdaRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: "LambdaBatchPersonalize"
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Path: /
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" ,
+                               "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess",
+                               "arn:aws:iam::aws:policy/AWSXrayFullAccess" ,
+                               "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess",
+                               "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+                               "arn:aws:iam::aws:policy/AmazonS3FullAccess"]
+
+
+
+

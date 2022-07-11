@@ -214,12 +214,4 @@ Resources:
         Path: /
         "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" ,
                                "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess",
-                               "arn:aws:iam::aws:policy/AWSXrayFullAccess",
-                              "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess",
-                               "arn:aws:iam::aws:policy/AmazonS3FullAccess"]
-Outputs:
-    LambdaRoleArn:
-      Value:
-        Fn::GetAtt: [LambdaRole , "Arn" ]
-      Export:
-        Name: !Sub "Personalize-LambdaRoleArn"
+                               "arn:aws:iam::aws:policy/AWSXrayFullAccess"]

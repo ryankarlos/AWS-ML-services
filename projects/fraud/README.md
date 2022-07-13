@@ -13,32 +13,35 @@ in AWS Fraud Detector https://docs.aws.amazon.com/frauddetector/latest/ug/create
 
 This contains the following variables:
 
-* index - Unique Identifier for each row
-* transdatetrans_time - Transaction DateTime
-* cc_num - Credit Card Number of Customer
-* merchant - Merchant Name
-* category - Category of Merchant
-* amt - Amount of Transaction
-* first - First Name of Credit Card Holder
-* last - Last Name of Credit Card Holder
-* gender - Gender of Credit Card Holder
-* street - Street Address of Credit Card Holder
-* city - City of Credit Card Holder
-* state - State of Credit Card Holder
-* zip - Zip of Credit Card Holder
-* lat - Latitude Location of Credit Card Holder
-* long - Longitude Location of Credit Card Holder
-* city_pop - Credit Card Holder's City Population
-* job - Job of Credit Card Holder
-* dob - Date of Birth of Credit Card Holder
-* trans_num - Transaction Number
-* unix_time - UNIX Time of transaction
-* merch_lat - Latitude Location of Merchant
-* merch_long - Longitude Location of Merchant
-* is_fraud - Fraud Flag <--- Target Class
+* **index** - Unique Identifier for each row
+* **transdatetrans_time** - Transaction DateTime
+* **cc_num** - Credit Card Number of Customer
+* **merchant** - Merchant Name
+* **category** - Category of Merchant
+* **amt** - Amount of Transaction
+* **first** - First Name of Credit Card Holder
+* **last** - Last Name of Credit Card Holder
+* **gender** - Gender of Credit Card Holder
+* **street** - Street Address of Credit Card Holder
+* **city** - City of Credit Card Holder
+* **state** - State of Credit Card Holder
+* **zip** - Zip of Credit Card Holder
+* **lat** - Latitude Location of Credit Card Holder
+* **long** - Longitude Location of Credit Card Holder
+* **city_pop** - Credit Card Holder's City Population
+* **job** - Job of Credit Card Holder
+* **dob** - Date of Birth of Credit Card Holder
+* **trans_num** - Transaction Number
+* **unix_time** - UNIX Time of transaction
+* **merch_lat** - Latitude Location of Merchant
+* **merch_long** - Longitude Location of Merchant
+* **is_fraud** - Fraud Flag <--- Target Class
 
 We will create a workflow to read data from S3, perform ETL job, train a Fraud Detector model which will be deployed 
 and used to generate predictions for a sample of batch data as well as realtime predictions via a custom API.
+
+The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services) and 
+configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
 
 ### CloudFormation Templates
 
@@ -734,6 +737,7 @@ Delete selected resources in bucket or entire bucket. If entire bucket not neede
 
 ```
 python s3/cleanup_resources.py --bucket_name=fraud-sample-data
+
 2022-05-15 01:20:00,996 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials
 2022-05-15 01:20:01,335 __main__ INFO:Deleting all objects in S3 bucket fraud-sample-data as resource key not provided
 2022-05-15 01:20:02,707 __main__ INFO:Deleted bucket fraud-sample-data 

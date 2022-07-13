@@ -3,14 +3,13 @@
 This section will focus on pipelines combining the following AWS services:
 
 * AWS Transcribe: automatic speech recognition (speech to text)
-* AWS Textract: Extract text and data from documents (e.g. scanned docs, jpeg etc)
 * AWS Polly: Convert text to life like speech
 * AWS Translate: Translate text from one lang to another
 * AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
 
 ### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/nlp/AWS_nlp_speech_translation_architecture.png"></img>
+![](../../screenshots/nlp/AWS_nlp_speech_translation_architecture.png)
 
 The mp3 file we want to use is in `datasets/nlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3`
 and is just some english speech about ML. 

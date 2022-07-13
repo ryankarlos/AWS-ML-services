@@ -79,7 +79,8 @@ $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir data
 
 We should have train and test csv files in the same folder as in screenshot below
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/s3-bucket-raw-data-input.png"></img>
+![](../../screenshots/fraud/s3-bucket-raw-data-input.png)
+
 
 We also need to upload the glue script to S3 bucket which is referenced in the cloudformation template in the glue job resource.
 If glue jobs have been run previously, there should be a bucket in S3 of the format - aws-glue-assets-${AWS::AccountId}-${AWS::Region} Inside this bucket 
@@ -101,13 +102,16 @@ In the Event types section, we will only select all object create events. We cou
 'copy' or 'put' but given the large file size (approx 300MB), there is a possibility of s3 copy action from glue script using multipart upload to
 write the object (so we want to capture this action as well)
 
-<img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-train-data-s3.png"></img>
+![](../../screenshots/fraud/event-notification-train-data-s3.png)
+
 
 In the Destination section, choose the event notification destination and select the destination type: SQS Queue.
 Specify the arn of the queue (which can be obtained from the SQS console)
 https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-event-notifications.html
 
-<center><img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-s3-destination-sqs.png"></center>
+
+![](../../screenshots/fraud/event-notification-s3-destination-sqs.png)
+
 
 Repeat the same for the next event configuration for the batch predictions to the prediction queue in SQS for lambda to be invoked tom
 create a batch prediction job.
@@ -115,17 +119,19 @@ The only change we will make is specifying a different prefix and suffix as we w
 the 'batch_predict' folder in the bucket having key 'batch_predict/fraudTest.csv'. So we set the prefix to 'batch_predict' and suffix to 
 'fraudTest.csv' or just 'csv' (as this is the only object in this folder)
 
-<center><img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/event-notification-batch-predict-data-sqs.png"></center>
+![](../../screenshots/fraud/event-notification-batch-predict-data-sqs.png)
 
 Once we have configured both event notifications for the two SQS queues we should see them in the EventNotifications section 
 in the bucket properties as in screenshot below.
 
-<center><img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/s3_fraud_bucket_config_events.png"></center>
+![](../../screenshots/fraud/s3_fraud_bucket_config_events.png)
+
 
 In each SQS queue, we should see an access policy already configured via the cloudformation template which allows
 grants the Amazon S3 principal the necessary permissions to call the relevant API to publish messages to SQS queue. 
 
-<center><img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/access-policy-sqs.png"></center>
+![](../../screenshots/fraud/access-policy-sqs.png)
+
 
 ### ETL 
 
@@ -133,17 +139,22 @@ A Glue crawler run by the user crawls the train and test csv  files in the S3 bu
 The crawler uses a custom classifier, both of which are created automatically via cloudformation. These are configured as 
 below. The S3 path for the crawler is set to `s3://fraud-sample-data/input` which should include both the train and test csv files
 
-<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/custom-classifier.png"></img>
+
+![](../../screenshots/fraud/custom-classifier.png)
+
 
 If the crawler runs successfully, you should see a table in glue data catalog. We can confirm that the headers and types 
 have been crawled correctly. 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/glue-catalog-table.png"></img>
+![](../../screenshots/fraud/glue-catalog-table.png)
+
 
 EventBridge rule is configured to the listen to glue crawler state change event (i.e. when crawler status is 'Succeeded')
 as configured in the eventpattern in the screenshot below. This uses the default eventbridge bus
 
-<img width=500  src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/eventbridge-rule-trigger-lambda.png"></img>
+
+![](../../screenshots/fraud/eventbridge-rule-trigger-lambda.png)
+
 
 EventBridge target is the lambda function which starts the glue job
 
@@ -157,7 +168,8 @@ requirements. for example Fraud detector model training requires some mandatory 
 These column names and exact event values are not present in the original raw dataset and need to be updated via glue script.
 If the glue job is successful then we should see train and test transformed files in each of the below folder locations in the bucket
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/s3-glue-output-folders.png"></img>
+![](../../screenshots/fraud/s3-glue-output-folders.png)
+
 
 The transformed data written to S3, will then trigger an S3 event notification (configured in the previous section)
 to SQS which would then invoke the lambda function synchronously to start the Fraud Detector model training job described in the 
@@ -165,7 +177,8 @@ next section.
 
 ###  Model Training
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud_train_architecture.png"></img>
+
+![](../../screenshots/fraud/fraud_train_architecture.png)
 
 The architecture for model training has been generated using the diagrams package via script in screenshots\aws_diagrams\fraud_train.py
 These resources are already created and configured via the cloudformation stack and some of these described in the previous sections.
@@ -178,7 +191,8 @@ details https://docs.aws.amazon.com/frauddetector/latest/ug/building-a-model.htm
 The script fetches the variables for the training job from S3 path which contains the csv file 
 with the training data. 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/train-model-lambda-logs.png"></img>
+![](../../screenshots/fraud/train-model-lambda-logs.png)
+
 
 Note: The event metadata columns e.g. EVENT_TIMESTAMP and EVENT_LABEL need to be ordered together. The csv files transformed from
 the glue script reorder the columns so that all the event variables are at the start and the 
@@ -192,7 +206,9 @@ The lambda function is also configured to have a large enough memory capacity (1
 If the default value (128MB) is used, then we will see a memory error as the max lambda memory capacity is exceeded when the data is 
 loaded in from S3.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/lambda-low-memory-error-runtime.png"></img>
+
+![](../../screenshots/fraud/lambda-low-memory-error-runtime.png)
+
 
 By default, the environment variables in lambda `MODE` and `MODEL_VERSION` are set as 'create' and '1.0' when creating 
 via the cloudformation stack. This makes the script, create a new model with the specified version.
@@ -204,20 +220,24 @@ We can update the environment variables either via the cloudformation parameters
 For example for creating a new model version 2.0, we would update the `MODEL_VERSION` variable to 2.0 as below and trigger
 the glue crawler to execute the workflow and train a new model
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/lambda-env-vars-config-verison2-create.png"></img>
+![](../../screenshots/fraud/lambda-env-vars-config-verison2-create.png)
+
 
 We will then see the model training start in the Fraud Detector console in the 'Model' tab
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud-train-new-model.png"></img>
+![](../../screenshots/fraud/fraud-train-new-model.png)
+
 
 To update an existing model version, we set the `MODE` variable to `update` and `MODEL_VERSION` to the major version which
 needs updating. In this example below we leave it as 1.0 as we already have an active 1.0 major version which we want to
 update to 1.0.1
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/lambda-train-env-variables.png"></img>
+![](../../screenshots/fraud/lambda-train-env-variables.png)
+
 
 Once the workflow is complete, we can then see the minor version 1.0.1 training job start.
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud-model-update-version-101-training-console.png"></img>
+
+![](../../screenshots/fraud/fraud-model-update-version-101-training-console.png)
 
 We cannot train two models for the same major version at once.So if minor version training was already in progress and if 
 we executed the workflow again to update the major version again, we would normally see the following exception
@@ -236,7 +256,9 @@ and it should automatically start a minor version `1.0.2` as it knows that `1.0.
 
 From the console, we can compare different model version performances
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-versions-performance.png"></img>
+
+![](../../screenshots/fraud/model-versions-performance.png)
+
 
 and also click on each model version and inspect the score distribution, confusion matrix and model variable importance.
 For example in model version 1, the AUC score is 0.94 and the model variable importance plot which gives an understanding
@@ -249,12 +271,14 @@ are contributing noise in this sample dataset. This could be because the model i
 being related to high amt values) or because that there is a label leakage if the variable depends on the fraud labels. 
 This version only uses 2 months of data (dec 2019 -Jan 2021) so in the  next iteration we can include more data and see if it makes a difference
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-v1.png"></img>
+![](../../screenshots/fraud/model-v1.png)
+
 
 We train a new model (version 2), with over a year of data from 2019 to mid 2020. This increases training time but we 
 can see there has been an improvement to the AUC score (0.99) as well as the variable importance plot
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/model-version2-featureimportance.png"></img>
+![](../../screenshots/fraud/model-version2-featureimportance.png)
+
 
 However, we should still look and see if we can reduce overfitting.  In subsequent iterations we could also decide to 
 remove the amt variable and see how the model performs or add some extra variables to diversify the dataset.
@@ -276,9 +300,9 @@ In the screenshots below, I have selected a model thresholds of 500 and 305 in s
 how adjusting the model score threshold impacts the TPR and FPR. The ROC, confusion matrix are updated as the model threshold is 
 adjusted on the score distribution chart.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/modelv2-threshold500.png"></img>
+![](../../screenshots/fraud/modelv2-threshold500.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/modelv2-threshold-305.png"></img>
+![](../../screenshots/fraud/modelv2-threshold-305.png)
 
 To start model training in local mode, run the following script stored in `projects/fraud/training.py`. This calls the FraudDetector 
 api directly after dong the necessary data processing from data in S3 (i.e. it avoids the use of Glue Crawler and Glue used in the architecture above). 
@@ -300,8 +324,7 @@ prompt that appears, choose Deploy version.
 
 * Variables
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/variables.png"></img>
-
+![](../../screenshots/fraud/variables.png)
 
 The Version details shows a Status of Deploying. When the model is ready, the Status changes to Active.
 Once model has finished deploying and status changed to active, we will need to associate the model with Fraud Detector 
@@ -309,7 +332,8 @@ for predictions.
 However, we will also need to update the rule expressions as the default Fraud Detector version 1 created from cloudformation 
 uses the variable 'amt' in the rule expression as seen in the screenshot below. 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/detector-version-1-default-rules.png"></img>
+![](../../screenshots/fraud/detector-version-1-default-rules.png)
+
 
 We need to change this to model insight score which is a new variable created 
 after model training has completed. This variable is not available when the cloudformation stack is created as the model has not been 
@@ -344,9 +368,9 @@ $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_ve
 The screenshots below show the model associated with the new version and the correct rules expressions which use the
 `fraud_model_insightscore` variable
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud-detector-update-rules-version2.png"></img>
+![](../../screenshots/fraud/fraud-detector-update-rules-version2.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/fraud-detector-associate-model.png"></img>
+![](../../screenshots/fraud/fraud-detector-associate-model.png)
 
 ### Setting up API gateway 
 
@@ -364,11 +388,13 @@ The screenshots below show the model associated with the new version and the cor
  amt, category, cc_num, city, city_pop, event_timestamp, first, flow_definition, gender, job, last, merchant, state, street, trans_num, zip
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-method-request-console.png"></img>
+![](../../screenshots/fraud/API-gateway-method-request-console.png)
 
-10 Go back to the Method Execution pane.It should look like below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-method-execution-console.png"></img>
+10. Go back to the Method Execution pane.It should look like below.
+
+![](../../screenshots/fraud/API-gateway-method-execution-console.png)
+
 
 11. Choose Integration Request.
 12. Choose the Mapping Templates dropdown and then choose Add mapping template.
@@ -407,7 +433,7 @@ The screenshots below show the model associated with the new version and the cor
 }
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-integration-request-console.png"></img>
+![](../../screenshots/fraud/API-gateway-integration-request-console.png)
 
 17. Choose Save, and go back to MethodExecution pane. Click on Test button on the left.
 18. In the Query Strings box paste the following
@@ -418,9 +444,9 @@ trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&fir
 
 If successful you should see the response and logs as in screenshot below. You can also navigate to CloudWatch log stream group for Lambda invocation and check it has run successfully.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-get-method-test1-console.png"></img>
+![](../../screenshots/fraud/API-gateway-get-method-test1-console.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-get-method-test2logs-console.png"></img>
+![](../../screenshots/fraud/API-gateway-get-method-test2logs-console.png)
 
 We can then proceed to deploying the API. Go back to Resources -> Actions and Deploy API. Select Deployment Stage 'New Stage' and choose name as 'dev'.
 You should see the API endpoint to invoke on the console.
@@ -432,7 +458,7 @@ The setup should look like below. Note that when you add the iam role to gateway
 in the format 'API-Gateway-Execution-Logs_apiId/stageName'. The arn for the log group end with 'dev:*'. You need to only include the 
 arn upto the stagename 'dev' as shown in the screenshot below - otherwise it will throw issues with the validation checks.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/api-rest-stage-editor-logs-config.png"></img>
+![](../../screenshots/fraud/api-rest-stage-editor-logs-config.png)
 
  To test the API's new endpoint, we can use postman for sending an API request 
 https://learning.postman.com/docs/getting-started/sending-the-first-request/
@@ -445,19 +471,19 @@ Click send and you should see the response body at the bottom.
 https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d618adfbb12ecad9d427244&amt=245.97&zip=97383&city=Stayton&first=Erica&job='Engineer, biomedical'&street='213 Girll Expressway'&category=shopping_pos&city_pop=116001&gender=F&cc_num=180046165512893&last=Walker&state=OR&merchant=fraud_Macejkovic-Lesch&event_timestamp=2020-10-13T09:21:53.000Z
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/postman-api-gateway.png"></img>
-
+![](../../screenshots/fraud/postman-api-gateway.png)
 
 You can check the log streams associated with the latest invocation in the cloudwatch log group for API gateway. This will show  messages 
 with the execution or access details of your request.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/API-gateway-cloudwatch-log-group.png"></img>
+![](../../screenshots/fraud/API-gateway-cloudwatch-log-group.png)
 
-Note: If any changes are made to the api configuration or parameters - it would need to be redployed for the changes to take effect.
+Note: If any changes are made to the api configuration or parameters - it would need to be redeployed for the changes to take effect.
 
 ### Generate Predictions 
 
-<img width=700 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/Fraud_prediction_architecture.png"></img>
+
+![](../../screenshots/fraud/Fraud_prediction_architecture.png)
 
 The architecture diagram above shows the two modes we can use for making predictions with Amazon Fraud Detector: batch and real-time.
 You can use a batch predictions job in Amazon Fraud Detector to get predictions for a set of events that do not require real-time scoring. 
@@ -479,7 +505,7 @@ copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-s
 we can monitor the batch prediction jobs in Fraud Detector. Once complete,we should see the output in S3. An example of 
 a batch output is available in datasets/dataset1/results/DetectorBatchResult.csv
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/batch_prediction_jobs.png"></img>
+![](../../screenshots/fraud/batch_prediction_jobs.png)
 
 
 In realtime mode, we will make use of the API gateway created and integrated with the lambda function which makes the 
@@ -550,7 +576,7 @@ https://docs.aws.amazon.com/sagemaker/latest/dg/sms-workforce-create-private-con
 
 After you import your private workforce, refresh the page to see the Private workforce summary page as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/sagemaker-workforces-console.png"></img>
+![](../../screenshots/fraud/sagemaker-workforces-console.png)
 
 On this page, you can see information about the Amazon Cognito user pool for your workforce,  the worker team name 'AugmentedAI-Default' 
 for your workforce, and a list of all the members of your private workforce. 
@@ -558,7 +584,8 @@ This workforce is now available to use in both Amazon Augmented AI and Amazon Sa
 human review tasks and data labeling jobs respectively.
 If you click on the private team name 'AugmentedAI-Default' , you should see the Cognito user group linked to it
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/sagemaker-workforce-team.png"></img>
+![](../../screenshots/fraud/sagemaker-workforce-team.png)
+
 
 Once the workforce is created, we can run the script below passing in the workforce arn as an arg to create 
 a human task UI using a custom worker template defined in `augmented_ai\fraud\constants.py`. Amazon A2I uses this 
@@ -595,12 +622,12 @@ https://d9d16i7hbc.execute-api.us-east-1.amazonaws.com/dev?trans_num=6cee353a9d6
 
 if this ran successfully, you should see the human loop in progress as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/human-loops-a2i.png"></img>
+![](../../screenshots/fraud/human-loops-a2i.png)
 
 The log stream configured for lambda function can also be checked. The insight score is 872 and this should initiate the 
 call to StartHumanLoop action and can be confirmed from the 'Started human loop: Fraud-detector' log message
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/predict-lambda-logs-human-loop.png"></img>
+![](../../screenshots/fraud/predict-lambda-logs-human-loop.png)
 
 
 Similarly, to run this from the local machine, we can use the same script which we ran in the previous section to generate realtime predictions.
@@ -698,7 +725,7 @@ Deleting cloud formation stack
 By the end of this example, the bucket should have the following folders corresponding to the different 
 stages inputs/outputs discussed in the previous sections
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/fraud/bucket-final-folder-structure.png"></img>
+![](../../screenshots/fraud/bucket-final-folder-structure.png)
 
 
 Delete selected resources in bucket or entire bucket. If entire bucket not needed to be deleted, then 

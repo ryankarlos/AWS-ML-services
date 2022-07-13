@@ -57,7 +57,7 @@ upload: datasets\personalize\ml-25m\input\ratings.csv to s3://recommendation-sam
 
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_raw_data.png"></img>
+![](../../screenshots/personalize/s3_raw_data.png)
 
 Finally we need to add the glue script and lambda function to S3 bucket as well. This assumes the lambda function is zipped 
 as in `lambdas/data_import_personalize.zip` and you have a bucket with key `aws-glue-assets-376337229415-us-east-1/scripts`. If not adapt
@@ -112,17 +112,20 @@ Create cloudformation template which creates the following resources:
 
 If successful, we should see the following resources successfully created in the resources tab
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_parameters_tab.png"></img>
+
+
+![](../../screenshots/personalize/cloud_formation_parameters_tab.png)
 
 If we run the command as above, just using the default parameters, we should see the key value pairs listed in the parameters
 tab as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_resources_tab.png"></img>
+![](../../screenshots/personalize/cloud_formation_resources_tab.png)
+
 
 We should see that all the services should be created. For example navigate to the Step function console and click on the 
 sfn name `GlueETLPersonalizeTraining`
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/step_function_diagram_with_definition_console.png"></img>
+![](../../screenshots/personalize/step_function_diagram_with_definition_console.png)
 
 
 ### S3 event notifications
@@ -156,26 +159,30 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 #### Trigger Workflow for Training Solution
 
 
-<img width=800 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+
+![](../../screenshots/personalize/personalize_train.png)
 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/train_app_service_map_xray.png"></img>
+![](../../screenshots/personalize/s3_glue_output.png)
 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_lambda.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_traces_sfn.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline1.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline2.png"></img>
+![](../../screenshots/personalize/train_app_service_map_xray.png)
 
 
+![](../../screenshots/personalize/xray_trace_lambda.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/sfn_successful_run_create_new_sol.png"></img>
 
+![](../../screenshots/personalize/xray_traces_sfn.png)
+
+
+![](../../screenshots/personalize/CloudWatch_Xraytraces_timeline1.png)
+
+
+![](../../screenshots/personalize/CloudWatch_Xraytraces_timeline2.png)
+
+
+![](../../screenshots/personalize/sfn_successful_run_create_new_sol.png)
+~~~~
 
 #### Run GlueJob via Notebook and Train Solution Manually
 
@@ -230,7 +237,7 @@ The User-Personalization (aws-user-personalization) recipe is optimized for all 
 When recommending items, this recipe uses automatic item exploration.
 https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html
 
-<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
+![](../../screenshots/personalize/create_solution_console.png)
 
 Wait for solution version to print an ACTIVE status. Training can take a while, depending on the dataset size and number of user-item
 interactions. If using AutoMl this can take longer. Be careful, that the training time (hrs) value is  based on 1 hr of compute capacity 
@@ -252,7 +259,7 @@ Amazon Personalize then creates the solution version using the training set. Aft
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
 newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
+![](../../screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png)
 
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter
@@ -329,7 +336,8 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 
 #### Recommendations
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_recommendation_workflow.png"></img>
+![](../../screenshots/personalize/personalize_recommendation_workflow.png)
+
 
 You get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
 To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, when you get recommendations or get a personalized ranking.

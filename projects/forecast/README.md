@@ -1,6 +1,6 @@
 ### AWS Forecast 
 
-![](../../screenshots/forecast/aws_forecast_architecture.png.png)
+![](../../screenshots/forecast/aws_forecast_architecture.png)
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
 example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 

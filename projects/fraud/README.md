@@ -6,10 +6,9 @@ Amazon Fraud Detector automates the time-consuming and expensive steps to build,
 detection. It customizes each model it creates to your dataset, making the accuracy of models higher 
 than current one-size-fits-all ML solutions. And because you pay only for what you use, you can avoid large upfront expenses.
 
-The example below, uses simulated train and test datasets from Kaggle and can be downloaded from 
-https://www.kaggle.com/datasets/kartik2112/fraud-detection
-The datasets `fraudTest.csv` and `fraudTrain.csv`  contain variables for each online account registration event as required for creating an event 
-in AWS Fraud Detector https://docs.aws.amazon.com/frauddetector/latest/ug/create-event-dataset.html: 
+The example below, uses simulated train and test datasets from Kaggle and can be downloaded from this [kaggle page](https://www.kaggle.com/datasets/kartik2112/fraud-detection)
+The datasets _fraudTest.csv_ and _fraudTrain.csv_  contain variables for each online account registration event as required for creating an event 
+in AWS Fraud Detector as described [here](https://docs.aws.amazon.com/frauddetector/latest/ug/create-event-dataset.html) 
 
 This contains the following variables:
 
@@ -45,10 +44,11 @@ configuring virtual environment with dependencies [here](https://ryankarlos.gith
 
 ### CloudFormation Templates
 
-Cloudformation templates for creating glue development endpoint or the glue and fraud event resources 
-are stored in cloudformation folder. The stacks can be created by running the bash script 
-below and passing in either 'endpoint' or 'detector' argument to create a glue dve endpoint
-stack or frauddetectorglue stack
+Cloudformation templates for creating glue development endpoint (`/glue-dev-endpoint.yaml`) or the glue and fraud event resources (`fraud_detector.yaml`)
+are stored in [cloudformation folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/cloudformation)
+More details on cloudformation can be found [here](../../cloudformation), which contains links to the appropriate AWS docs.
+The stacks can be created by running the bash script below and passing in either 'endpoint' or 'detector' argument to 
+create a glue dve endpoint  stack or frauddetectorglue stack
 
 ```
  sh projects/fraud/bash_scripts/create-resources.sh endpoint
@@ -86,7 +86,7 @@ We should have train and test csv files in the same folder as in screenshot belo
 
 
 We also need to upload the glue script to S3 bucket which is referenced in the cloudformation template in the glue job resource.
-If glue jobs have been run previously, there should be a bucket in S3 of the format - aws-glue-assets-${AWS::AccountId}-${AWS::Region} Inside this bucket 
+If glue jobs have been run previously, there should be a bucket in S3 of the format **- aws-glue-assets-${AWS::AccountId}-${AWS::Region}** Inside this bucket 
 there will be a scripts folder where glue references all the scripts generated if glue job etl workflow is created from the console. Upload the glue script 
 fraud-etl-glue.py into the bucket in the scripts folder via console or cli.
 If this bucket does not exist, then create your own. However, the ScriptLocation property of the GlueJOb resource in the cloudformation template used to 
@@ -109,8 +109,7 @@ write the object (so we want to capture this action as well)
 
 
 In the Destination section, choose the event notification destination and select the destination type: SQS Queue.
-Specify the arn of the queue (which can be obtained from the SQS console)
-https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-event-notifications.html
+Specify the arn of the queue (which can be obtained from the SQS console) [Ref](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-event-notifications.html)
 
 
 ![](../../screenshots/fraud/event-notification-s3-destination-sqs.png)

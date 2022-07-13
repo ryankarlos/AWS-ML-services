@@ -1,6 +1,6 @@
 ### AWS Forecast 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/aws_forecast_architecture.png" height=500 width=1000></img>
+![](../../screenshots/forecast/aws_forecast_architecture.png.png)
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
 example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 
@@ -32,8 +32,8 @@ profile
 
 ![](../../screenshots/forecast/manning_raw_data_plot.png)
 
-Module [dataset_and_import_jobs.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/dataset_and_import_jobs.py) creates an AWS Forecast dataset group and dataset 
-as described in [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html)
+Module [dataset_and_import_jobs.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/dataset_and_import_jobs.py) 
+creates an AWS Forecast dataset group and dataset as described in [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html)
 Here we only use target time series dataset type 
 
 As per [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html),
@@ -43,7 +43,6 @@ Related time series and Item metadata is optional".
 
 For the data uploaded to S3 using module `prepare_data_for_s3.py`, the itemid column has been created and set to arbitary value (1) 
 as all the items belong to the same group (i.e Manning's wikipedia hits)
-
 
 The dataset group and import job can then be created using the snippet below after setting the data frequency for daily frequency and ts_schema.
 
@@ -103,7 +102,7 @@ paramters are passed into the custom functions for creating the predictor
   set this to 35 days)
   
 This custom function calls the forecast.create_predictor method and sets the
-AutoML parameter to `True`. 
+AutoML parameter to _True_. 
 However, this can also be upgraded to AutoPredictor as detailed [here](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html)
 and is suggested as the preferred method by AWS
 >AutoPredictor is the default and preferred method to create a predictor with Amazon Forecast. AutoPredictor creates predictors by applying the optimal combination of algorithms for each time series in your dataset.

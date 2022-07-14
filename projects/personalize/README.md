@@ -127,27 +127,46 @@ sfn name `GlueETLPersonalizeTraining`
 
 ### S3 event notifications
 
-We need to configure two S3 event notifications:
+We need to configure S3 event notifications for train and prediction workflows:
 
-* S3 to lambda notification (for put raw data object event) to trigger the step function execution
-* send notifications to SNS topic created from cloudformation, when the batch jobs from Personalize complete.  
+* Training workflow
 
-* For SNS, we have configured email as subscriber to SNS via protocol set as email endpoint.
-The SNS messages will then send email to subscriber address when event message received from S3.
+- S3 to lambda notification (for put raw data object event) to trigger the step function execution for the train workflow
 
-From root of repo, run the following script to configure bucket notifications. 
+* Batch/RealTime Recommendations
+
+1. S3 to Lambda notification for triggering Personalize Batch Job when batch sample data object but into S3 bucket prefix
+2. S3 to Lambda notification for triggering lambda to transform output of batch job added to S3. 
+3. S3 notification to SNS topic, when the output of lambda transform lands in S3 bucket. We have configured email as subscriber 
+to SNS via protocol set as email endpoint, via cloudformation. The SNS messages will then send email to subscriber 
+address when event message received from S3.
+
+To add bucket event notification for starting the training workflow via step functions, run the custom script and 
+passing arg `--workflow` with value `train`. By default, this will send S3 event when csv file is uploaded into 
+`movie-lens/batch/results/` prefix in the bucket.
 
 ```
-$ python projects/personalize/put_notification_s3.py
+$ python projects/personalize/put_notification_s3.py --workflow train
+
 INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
 INFO:__main__:Lambda arn arn:aws:lambda:........:function:LambdaSFNTrigger for function LambdaSFNTrigger
-INFO:__main__:Topic arn arn:aws:sns:........:personalize-batch for personalize-batch
 INFO:__main__:HTTPStatusCode: 200
 INFO:__main__:RequestId: X6X9E99JE13YV6RH
-{'ResponseMetadata': {'RequestId': 'X6X9E99JE13YV6RH', 'HostId': 'yAseQ1ugcv9FKbRFxCps6MjeMnG7QFjQDVmRjhs5JQXeHjmYqzcCXH/+j1cOlz3vRiEBDhZPOnQ=', 
-'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amz-id-2': 'yAseQ1ugcv9FKbRFxCps6MjeMnG7QFjQDVmRjhs5JQXeHjmYqzcCXH/+j1cOlz3vRiEBDhZPOnQ=', 
-'x-amz-request-id': 'X6X9E99JE13YV6RH', 'date': 'Fri, 08 Jul 2022 03:04:55 GMT', 'server': 'AmazonS3', 'content-length': '0'}, 'RetryAttempts': 0}}
+```
 
+To add bucket event notification for batch/realtime predictions run the script and pass `--workflow` with value `predict`.
+The default prefixes set for the object event triggers for s3 to lambda and s3 to sns notification, can be found in the source
+code. These can be overridden by passing the respective argument names (see click options in source code).
+
+```
+$ python projects/personalize/put_notification_s3.py --workflow predict
+
+INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
+INFO:__main__:Lambda arn arn:aws:lambda:us-east-1:376337229415:function:LambdaBatchTrigger for function LambdaBatchTrigger
+INFO:__main__:Lambda arn arn:aws:lambda:us-east-1:376337229415:function:LambdaBatchTransform for function LambdaBatchTransform
+INFO:__main__:Topic arn arn:aws:sns:us-east-1:376337229415:PersonalizeBatch for PersonalizeBatch
+INFO:__main__:HTTPStatusCode: 200
+INFO:__main__:RequestId: Q0BCATSW52X1V299
 ```
 
 Note: There is currently not support for notifications to FIFO type SNS topics. 

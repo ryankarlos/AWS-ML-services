@@ -35,53 +35,103 @@ def get_account_id():
     return account_id
 
 
-def create_bucket_notification_config(
-    bucket_name,
-    object_prefix_sns,
-    object_prefix_lambda,
-    topic_arn,
-    lambda_arn,
-    account_id,
-):
-    response = s3.put_bucket_notification_configuration(
-        Bucket=bucket_name,
-        NotificationConfiguration={
-            "TopicConfigurations": [
-                {
-                    "Id": "BatchResultsSNS",
-                    "TopicArn": topic_arn,
-                    "Events": ["s3:ObjectCreated:*"],
-                    "Filter": {
-                        "Key": {
-                            "FilterRules": [
-                                {"Name": "prefix", "Value": object_prefix_sns,},
-                                {"Name": "suffix", "Value": ".csv"},
-                            ]
-                        }
+def create_bucket_notification_config(bucket_name, account_id, workflow, **kwargs):
+    if workflow == "train":
+        sfn_trigger_lambda_arn = kwargs["sfn_trigger_lambda_arn"]
+        object_prefix_sfn_trigger_lambda = kwargs["object_prefix_sfn_trigger_lambda"]
+        response = s3.put_bucket_notification_configuration(
+            Bucket=bucket_name,
+            NotificationConfiguration={
+                "LambdaFunctionConfigurations": [
+                    {
+                        "Id": "RawDataTriggerLambda",
+                        "LambdaFunctionArn": sfn_trigger_lambda_arn,
+                        "Events": ["s3:ObjectCreated:*"],
+                        "Filter": {
+                            "Key": {
+                                "FilterRules": [
+                                    {
+                                        "Name": "prefix",
+                                        "Value": object_prefix_sfn_trigger_lambda,
+                                    },
+                                    {"Name": "suffix", "Value": ".csv"},
+                                ]
+                            }
+                        },
+                    }
+                ],
+            },
+            ExpectedBucketOwner=account_id,
+            SkipDestinationValidation=True,
+        )
+    elif workflow == "predict":
+        batch_transform_lambda_arn = kwargs["batch_transform_lambda_arn"]
+        batch_trigger_lambda_arn = kwargs["batch_trigger_lambda_arn"]
+        object_prefix_batch_trigger_lambda = kwargs[
+            "object_prefix_batch_trigger_lambda"
+        ]
+        object_prefix_batch_transform_lambda = kwargs[
+            "object_prefix_batch_transform_lambda"
+        ]
+        topic_arn = kwargs["topic_arn"]
+        object_prefix_sns = kwargs["object_prefix_sns"]
+        response = s3.put_bucket_notification_configuration(
+            Bucket=bucket_name,
+            NotificationConfiguration={
+                "TopicConfigurations": [
+                    {
+                        "Id": "BatchResultsSNS",
+                        "TopicArn": topic_arn,
+                        "Events": ["s3:ObjectCreated:*"],
+                        "Filter": {
+                            "Key": {
+                                "FilterRules": [
+                                    {"Name": "prefix", "Value": object_prefix_sns},
+                                    {"Name": "suffix", "Value": ".csv"},
+                                ]
+                            }
+                        },
+                    }
+                ],
+                "LambdaFunctionConfigurations": [
+                    {
+                        "Id": "BatchTriggerLambda",
+                        "LambdaFunctionArn": batch_trigger_lambda_arn,
+                        "Events": ["s3:ObjectCreated:*"],
+                        "Filter": {
+                            "Key": {
+                                "FilterRules": [
+                                    {
+                                        "Name": "prefix",
+                                        "Value": object_prefix_batch_trigger_lambda,
+                                    },
+                                    {"Name": "suffix", "Value": ".csv"},
+                                ]
+                            }
+                        },
                     },
-                }
-            ],
-            "LambdaFunctionConfigurations": [
-                {
-                    "Id": "RawDataTriggerLambda",
-                    "LambdaFunctionArn": lambda_arn,
-                    "Events": ["s3:ObjectCreated:*"],
-                    "Filter": {
-                        "Key": {
-                            "FilterRules": [
-                                {"Name": "prefix", "Value": object_prefix_lambda,},
-                                {"Name": "suffix", "Value": ".csv"},
-                            ]
-                        }
+                    {
+                        "Id": "BatchTransformLambda",
+                        "LambdaFunctionArn": batch_transform_lambda_arn,
+                        "Events": ["s3:ObjectCreated:*"],
+                        "Filter": {
+                            "Key": {
+                                "FilterRules": [
+                                    {
+                                        "Name": "prefix",
+                                        "Value": object_prefix_batch_transform_lambda,
+                                    },
+                                    {"Name": "suffix", "Value": ".out"},
+                                ]
+                            }
+                        },
                     },
-                }
-            ],
-        },
-        ExpectedBucketOwner=account_id,
-        SkipDestinationValidation=True,
-    )
+                ],
+            },
+            ExpectedBucketOwner=account_id,
+            SkipDestinationValidation=True,
+        )
 
-    print(response)
     logger.info("HTTPStatusCode: %s", response["ResponseMetadata"]["HTTPStatusCode"])
     logger.info("RequestId: %s", response["ResponseMetadata"]["RequestId"])
     return response
@@ -90,13 +140,23 @@ def create_bucket_notification_config(
 @click.command()
 @click.option(
     "--topic_name",
-    default="personalize-batch",
+    default="PersonalizeBatch",
     help="SNS topic name for target s3 notification",
 )
 @click.option(
-    "--lambda_function_name",
+    "--sfn_trigger_lambda_function_name",
     default="LambdaSFNTrigger",
-    help="lambda function name for target s3 notification",
+    help="lambda function name which triggers step function job",
+)
+@click.option(
+    "--batch_transform_function_name",
+    default="LambdaBatchTransform",
+    help="lambda function name which transforms batch personalize output data from s3",
+)
+@click.option(
+    "--batch_trigger_lambda_function_name",
+    default="LambdaBatchTrigger",
+    help="lambda function name which triggers batch job in personalize",
 )
 @click.option(
     "--bucket_name",
@@ -109,27 +169,62 @@ def create_bucket_notification_config(
     help="updates to objects with this prefix to send notification to SNS",
 )
 @click.option(
-    "--object_prefix_lambda",
+    "--object_prefix_batch_transform_lambda",
+    default="movie-lens/batch/results/",
+    help="updates to objects with this prefix to send notification to lambda to transform batch data",
+)
+@click.option(
+    "--object_prefix_batch_trigger_lambda",
+    default="movie-lens/batch/input/",
+    help="object for which s3 event notification triggers lambda for starting batch job",
+)
+@click.option(
+    "--object_prefix_sfn_trigger_lambda",
     default="movie-lens/raw_data/input/",
-    help="updates to objects with this prefix to trigger lambda",
+    help="updates to objects with this prefix to trigger lambda which starts step function job",
+)
+@click.option(
+    "--workflow",
+    default="train",
+    type=click.Choice(["train", "predict"]),
+    help="whether adding bucket notifications for train or predict workflow",
 )
 def main(
     topic_name,
-    lambda_function_name,
+    sfn_trigger_lambda_function_name,
+    batch_trigger_lambda_function_name,
+    batch_transform_function_name,
     bucket_name,
     object_prefix_sns,
-    object_prefix_lambda,
+    object_prefix_sfn_trigger_lambda,
+    object_prefix_batch_trigger_lambda,
+    object_prefix_batch_transform_lambda,
+    workflow,
 ):
     account_id = get_account_id()
-    lambda_arn = get_lambda_arn(lambda_function_name)
-    topic_arn = get_sns_topic_arn(topic_name)
+    kwargs = {}
+    if workflow == "train":
+        kwargs["sfn_trigger_lambda_arn"] = get_lambda_arn(
+            sfn_trigger_lambda_function_name
+        )
+        kwargs["object_prefix_sfn_trigger_lambda"] = object_prefix_sfn_trigger_lambda
+    elif workflow == "predict":
+        kwargs["batch_trigger_lambda_arn"] = get_lambda_arn(
+            batch_trigger_lambda_function_name
+        )
+        kwargs["batch_transform_lambda_arn"] = get_lambda_arn(
+            batch_transform_function_name
+        )
+        kwargs["topic_arn"] = get_sns_topic_arn(topic_name)
+        kwargs["object_prefix_sns"] = object_prefix_sns
+        kwargs[
+            "object_prefix_batch_trigger_lambda"
+        ] = object_prefix_batch_trigger_lambda
+        kwargs[
+            "object_prefix_batch_transform_lambda"
+        ] = object_prefix_batch_transform_lambda
     response = create_bucket_notification_config(
-        bucket_name,
-        object_prefix_sns,
-        object_prefix_lambda,
-        topic_arn,
-        lambda_arn,
-        account_id,
+        bucket_name, account_id, workflow, **kwargs
     )
     return response
 

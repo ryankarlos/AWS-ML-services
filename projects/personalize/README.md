@@ -164,8 +164,10 @@ INFO:__main__:RequestId: X6X9E99JE13YV6RH
 ```
 
 To add bucket event notification for batch/realtime predictions run the script and pass `--workflow` with value `predict`.
-The default prefixes set for the object event triggers for s3 to lambda and s3 to sns notification, can be found in the source
-code. These can be overridden by passing the respective argument names (see click options in source code).
+The default prefixes set for the object event triggers for s3 to lambda and s3 to sns notification, can be found in the [source
+code](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/put_notification_s3.py). 
+These can be overridden by passing the respective argument names (see click options in the 
+[source code](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/put_notification_s3.py)).
 
 ```
 $ python projects/personalize/put_notification_s3.py --workflow predict

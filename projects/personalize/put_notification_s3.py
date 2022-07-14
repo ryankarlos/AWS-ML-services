@@ -73,26 +73,9 @@ def create_bucket_notification_config(bucket_name, account_id, workflow, **kwarg
         object_prefix_batch_transform_lambda = kwargs[
             "object_prefix_batch_transform_lambda"
         ]
-        topic_arn = kwargs["topic_arn"]
-        object_prefix_sns = kwargs["object_prefix_sns"]
         response = s3.put_bucket_notification_configuration(
             Bucket=bucket_name,
             NotificationConfiguration={
-                "TopicConfigurations": [
-                    {
-                        "Id": "BatchResultsSNS",
-                        "TopicArn": topic_arn,
-                        "Events": ["s3:ObjectCreated:*"],
-                        "Filter": {
-                            "Key": {
-                                "FilterRules": [
-                                    {"Name": "prefix", "Value": object_prefix_sns},
-                                    {"Name": "suffix", "Value": ".csv"},
-                                ]
-                            }
-                        },
-                    }
-                ],
                 "LambdaFunctionConfigurations": [
                     {
                         "Id": "BatchTriggerLambda",
@@ -139,11 +122,6 @@ def create_bucket_notification_config(bucket_name, account_id, workflow, **kwarg
 
 @click.command()
 @click.option(
-    "--topic_name",
-    default="PersonalizeBatch",
-    help="SNS topic name for target s3 notification",
-)
-@click.option(
     "--sfn_trigger_lambda_function_name",
     default="LambdaSFNTrigger",
     help="lambda function name which triggers step function job",
@@ -162,11 +140,6 @@ def create_bucket_notification_config(bucket_name, account_id, workflow, **kwarg
     "--bucket_name",
     default="recommendation-sample-data",
     help="Bucket name for configuring notifications",
-)
-@click.option(
-    "--object_prefix_sns",
-    default="movie-lens/batch/results/",
-    help="updates to objects with this prefix to send notification to SNS",
 )
 @click.option(
     "--object_prefix_batch_transform_lambda",
@@ -190,12 +163,10 @@ def create_bucket_notification_config(bucket_name, account_id, workflow, **kwarg
     help="whether adding bucket notifications for train or predict workflow",
 )
 def main(
-    topic_name,
     sfn_trigger_lambda_function_name,
     batch_trigger_lambda_function_name,
     batch_transform_function_name,
     bucket_name,
-    object_prefix_sns,
     object_prefix_sfn_trigger_lambda,
     object_prefix_batch_trigger_lambda,
     object_prefix_batch_transform_lambda,
@@ -215,8 +186,6 @@ def main(
         kwargs["batch_transform_lambda_arn"] = get_lambda_arn(
             batch_transform_function_name
         )
-        kwargs["topic_arn"] = get_sns_topic_arn(topic_name)
-        kwargs["object_prefix_sns"] = object_prefix_sns
         kwargs[
             "object_prefix_batch_trigger_lambda"
         ] = object_prefix_batch_trigger_lambda

@@ -1,11 +1,10 @@
 import os
 import logging
 import boto3
-import pandas as pd
-import numpy as np
 import urllib.parse
-import io
 import json
+import csv
+import io
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -21,35 +20,46 @@ def lambda_handler(event, context):
     )
     results_obj = s3.get_object(Bucket=bucket, Key=results_key)
     metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
-    df_metadata = pd.read_csv(
-        io.BytesIO(metadata_obj["Body"].read()), index_col="movieId"
-    )
+    lines = metadata_obj["Body"].read().decode("latin")
+    buf = io.StringIO(lines)
+    reader = csv.DictReader(buf, delimiter=",")
+    metadata_rows = list(reader)
     bytes_list = results_obj["Body"].read().rstrip(b"").split(b"\n")
-    print(df_metadata)
-    result = {"userId": [], "Recommendations": []}
+    result = []
     for data in bytes_list:
         if data != b"":
             results_dict = json.loads(data.decode("utf-8"))
             if results_dict["error"] is None:
-                recommended_items = np.array(
-                    results_dict["output"]["recommendedItems"], dtype=int
-                )
-                new_df = df_metadata.loc[recommended_items, :].reset_index(drop=True)
-                recomendations = " | ".join(
-                    list(
-                        new_df["title"]
-                        + " "
-                        + "("
-                        + new_df["genres"].str.split(pat="|", n=1).str[0]
-                        + ")"
-                    )
-                )
-                print(recomendations)
-                result["Recommendations"].append(recomendations)
-                result["userId"].append(results_dict["input"]["userId"])
-
-    transformed_batch = pd.DataFrame(result)
+                recommended_items = results_dict["output"]["recommendedItems"]
+                recomendations = []
+                for row in metadata_rows:
+                    if row["movieId"] in recommended_items:
+                        recommend = (
+                            row["title"]
+                            + " "
+                            + "("
+                            + row["genres"].split("|", 1)[0]
+                            + ")"
+                        )
+                        recomendations.append(recommend)
+                recomendations = " | ".join(recomendations)
+                data = {
+                    "user_id": results_dict["input"]["userId"],
+                    "recommendations": recomendations,
+                }
+                result.append(data)
+    # transformed_batch = pd.DataFrame(result)
+    print(result)
+    header = ["user_id", "recommendations"]
+    data_dict_keys = result[0].keys()
     results_key = f'{results_key.rsplit("/", 1)[0]}/transformed_users.csv'
-    s3_output_path = f"s3://{bucket}/{results_key}"
-    transformed_batch.to_csv(s3_output_path)
-    return transformed_batch
+    # creating a file buffer
+    file_buff = io.StringIO()
+    # writing csv data to file buffer
+    writer = csv.DictWriter(file_buff, fieldnames=data_dict_keys)
+    writer.writeheader()
+    for data in result:
+        writer.writerow(data)
+    # placing file to S3, file_buff.getvalue() is the CSV body for the file
+    s3.put_object(Body=file_buff.getvalue(), Bucket=bucket, Key=results_key)
+    return result

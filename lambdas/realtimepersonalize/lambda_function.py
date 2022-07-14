@@ -46,9 +46,9 @@ def get_movie_names_from_id(bucket, key, movie_id):
     reader = csv.DictReader(buf, delimiter=",")
     rows = list(reader)
     for row in rows:
-        if row["movieId"] == movie_id:
+        if int(row["movieId"]) == movie_id:
             title = row["title"]
-            genre = row["genre"]
+            genre = row["genres"]
     return title, genre
 
 

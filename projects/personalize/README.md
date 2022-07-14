@@ -1,16 +1,16 @@
 
 ### AWS Personalize Examples
 
-There are a number of datasets that are available for recommendation research. Amongst them, the MovieLens dataset https://movielens.org/ is 
+There are a number of datasets that are available for recommendation research. Amongst them, the [MovieLens dataset](https://movielens.org/) is 
 probably one of the more popular ones. MovieLens is a non-commercial web-based movie recommender system. It is created in 1997 and 
 run by GroupLens, a research lab at the University of Minnesota, in order to gather movie rating data for research purposes. 
 MovieLens data has been critical for several research studies including personalized recommendation and social psychology.
 
-Download the zip MovieLens 25M Dataset under 'Recommended for new research' section in https://grouplens.org/datasets/movielens/
+Download the zip [MovieLens 25M Dataset](https://grouplens.org/datasets/movielens/) under **Recommended for new research** section
 From command line, we can unzip this as below. Navigate to the folder where the zip is stored and run the unzip comand.
-You may need to install the unzip package if not already installed https://www.tecmint.com/install-zip-and-unzip-in-linux/. 
+You may need to install the unzip package if not already installed from this [link](https://www.tecmint.com/install-zip-and-unzip-in-linux/). 
 For example on ubuntu `sudo apt-get install -y unzip`.
-We do not require the genome-tags.csv and genome-scores.csv so these can be deleted
+We do not require the _genome-tags.csv_ and _genome-scores.csv_ so these can be deleted
 
 ```
 $ cd datasets/personalize
@@ -38,10 +38,12 @@ $ aws s3api put-bucket-accelerate-configuration --bucket recommendation-sample-d
 ```
 
 It's a best practice to use aws s3 commands (such as aws s3 cp) for multipart uploads and downloads, because these aws s3 commands automatically perform multipart uploading and downloading based on the file size
-https://aws.amazon.com/premiumsupport/knowledge-center/s3-multipart-upload-cli/
-To use more of your host's bandwidth and resources during the upload, increase the maximum number of concurrent requests set in your AWS CLI configuration. By default, the AWS CLI uses 10 maximum concurrent requests. This command sets the maximum concurrent number of requests to 20:
+as described in [AWS docs](https://aws.amazon.com/premiumsupport/knowledge-center/s3-multipart-upload-cli/)
+To use more of your host's bandwidth and resources during the upload, increase the maximum number of concurrent requests set in your AWS CLI configuration. By default, the AWS CLI uses 10 maximum concurrent requests. 
+This command sets the maximum concurrent number of requests to 20:
 
-You can direct all Amazon S3 requests made by s3 and s3api AWS CLI commands to the accelerate endpoint: s3-accelerate.amazonaws.com. To do this, set the configuration value use_accelerate_endpoint to true in a profile in your AWS Config file. Transfer Acceleration must be enabled on your bucket to use the accelerate endpoint.
+You can direct all Amazon S3 requests made by s3 and s3api AWS CLI commands to the accelerate endpoint: s3-accelerate.amazonaws.com. To do this, set the configuration value use_accelerate_endpoint to true in a profile 
+in your AWS Config file. Transfer Acceleration must be enabled on your bucket to use the accelerate endpoint.
 The following example uploads a file to a bucket enabled for Transfer Acceleration by using the --endpoint-url parameter to specify the accelerate endpoint.
 
 ```
@@ -57,7 +59,7 @@ upload: datasets\personalize\ml-25m\input\ratings.csv to s3://recommendation-sam
 
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_raw_data.png"></img>
+![](../../screenshots/personalize/s3_raw_data.png)
 
 Finally we need to add the glue script and lambda function to S3 bucket as well. This assumes the lambda function is zipped 
 as in `lambdas/data_import_personalize.zip` and you have a bucket with key `aws-glue-assets-376337229415-us-east-1/scripts`. If not adapt
@@ -92,12 +94,18 @@ Otherwise, you will get the error
 
 ### CloudFormation Templates
 
-Create cloudformation template which creates the following resources:
+The cloudformation template for creating the resources for this example is located in this [folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/cloudformation)
+More details on cloudformation can be found [here](../../cloudformation), which contains links to the appropriate AWS docs.
+The cloudformation template `personalize.yaml` creates the following resources:
 
 * Glue Job 
 * Personalize resources (Dataset, DatasetGroup, Schema) and associated role 
 * Step Function (for running ETL and Personalize DatasetImport Job and Creating solution version) and associated role
 * lambda function (and associated role) for triggering step function execution with S3 event notification.
+
+We can use the following cli command to create the template, with the path to the template passed to the `--template-body`
+argument. Adpat this depending on where your template is stored. We also need to include the `CAPABILITIES_NAMED_IAM` value to 
+`--capabilities` arg as the template includes IAM resources e.g. IAM role which has a custom name such as a RoleName
 
 ```
  $ aws cloudformation create-stack --stack-name PersonalizeGlue \
@@ -112,17 +120,18 @@ Create cloudformation template which creates the following resources:
 
 If successful, we should see the following resources successfully created in the resources tab
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_parameters_tab.png"></img>
+![](../../screenshots/personalize/cloud_formation_parameters_tab.png)
 
 If we run the command as above, just using the default parameters, we should see the key value pairs listed in the parameters
 tab as in screenshot below.
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/cloud_formation_resources_tab.png"></img>
+![](../../screenshots/personalize/cloud_formation_resources_tab.png)
+
 
 We should see that all the services should be created. For example navigate to the Step function console and click on the 
 sfn name `GlueETLPersonalizeTraining`
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/step_function_diagram_with_definition_console.png"></img>
+![](../../screenshots/personalize/step_function_diagram_with_definition_console.png)
 
 
 ### S3 event notifications
@@ -175,36 +184,40 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 #### Trigger Workflow for Training Solution
 
 
-<img width=800 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_train.png"></img>
+![](../../screenshots/personalize/personalize_train.png)
 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/s3_glue_output.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/train_app_service_map_xray.png"></img>
+![](../../screenshots/personalize/s3_glue_output.png)
 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_trace_lambda.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/xray_traces_sfn.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline1.png"></img>
-
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/CloudWatch_Xraytraces_timeline2.png"></img>
+![](../../screenshots/personalize/train_app_service_map_xray.png)
 
 
+![](../../screenshots/personalize/xray_trace_lambda.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/sfn_successful_run_create_new_sol.png"></img>
+
+![](../../screenshots/personalize/xray_traces_sfn.png)
+
+
+![](../../screenshots/personalize/CloudWatch_Xraytraces_timeline1.png)
+
+
+![](../../screenshots/personalize/CloudWatch_Xraytraces_timeline2.png)
+
+
+![](../../screenshots/personalize/sfn_successful_run_create_new_sol.png)
 
 
 #### Run GlueJob via Notebook and Train Solution Manually
 
-Create GlueDev endpoint using CloudFormation stack `cloudformation\glue-dev-endpoint.yaml`
+Create GlueDev endpoint using [CloudFormation stack](https://github.com/ryankarlos/AWS-ML-services/blob/master/cloudformation/glue-dev-endpoint.yaml)
+Instructions on using cloudformation can be found [here](../../cloudformation)
 
 Set the parameters 
 * NumberofWorkers = 7
 * WorkerType = G.1X
 
-Then create notebook using this endpoint and upload `projects\personalize\glue\notebook\Personalize_GLue.ipynb`
+Then create notebook using this endpoint and upload the [notebook](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/glue/notebook/Personalize_GLue.ipynb)
 
 Once the notebook has finished running, you should see two folders in `s3://recommendation-sample-data/movie-lens/transformed/` as below. 
 Each of these will contain a csv file corresponding to the interactions data (which will be used for training solution) and 
@@ -246,10 +259,9 @@ values as in the screenshot below and then click `Create and train solution`
 * Advanced Configuration - Turn on 'Perform HPO'. Leave the other parameter values as it is.
 
 The User-Personalization (aws-user-personalization) recipe is optimized for all User_Personalization recommendation scenarios. 
-When recommending items, this recipe uses automatic item exploration.
-https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html
+When recommending items, this recipe uses automatic item exploration. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html)
 
-<img width=500 src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/create_solution_console.png"></img>
+![](../../screenshots/personalize/create_solution_console.png)
 
 Wait for solution version to print an ACTIVE status. Training can take a while, depending on the dataset size and number of user-item
 interactions. If using AutoMl this can take longer. Be careful, that the training time (hrs) value is  based on 1 hr of compute capacity 
@@ -263,7 +275,7 @@ this can result in 560 training hours, and over $130 bill !
 
 You can use offline metrics to evaluate the performance of the trained model before you create a campaign and provide recommendations. 
 Offline metrics allow you to view the effects of modifying a solution's hyperparameters or compare results from models trained with the same data.
-https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+[Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 To get performance metrics, Amazon Personalize splits the input interactions data into a training set and a testing set. The split depends on the type of recipe you choose:
 For USER_SEGMENTATION recipes, the training set consists of 80% of each user's interactions data and the testing set consists of 20% of each user's interactions data.
 For all other recipe types, the training set consists of 90% of your users and their interactions data. The testing set consists of the remaining 10% of users and their interactions data.
@@ -271,7 +283,7 @@ Amazon Personalize then creates the solution version using the training set. Aft
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
 newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png"></img>
+![](../../screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png)
 
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter
@@ -289,14 +301,12 @@ The above metrics are described below :
 * coverage : An evaluation metric that tells you the proportion of unique items that Amazon Personalize might recommend using your model 
 out of the total number of unique items in Interactions and Items datasets. To make sure Amazon Personalize recommends more of your items, 
 use a model with a higher coverage score. Recipes that feature item exploration, such as User-Personalization, have higher coverage than those that 
-don’t, such as popularity-count.
-https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+don’t, such as popularity-count [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
 * mean reciprocal rank at 25
 An evaluation metric that assesses the relevance of a model’s highest ranked recommendation. Amazon Personalize calculates this metric 
 using the average accuracy of the model when ranking the most relevant recommendation out of the top 25 recommendations over all requests for recommendations.
-This metric is useful if you're interested in the single highest ranked recommendation.
-https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+This metric is useful if you're interested in the single highest ranked recommendation. [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
 
 * normalized discounted cumulative gain (NCDG) at K (5/10/25)
@@ -305,23 +315,20 @@ Amazon Personalize calculates this by assigning weight to recommendations based 
 discounted (given a lower weight) by a factor dependent on its position. The normalized discounted cumulative gain at K assumes that recommendations that 
 are lower on a list are less relevant than recommendations higher on the list.
 Amazon Personalize uses a weighting factor of 1/log(1 + position), where the top of the list is position 1.
-This metric rewards relevant items that appear near the top of the list, because the top of a list usually draws more attention.
-https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+This metric rewards relevant items that appear near the top of the list, because the top of a list usually draws more attention.[Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
 
 * precision at K
 An evaluation metric that tells you how relevant your model’s recommendations are based on a sample size of K (5, 10, or 25) recommendations. 
 Amazon Personalize calculates this metric based on the number of relevant recommendations out of the top K recommendations, divided by K, 
-where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items.
-https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
   
 #### Creating Campaign for realtime recommendations
 
 A campaign is a deployed solution version (trained model) with provisioned dedicated transaction capacity for creating 
 real-time recommendations for your application users.  After you complete Preparing and importing data and Creating a solution, you are ready to 
-deploy your solution version by creating an AWS Personalize Campaign
-https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html
+deploy your solution version by creating an AWS Personalize Campaign [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html)
 If you are getting batch recommendations, you don't need to create a campaign.
 
 ```
@@ -333,7 +340,7 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 ```
 
 An additional arh `--config` can be passed, to set the explorationWeight and explorationItemAgeCutOff parameters for user
-personalizaion recipe https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html#bandit-hyperparameters
+personalizaion recipe [Reference](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html#bandit-hyperparameters)
 These parameters default to 0.3 and 30.0 respectively if not passed (as in previous example)
 To set the explorationWeight and ItemAgeCutoff to 0.6 and 100 respectively, run the script as below:
 
@@ -348,22 +355,21 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 
 #### Recommendations
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/personalize/personalize_recommendation_workflow.png"></img>
+![](../../screenshots/personalize/personalize_recommendation_workflow.png)
+
 
 You get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
-To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, when you get recommendations or get a personalized ranking.
-https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html
+To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, 
+when you get recommendations or get a personalized ranking.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html)
 
 With the User-Personalization recipe, Amazon Personalize generates scores for items based on a user's interaction data and metadata. 
 These scores represent the relative certainty that Amazon Personalize has in whether the user will interact with the item next. 
-Higher scores represent greater certainty.
-https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
+Higher scores represent greater certainty.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
 
 Amazon Personalize scores all the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
 all scores equals 1. For example, if you're getting movie recommendations for a user and there are three movies in the Items dataset, 
 their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
-small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.
-https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html
+small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
 
 We can run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
 recommendation mode to realtime.
@@ -435,9 +441,9 @@ job when you want to get batch item recommendations for your users or find simil
 To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon
 S3 bucket, uses your solution version trained with a USER_SEGMENTATION recipe to generate user segments for each row of input 
 data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in descending order based on the probability that 
-each user will interact with items in your inventory. https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html
+each user will interact with items in your inventory. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html)
 
-The input data in S3 needs to be a json file with the data in a specific format as specified in https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples
+The input data in S3 needs to be a json file with the data in a specific format as specified [here](https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples)
 For this example we will use a sample as in `datasets\personalize\ml-25m\batch\input\users.json` and upload this to S3 bucket `recommendation-sample-data` in
 `movie-lens/batch/input/users.json`. The following script uses the default s3 bucket name `recommendation-sample-data` and input data key `movie-lens/batch/input/users.json`.
 These can be overridden by passing a value to the `--bucket` and `--batch_input_key` args respectively. The results output will be stored in `movie-lens/batch/results/`
@@ -470,7 +476,7 @@ $ python projects/personalize/recommendations.py --job_name BatchInferenceMovies
 
 The results file `users.json.out` should be stored in destination folder specified `movie-lens/batch/results/`.
 An example of the results is stored in `atasets\personalize\ml-25m\batch\results\users.json.out`
-The format is as described https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples
+The format is as described [here](https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples)
 and each line contains a json with the input user id and the output recommended item ids, in this case 25 recommendations since we specified this in api call.
 
 We can then retrieve the movie title and genres by mapping the `item_id` to title in movies.csv file.

@@ -3,14 +3,17 @@
 This section will focus on pipelines combining the following AWS services:
 
 * AWS Transcribe: automatic speech recognition (speech to text)
-* AWS Textract: Extract text and data from documents (e.g. scanned docs, jpeg etc)
 * AWS Polly: Convert text to life like speech
 * AWS Translate: Translate text from one lang to another
 * AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
 
+The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services) and 
+configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
+
+
 ### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/nlp/AWS_nlp_speech_translation_architecture.png"></img>
+![](../../screenshots/nlp/AWS_nlp_speech_translation_architecture.png)
 
 The mp3 file we want to use is in `datasets/nlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3`
 and is just some english speech about ML. 
@@ -111,8 +114,7 @@ comprehend services and S3,lambda etc
 
 
 If creating new step function, the create_state_machine() method of boto sfn client requires the
-Amazon States Language definition of the state machine in string format
-the https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine asl_definition 
+Amazon States Language definition of the state machine in string format as described [here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine) 
 
 This is defined in the json file `step_functions/AWSNLPServicesdefinition.json`, which is loaded and converted to
 json string format.
@@ -122,7 +124,7 @@ To create and execute the step function run the following command. This will fir
 'StepFunctionAWSNLPServices', with step function name 'NLPExecution'.
 Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
 `--target_lang_code`). This needs to be paired with a voice-id for the chosen target language, required by AWS Polly  
-https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
+[Reference](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html)
 
 ```
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --deploy --role StepFunctionAWSNLPServices
@@ -205,7 +207,7 @@ in the following format for this execution
 
 We can see from the flow below, that depending on the engine type detected, the input will go to the 
 respective task to execute - which sets the engine parameter to 'neural' or 'standard' depending on the
-voice id chosen from this list https://docs.aws.amazon.com/polly/latest/dg/voicelist.html.
+voice id chosen from [this](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html)list 
 Also, there is another choice task to determine whether to skip the comprehend step if the language is not one of 
 the following (de", "pt","en","it","fr","es") as the others are not supported by all the services e.g. syntax detection
 It uses the $.SkipComprehend state variable which is part of the input passed to the state machine (above) and computed

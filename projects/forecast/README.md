@@ -1,21 +1,22 @@
 ### AWS Forecast 
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/aws_forecast_architecture.png" height=500 width=1000></img>
+![](../../screenshots/forecast/aws_forecast_architecture.png)
 
-Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the Fbprophet library example
-dataset which is a time series of the Wikipedia page hits for Peyton Manning
-https://peerj.com/preprints/3190/
-https://facebook.github.io/prophet/docs/quick_start.html#python-api
+Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
+example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 
+can be found [here](https://peerj.com/preprints/3190/)
 
+The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast) and 
+configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
 
-The notebook `AWS_Forecast.ipynb` uses the functions in the modules in this package to 
+Notebooks for the various steps described in the next sections can be found [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb)
+The notebook [AWS_Forecast.ipynb](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb) uses the functions in the modules in this package to 
 import data into S3, create an AWS forecast dataset and import data into it from S3, 
 train a predictor and then forecast using the model. 
 
-
 #### Data prep 
 
-The functions in modules `prepare_data_for_s3.py` filter the existing dataset to
+The functions in modules [prepare_data_for_s3.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/prepare_data_for_s3.py) filter the existing dataset to
 only include historical data for one year (2015) and then reformat the dataset
 to have columns ("timestamp", "target_value","item_id") and values as expected by AWS Forecast api.
 Finally we call the s3 put object to add to created S3 bucket.
@@ -23,29 +24,25 @@ Finally we call the s3 put object to add to created S3 bucket.
 For illustration purposes and to generate the task viz, ive used dask delayed, but the dataset
 size certainly does not warrant the need for it. 
 
-<p align="center">
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/data_processing_workflow.png" height=1000></img>
-</p>
+![](../../screenshots/forecast/data_processing_workflow.png)
+
 
 The filtered raw data for 2015 which is imported into S3 and then imported into AWS forecast has the following
 profile
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning_raw_data_plot.png" height=500 width=1000></img>
+![](../../screenshots/forecast/manning_raw_data_plot.png)
 
-
-Module `dataset_and_import_jobs.py` creates an AWS Forecast dataset group and dataset 
-https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html
+Module [dataset_and_import_jobs.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/dataset_and_import_jobs.py) 
+creates an AWS Forecast dataset group and dataset as described in [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html)
 Here we only use target time series dataset type 
 
-As per https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html, 
-
-"The dataset group must include a target time series dataset. The target time series dataset includes the 
+As per [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html),
+>The dataset group must include a target time series dataset. The target time series dataset includes the 
 target attribute (item_id) and timestamp attribute, as well as any dimensions. 
 Related time series and Item metadata is optional".
 
 For the data uploaded to S3 using module `prepare_data_for_s3.py`, the itemid column has been created and set to arbitary value (1) 
 as all the items belong to the same group (i.e Manning's wikipedia hits)
-
 
 The dataset group and import job can then be created using the snippet below after setting the data frequency for daily frequency and ts_schema.
 
@@ -87,17 +84,16 @@ dataset_import_job_arn=ts_dataset_import_job_response['DatasetImportJobArn']
 check_job_status(dataset_import_job_arn, job_type="import_data")
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-datasets.png" ></img>
+![](../../screenshots/forecast/manning-datasets.png)
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-dashboard.png" ></img>
-
+![](../../screenshots/forecast/manning-dashboard.png)
 
 #### Model Training
 
 Create a predictor (an Amazon Forecast model) that is trained using the target time series. 
 You can use predictors to generate forecasts based on your time-series data.
 
-As per https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html, the following
+As per [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html), the following
 paramters are passed into the custom functions for creating the predictor
 
 * Dataset group (defined previously)
@@ -106,15 +102,12 @@ paramters are passed into the custom functions for creating the predictor
   set this to 35 days)
   
 This custom function calls the forecast.create_predictor method and sets the
-AutoML parameter to `True`. 
-However, this can also be upgraded to AutoPredictor as detailed in 
-https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html
+AutoML parameter to _True_. 
+However, this can also be upgraded to AutoPredictor as detailed [here](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html)
 and is suggested as the preferred method by AWS
-
-"
-AutoPredictor is the default and preferred method to create a predictor with Amazon Forecast. AutoPredictor creates predictors by applying the optimal combination of algorithms for each time series in your dataset.
+>AutoPredictor is the default and preferred method to create a predictor with Amazon Forecast. AutoPredictor creates predictors by applying the optimal combination of algorithms for each time series in your dataset.
 Predictors created with AutoPredictor are generally more accurate than predictors created with AutoML or manual selection."
-"
+
 
 ```
 
@@ -128,45 +121,34 @@ check_job_status(predictor_arn, job_type="training")
 
 ### Backtest results
 
-Amazon Forecast provides following metrics to evaluate predictors.
-Quoting the following from AWS docs 
-https://docs.aws.amazon.com/forecast/latest/dg/metrics.html
+Amazon Forecast provides following [metrics](https://docs.aws.amazon.com/forecast/latest/dg/metrics.html) to evaluate predictors.
+Described below, are some of the metrics which are used in this example for evaluating model performance.
 
-""
-* Root Mean Square Error (RMSE): square root of the average of squared errors, and is therefore more sensitive to 
+>1. Root Mean Square Error (RMSE): square root of the average of squared errors, and is therefore more sensitive to 
   outliers than other accuracy metrics. A lower value indicates a more accurate model.
-  
-* Weighted Quantile Loss (wQL): measures the accuracy of a model at a specified quantile. It is particularly useful 
+>2. Weighted Quantile Loss (wQL): measures the accuracy of a model at a specified quantile. It is particularly useful 
   when there are different costs for underpredicting and overpredicting. By setting the weight (τ) of the wQL function, 
   you can automatically incorporate differing penalties for underpredicting and overpredicting.
   By default, Forecast computes wQL at 0.1 (P10), 0.5 (P50), and 0.9 (P90).
-
-* Average Weighted Quantile Loss (Average wQL): mean value of weighted quantile losses over all specified quantiles. 
-  By default, this will be the average of wQL[0.10], wQL[0.50], and wQL[0.90] 
-  
-* Mean Absolute Scaled Error (MASE): calculated by dividing the average error by a scaling factor. This scaling factor 
+>3. Average Weighted Quantile Loss (Average wQL): mean value of weighted quantile losses over all specified quantiles. 
+  By default, this will be the average of wQL[0.10], wQL[0.50], and wQL[0.90]
+>4. Mean Absolute Scaled Error (MASE): calculated by dividing the average error by a scaling factor. This scaling factor 
   is dependent on the seasonality value, m, which is selected based on the forecast frequency. A lower value indicates 
   a more accurate model. MASE is ideal for datasets that are cyclical in nature or have seasonal properties. 
   For example, forecasting for items that are in high demand during summers and in low demand during winters can 
   benefit from taking into account the seasonal impact.
-  
-* Mean Absolute Percentage Error (MAPE): takes the absolute value of the percentage error between observed and 
+>5. Mean Absolute Percentage Error (MAPE): takes the absolute value of the percentage error between observed and 
   predicted values for each unit of time, then averages those values. A lower value indicates a more accurate model.
   MAPE is useful for cases where values differ significantly between time points and outliers have a significant impact.
-  
-* Weighted Absolute Percentage Error (WAPE): measures the overall deviation of forecasted values from observed values. 
-  WAPE is calculated by taking the sum of observed values and the sum of predicted values, and calculating the error 
-  between those two values. A lower value indicates a more accurate model. WAPE is more robust to outliers than 
-  Root Mean Square Error (RMSE) because it uses the absolute error instead of the squared error.
-""
+>6. Weighted Absolute Percentage Error (WAPE): measures the overall deviation of forecasted values from observed values. 
+WAPE is calculated by taking the sum of observed values and the sum of predicted values, and calculating the error 
+between those two values. A lower value indicates a more accurate model. WAPE is more robust to outliers than 
+Root Mean Square Error (RMSE) because it uses the absolute error instead of the squared error.
 
 
-The metrics are provided for each backtest window 
-specified. Quoting the following from AWS doc
-https://docs.aws.amazon.com/forecast/latest/dg/metrics.html
+The metrics are provided for each backtest window  specified. 
 
-""
-Forecast uses backtesting to calculate accuracy metrics. If you run multiple backtests, Forecast averages each 
+>Forecast uses backtesting to calculate accuracy metrics. If you run multiple backtests, Forecast averages each 
 metric over all backtest windows. By default, Forecast computes one backtest, with the size of the backtest window 
 (testing set) equal to the length of the forecast horizon (prediction window). You can set both the backtest window 
 length and the number of backtest scenarios when training a predictor.
@@ -175,13 +157,13 @@ backtest window will be excluded from that backtest. This is because Forecast on
 observed values during backtesting, and filled values are not observed values.
 The backtest window must be at least as large as the forecast horizon, and smaller than half the length of the entire 
 target time-series dataset. You can choose from between 1 and 5 backtests.
-""
+
 
 ```
 error_metrics = evaluate_backtesting_metrics(predictor_arn)
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-predictors.png" ></img>
+![](../../screenshots/forecast/manning-predictors.png)
 
 
 and to plot the backtest results for all metrics except 
@@ -199,28 +181,25 @@ this dataset due to cyclical/seasonal properties in data
 plot_backtest_metrics(error_metrics)
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-backtest-results-plot.png" ></img>
-
+![](../../screenshots/forecast/manning-backtest-results-plot.png)
 
 #### Forecast and query
 
 Now we have a trained model so we can create a forecast. This
 includes predictions for every item (item_id) in the dataset group 
-that was used to train the predictor. 
-https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html
+that was used to train the predictor [Reference](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html)
 
 ```
 forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
 forecast_arn = create_forecast(forecast_name, predictor_arn)
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecasts.png" ></img>
 
+![](../../screenshots/forecast/manning-forecasts.png)
 
 Once this is done, we can then query the forecast by passing a filter (key-value pair),
 where the key/values are one of the schema attribute names and valid values respectively. 
-This will return forecast for only those items that satisfy the criteria
-https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html
+This will return forecast for only those items that satisfy the criteria [Reference](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html)
 In this case, we query the forecast and return all the items 
 by using the item id dimension
 
@@ -231,7 +210,8 @@ df = create_forecast_plot(forecast_response)
 
 ```
 
-<img src="https://github.com/ryankarlos/AWS-ML-services/blob/master/screenshots/forecast/manning-forecast-p10-p50-p90-plot.png" ></img>
+![](../../screenshots/forecast/manning-forecast-p10-p50-p90-plot.png)
+
 
 
 #### Terminating resources

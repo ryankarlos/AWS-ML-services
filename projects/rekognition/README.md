@@ -1,14 +1,17 @@
+## AWS Rekognition
 
-All the scripts in this folder using AWS SDK for python can be found in the official docs https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/what-is.html
+The following exercise, demonstrates using AWS Rekognition Custom Labels to train a custom labelled food images dataset 
+and then use the model to classify a set of test images.
+All the scripts used in this exercise [here](https://github.com/ryankarlos/AWS-ML-services/projects/rekognition) can be found in the official [docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/what-is.html)
 Some of these scripts have been adapted and tailored for the use of these sample datasets.
-
+To configure virtual environment for this exercise follow the instructions [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
 
 #### Uploading datatset to S3
 
 Run the following command specifying the local path to image data tom upload, bucket name.
 We also need to attach a resource policy to the bucket to give AWS Rekogniiton required
-permissions to acccess bucket. Pass the required resource policy filename 
-(listed in `s3/resource_policies/`) to the arg `--policy_filename`
+permissions to acccess bucket. We will run the following `transfer_data_s3.py` script located in this [folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/s3) Pass the required resource policy filename 
+We need to pass an arg `--policy_filename` to the script which is the filename of the s3 resource policy defined [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/s3/resource_policies/rekognition_permissions.json)
 
 ```
 $ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir datasets/food101 --policy_filename rekognition_permissions.json   
@@ -22,7 +25,9 @@ $ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir dataset
 
 #### Creating project
 
-https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/mp-create-project.html
+A project manages the model versions, training dataset, and test dataset for a model. You can create a project with the Amazon Rekognition Custom Labels 
+console or with the CreateProject API as described in the [docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/mp-create-project.html).
+Run the following `create_project.py` script in the [project folder](https://github.com/ryankarlos/AWS-ML-services/projects/rekognition) 
 
 ```
 $ python rekognition/creating_project.py custom_labels
@@ -34,10 +39,9 @@ Finished creating project: custom_labels
 
 #### Creating dataset
 
-https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/md-create-dataset-existing-dataset-sdk.html
-
-
 This automatically splits the dataset into training and test.Alternatively one can also pass in existing test dataset
+More details can be found in [AWS docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/md-create-dataset-existing-dataset-sdk.html
+)
 
 ![img_1.png](../../screenshots/rekognition/food101/img_1.png)
 
@@ -57,8 +61,16 @@ to be fair a lot of false negatives and positives are rubbish images which shoul
 
 ### Run inference
 
-```
+We run the model inference on a set of unseen images, by running the following [script](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/rekognition/inference.py)
+and substituing the values for model_arn, project_arn and path to set of test images to the respective args below.
+
+```Shell
 $ python rekognition/inference.py --model_arn=<model-arn-value> --project_arn=<project-arn-value> --image=datasets/cv/food101/train
+```
+
+This should output the following in the terminal
+
+```
 INFO: Starting model
 INFO: Status: RUNNING
 INFO: Message: The model is running.
@@ -94,23 +106,15 @@ Done...
 
 ### Cleanup resources
 
-Cannot delete project directly as hace to clean up datasets and model
-
-* First get project and dataset-arns using aws-cli
-
-```
-$ aws rekognition describe-projects --project-name custom_labels
-```
-
-* Delete train and test datasets
-
-* First get dataset-arn
+We can cleanup resources created in this example, using a [custom script](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/rekognition/cleanup_resources.py)
+However, we cannot delete project directly as have to clean up datasets and model first.
+So first get project and dataset-arns using aws-cli
 
 ```
 $ aws rekognition describe-projects --project-name custom_labels
 ```
 
-Then cleanup test and train datasets with each arn
+Then delete test and train datasets with each arn
 
 ```
 $ python rekognition/cleanup_resources.py --resource=dataset --dataset_arn="<arn-value>"
@@ -130,15 +134,14 @@ INFO: Finished deleting dataset: <arn-value>
 
 ```
 
-* Delete model
+Use the project arn retrieved from the previous step to get the model-arn using the cli command below
 
-Get model-arn
 ```
 aws rekognition describe-project-versions --project-arn="<arn-value>"
 ```
 
-and use arn to delete model 
-
+Then delete the model resource, running the custom script and passing in the resource value as `model`
+and model-arn retrieved form the previous step
 ```
 $ python rekognition/cleanup_resources.py --resource=model --model_arn=<arn-value>
 Are you sure you wany to delete model <arn-value> ?
@@ -148,7 +151,8 @@ INFO: Deleting dataset: <arn-value>
 ```
 
 
-* Then delete project dataset
+Then run the custom script again to delete the project dataset, by passing in the resource value as `project`
+and `project-arn`
 
 ```
 $ python rekognition/cleanup_resources.py --resource=project --project_arn=<arn-value>
@@ -159,8 +163,8 @@ INFO: project deleted: 5
 INFO: Finished deleting project: 
 ```
 
-* Delete selected resources in bucket or entire bucket. If entire bucket not needed to be 
-  deleted, then `--resource_list` arg can be passed.
+Finally, we can run the custom script to delete selected resources in bucket or the entire bucket. If the entire bucket does not need to
+be deleted, the `--resource_list` arg can be passed.
 
 ```
 $ python s3/cleanup_resources.py --bucket_name=rekognition-cv

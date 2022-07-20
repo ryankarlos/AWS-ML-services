@@ -3,7 +3,8 @@ import logging
 import boto3
 import json
 import io
-import csv
+import pandas as pd
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -39,16 +40,10 @@ def get_real_time_recommendations(
 
 
 def get_movie_names_from_id(bucket, key, movie_id):
-
     obj = s3.get_object(Bucket=bucket, Key=key)
-    lines = obj["Body"].read().decode("latin")
-    buf = io.StringIO(lines)
-    reader = csv.DictReader(buf, delimiter=",")
-    rows = list(reader)
-    for row in rows:
-        if int(row["movieId"]) == movie_id:
-            title = row["title"]
-            genre = row["genres"]
+    df = pd.read_csv(io.BytesIO(obj["Body"].read()))
+    title = df.loc[df["movieId"] == movie_id, ["title"]].values.flatten()[0]
+    genre = df.loc[df["movieId"] == movie_id, ["genres"]].values.flatten()[0]
     return title, genre
 
 

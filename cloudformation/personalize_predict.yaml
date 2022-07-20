@@ -25,7 +25,7 @@ Parameters:
       Description: "Key to lambda realtime personalize trigger zip object"
       Type: "String"
     BatchResultsPath:
-      Default: /movie-lens/batch/results/
+      Default: /movie-lens/batch/results
       Description: "Path to folder in S3 bucket where results from batch job will be stored"
       Type: "String"
     MoviesMetadataKey:
@@ -99,6 +99,8 @@ Resources:
           MemorySize: 500
           TracingConfig:
             Mode: Active
+          Layers:
+            - arn:aws:lambda:us-east-1:336392948345:layer:AWSDataWrangler-Python39:9
           Environment:
             Variables:
               METADATA_KEY: !Ref MoviesMetadataKey
@@ -114,6 +116,8 @@ Resources:
             S3Key: !Ref RealTimeTriggerLambdaKey
           Runtime: python3.9
           Timeout: 60
+          Layers:
+            - arn:aws:lambda:us-east-1:336392948345:layer:AWSDataWrangler-Python39:9
           MemorySize: 500
           TracingConfig:
             Mode: Active
@@ -162,8 +166,10 @@ Resources:
           items:
             type: object
             properties:
-              user_id:
+              id:
                 type: integer
+              mode:
+                type: string
     RequestValidator:
       Type: AWS::ApiGateway::RequestValidator
       Properties:
@@ -183,14 +189,26 @@ Resources:
         ResourceId: !GetAtt [ApiGateway, RootResourceId]
         RestApiId: !Ref ApiGateway
         RequestParameters:
-          method.request.querystring.user_id: true
+          method.request.querystring.id: true
+          method.request.querystring.mode: true
     ApiGatewayDeployment:
       Type: AWS::ApiGateway::Deployment
       DependsOn:
         - ApiGatewayRootMethod
       Properties:
         RestApiId: !Ref ApiGateway
+    ApiGatewayStage:
+      Type: AWS::ApiGateway::Stage
+      Properties:
         StageName: !Ref ApiGatewayStageName
+        Description: Dev Stage
+        RestApiId: !Ref ApiGateway
+        DeploymentId: !Ref ApiGatewayDeployment
+        MethodSettings:
+          - ResourcePath: /
+            HttpMethod: GET
+            MetricsEnabled: 'true'
+            DataTraceEnabled: 'true'
     LambdaRole:
       Type: 'AWS::IAM::Role'
       Properties:

@@ -199,13 +199,14 @@ def main(
     context,
 ):
     s3_input_path = f"s3://{bucket}/{batch_input_key}"
-    s3_output_path = f"s3://{bucket}/{batch_results_key}"
+    s3_inference_results_path = f"s3://{bucket}/{batch_results_key}/inference/"
+    s3_segment_results_path = f"s3://{bucket}/{batch_results_key}/segment/"
     role_arn = iam.get_role(RoleName=role_name)["Role"]["Arn"]
     if recommendation_mode == "batch_inference":
         logger.info(f"Running batch inference job {job_name} with config: {config}")
         return create_batch_inference_job(
             s3_input_path,
-            s3_output_path,
+            s3_inference_results_path,
             job_name,
             role_arn,
             sol_arn,
@@ -215,7 +216,7 @@ def main(
     elif recommendation_mode == "batch_segment":
         logger.info(f"Running batch segment job {job_name} for {num_users} users")
         return create_batch_segment_job(
-            s3_input_path, s3_output_path, job_name, num_users, role_arn, sol_arn
+            s3_input_path, s3_segment_results_path, job_name, num_users, role_arn, sol_arn
         )
     elif recommendation_mode == "realtime":
         context = json.loads(context)

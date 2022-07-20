@@ -59,13 +59,14 @@ def lambda_handler(event, context):
         event["Records"][0]["s3"]["object"]["key"], encoding="utf-8"
     )
     s3_input_path = f"s3://{bucket}/{key}"
-    s3_output_path = f"s3://{bucket}/{results_key}"
+    s3_inference_results_path = f"s3://{bucket}/{results_key}/inference/"
+    s3_segment_results_path = f"s3://{bucket}/{results_key}/segment/"
     try:
         if key.split("/")[-1] == "users.json":
             logger.info(f"Running batch inference job {job_name} with config: {config}")
             return create_batch_inference_job(
                 s3_input_path,
-                s3_output_path,
+                s3_inference_results_path,
                 job_name,
                 role_arn,
                 solution_arn,
@@ -76,7 +77,7 @@ def lambda_handler(event, context):
             logger.info(f"Running batch segment job {job_name} for {num_users} users")
             return create_batch_segment_job(
                 s3_input_path,
-                s3_output_path,
+                s3_segment_results_path,
                 job_name,
                 num_users,
                 role_arn,

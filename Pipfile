@@ -17,6 +17,7 @@ sqlalchemy = "==1.4.36"
 frauddetector= "==0.2.0"
 diagrams= "==0.21.1"
 s3fs= "==2022.5.0"
+pyarrow = "==8.0.0"
 
 [dev-packages]
 black = ">=22.1.0"

@@ -1,5 +1,5 @@
 
-### AWS Personalize Examples
+# AWS Personalize Examples
 
 There are a number of datasets that are available for recommendation research. Amongst them, the [MovieLens dataset](https://movielens.org/) is 
 probably one of the more popular ones. MovieLens is a non-commercial web-based movie recommender system. It is created in 1997 and 
@@ -27,7 +27,7 @@ Archive:  datasets/personalize/ml-25m.zip
 
 ```
 
- ### Loading data into S3 
+ ## Loading data into S3 
 
 
 The following example sets Status=Enabled to enable Transfer Acceleration on a bucket. You use Status=Suspended to suspend Transfer Acceleration.
@@ -92,7 +92,7 @@ Otherwise, you will get the error
 `An error occurred (InvalidRequest) when calling the PutObject operation: S3 Transfer Acceleration is not configured on this bucket`
 
 
-### CloudFormation Templates
+## CloudFormation Templates
 
 The cloudformation template for creating the resources for this example is located in this [folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/cloudformation)
 More details on cloudformation can be found [here](../../cloudformation), which contains links to the appropriate AWS docs.
@@ -134,7 +134,7 @@ sfn name `GlueETLPersonalizeTraining`
 ![](../../screenshots/personalize/step_function_diagram_with_definition_console.png)
 
 
-### S3 event notifications
+## S3 event notifications
 
 We need to configure S3 event notifications for train and prediction workflows:
 
@@ -183,7 +183,7 @@ INFO:__main__:RequestId: Q0BCATSW52X1V299
 Note: There is currently not support for notifications to FIFO type SNS topics. 
 
 
-#### Trigger Workflow for Training Solution
+## Trigger Workflow for Training Solution
 
 
 ![](../../screenshots/personalize/personalize_train.png)
@@ -210,7 +210,7 @@ Note: There is currently not support for notifications to FIFO type SNS topics.
 ![](../../screenshots/personalize/sfn_successful_run_create_new_sol.png)
 
 
-#### Run GlueJob via Notebook and Train Solution Manually
+### Run GlueJob via Notebook and Train Solution Manually
 
 Create GlueDev endpoint using [CloudFormation stack](https://github.com/ryankarlos/AWS-ML-services/blob/master/cloudformation/glue-dev-endpoint.yaml)
 Instructions on using cloudformation can be found [here](../../cloudformation)
@@ -273,7 +273,7 @@ resulting in a larger bill. Assume the interactions dataset is created from 12 m
 the glue parameter ,
 this can result in 560 training hours, and over $130 bill ! 
 
-#### Evaluating solution metrics 
+## Evaluating solution metrics 
 
 You can use offline metrics to evaluate the performance of the trained model before you create a campaign and provide recommendations. 
 Offline metrics allow you to view the effects of modifying a solution's hyperparameters or compare results from models trained with the same data.
@@ -326,7 +326,7 @@ Amazon Personalize calculates this metric based on the number of relevant recomm
 where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
   
-#### Creating Campaign for realtime recommendations
+## Creating Campaign for realtime recommendations
 
 A campaign is a deployed solution version (trained model) with provisioned dedicated transaction capacity for creating 
 real-time recommendations for your application users.  After you complete Preparing and importing data and Creating a solution, you are ready to 
@@ -355,7 +355,7 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 2022-07-09 21:12:08,412 - deploy - INFO - Status: CREATE PENDING
 ```
 
-#### Recommendations
+## Recommendations
 
 ![](../../screenshots/personalize/personalize_recommendation_workflow.png)
 
@@ -373,9 +373,107 @@ all scores equals 1. For example, if you're getting movie recommendations for a 
 their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
 small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
 
-We can run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
-recommendation mode to realtime.
-So for user `1`, the model recommends movies of drama/romance theme.
+
+To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon 
+S3 bucket, uses your solution version to generate item recommendations, and then exports the recommendations to an Amazon S3 bucket.
+The input data can be a list of users or items or list of users each with a collection of items in JSON format. Use a batch inference 
+job when you want to get batch item recommendations for your users or find similar items across an inventory.
+
+To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon
+S3 bucket, uses your solution version trained with a USER_SEGMENTATION recipe to generate user segments for each row of input 
+data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in descending order based on the probability that 
+each user will interact with items in your inventory. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html)
+
+The input data in S3 needs to be a json file with the data in a specific format as specified [here](https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples)
+For this example we will use a sample as in `datasets\personalize\ml-25m\batch\input\users.json` and upload this to S3 bucket `recommendation-sample-data` in
+`movie-lens/batch/input/users.json`.
+
+The cloudformation  stack created earlier, should have deployed the necessary resources to 
+run the batch job, i.e a lambda function which gets triggered when input data is added to S3, and creates the 
+batch job in Personalize. The lambda function will automatically trigger either a batch segment job 
+or a batch inference job depending on the filename. A `users.json` file, is assumed to have user ids for which
+we required item recommendations and will trigger a batch inference job using the solution version arn specified 
+as the lambda environment variable (defined through the cloudformation stack parameters) . We will be using the
+solution version trained using the USER_PERSONALIZATION recipe, in the previous section
+
+An `items.json` file on the other hand, will trigger a batch segment job, and should be of the
+format as in `datasets/personalize/ml-25m/batch/input/items.json`. This will return a list of users with
+highest probabilites for recommending the items to.
+**Note**: A batch segment job requires the solution to be trained with a USER_SEGMENTATION recipe and will
+throw an error if another recipe is used. This will require training a new solution with this recipe and 
+is beyond the scope of this tutorial.
+The lambda config should look as below with the event trigger set as S3.
+
+
+A second lambda function which runs a transform operation when the  results from the batch job are added to S3 from Personalize. If successful, a notification is sent to SNS topic
+configured with email as endpoint to send alert when the workflow completes. 
+The output of the batch job from personalize, returns a json in the following format:
+
+```
+{"input":{"userId":"1"},"output":{"recommendedItems":[....],"scores":[....]},"error":null}
+{"input":{"userId":"2"},"output":{"recommendedItems":[....],"scores":[...]},"error":null}
+......
+.....
+```
+
+With the transformation, we intend to return a structured dataset serialised in parquet format (with snappy compression),
+with the following schema:
+
+* **userID**: integer
+* **Recommendations**: string
+
+The movie id is mapped to the title and associated genre and release year or each user as below . Each recommendation
+is separated by a `|` delimiter.
+
+```
+   userId                           Recommendations
+0    1       Movie Title (year) (genre) | Movie Title (year) (genre) | ....
+1    2       Movie Title (year) (genre) | Movie Title (year) (genre) | ....
+......
+
+```
+
+This also uses a lambda layer with the AWS managed DataWrangler layer, so the pandas and numpy libraries are available. 
+The configuration, should look like below, with the lambda layer and destination as SNS.
+
+To trigger the batch inference job workflow, copy the sample `users.json` batch data to s3 path below.
+
+```
+aws s3 cp datasets/personalize/ml-25m/batch/input/users.json s3://recommendation-sample-data/movie-lens/batch/input/users.json
+```
+This creates a batch inference job with the job name having the unixtimestamp affixed to the end.
+
+We should receive a notification via email, when the entire workflow completes. 
+The outputs of the batch job and subsequent transformation, should be visible 
+in the bucket with keys `movie-lens/batch/results/inference/users.json.out` and 
+`movie-lens/batch/results/inference/transformed.parquet` respectively.
+These have also been copied and stored in the repo in `datasets/personalize/ml-25m/batch/results/users.json.out`
+and `datasets/personalize/ml-25m/batch/results/transformed.parquet`
+
+```
+    userId                                    Recommendations
+0    15000  Kiss the Girls (1997) (Crime) | Scream (1996) ...
+1   162540  Ice Age 2: The Meltdown (2006) (Adventure) | I...
+2     5000  Godfather, The (1972) (Crime) | Star Wars: Epi...
+3       94  Jumanji (1995) (Adventure) | Nell (1994) (Dram...
+4     4638  Inglourious Basterds (2009) (Action) | Watchme...
+5     9000  Die Hard 2 (1990) (Action) | Lethal Weapon 2 (...
+6      663  Crow, The (1994) (Action) | Nightmare Before C...
+7     1030  Sister Act (1992) (Comedy) | Lethal Weapon 4 (...
+8     3384  Ocean's Eleven (2001) (Crime) | Matrix, The (1...
+9    34567  Lord of the Rings: The Fellowship of the Ring,...
+10      50  Grand Budapest Hotel, The (2014) (Comedy) | He...
+11   80000  Godfather: Part II, The (1974) (Crime) | One F...
+12  110000  Manhattan (1979) (Comedy) | Raging Bull (1980)...
+13      13  Knocked Up (2007) (Comedy) | Other Guys, The (...
+14   20000  Sleepless in Seattle (1993) (Comedy) | Four We...
+```
+
+### Local Mode
+
+We can run the recommendations locally using custom scripts in the repo. 
+For **real time recommendations**, run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
+recommendation mode to realtime. So for user `1`, the model recommends movies of drama/romance theme.
 
 ```
 python projects/personalize/recommendations.py --job_name Moviesrealtimerecommend --sol_arn <solution-arn> --role_name PersonalizeRole \
@@ -436,18 +534,8 @@ Firm, The (1993) (Drama|Thriller)
 Wild Things (1998) (Crime|Drama|Mystery|Thriller)
 ```
 
-To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon 
-S3 bucket, uses your solution version to generate item recommendations, and then exports the recommendations to an Amazon S3 bucket.
-The input data can be a list of users or items or list of users each with a collection of items in JSON format. Use a batch inference 
-job when you want to get batch item recommendations for your users or find similar items across an inventory.
-To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon
-S3 bucket, uses your solution version trained with a USER_SEGMENTATION recipe to generate user segments for each row of input 
-data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in descending order based on the probability that 
-each user will interact with items in your inventory. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html)
-
-The input data in S3 needs to be a json file with the data in a specific format as specified [here](https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples)
-For this example we will use a sample as in `datasets\personalize\ml-25m\batch\input\users.json` and upload this to S3 bucket `recommendation-sample-data` in
-`movie-lens/batch/input/users.json`. The following script uses the default s3 bucket name `recommendation-sample-data` and input data key `movie-lens/batch/input/users.json`.
+For **Batch Inference jobs**, we need to run the `projects/personalize/recommendations.py` script.
+This uses the default s3 bucket name `recommendation-sample-data` and input data key `movie-lens/batch/input/users.json`.
 These can be overridden by passing a value to the `--bucket` and `--batch_input_key` args respectively. The results output will be stored in `movie-lens/batch/results/`
 but a different path can be chosen by passing a path to `--batch_results_key` arg.
 

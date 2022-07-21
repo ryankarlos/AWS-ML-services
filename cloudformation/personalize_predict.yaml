@@ -25,7 +25,7 @@ Parameters:
       Description: "Key to lambda realtime personalize trigger zip object"
       Type: "String"
     BatchResultsPath:
-      Default: /movie-lens/batch/results
+      Default: movie-lens/batch/results
       Description: "Path to folder in S3 bucket where results from batch job will be stored"
       Type: "String"
     MoviesMetadataKey:
@@ -73,6 +73,7 @@ Resources:
           Runtime: python3.9
           Timeout: 60
           MemorySize: 500
+          ReservedConcurrentExecutions: 4
           TracingConfig:
             Mode: Active
           Environment:
@@ -97,6 +98,7 @@ Resources:
           Runtime: python3.9
           Timeout: 60
           MemorySize: 500
+          ReservedConcurrentExecutions: 4
           TracingConfig:
             Mode: Active
           Layers:
@@ -119,6 +121,7 @@ Resources:
           Layers:
             - arn:aws:lambda:us-east-1:336392948345:layer:AWSDataWrangler-Python39:9
           MemorySize: 500
+          ReservedConcurrentExecutions: 100
           TracingConfig:
             Mode: Active
           Environment:
@@ -162,14 +165,10 @@ Resources:
         Schema:
           $schema: 'http://json-schema.org/draft-04/schema#'
           title: MoviesRecommend
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              mode:
-                type: string
+          type: object
+          properties:
+            user_id:
+              type: integer
     RequestValidator:
       Type: AWS::ApiGateway::RequestValidator
       Properties:
@@ -183,14 +182,17 @@ Resources:
         HttpMethod: GET
         Integration:
           IntegrationHttpMethod: POST
+          RequestTemplates:
+            "application/json": "{
+                \"user_id\" : $input.params('user_id')
+              }"
           Type: AWS
           Uri: !Sub >-
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaRealTimeTrigger.Arn}/invocations
         ResourceId: !GetAtt [ApiGateway, RootResourceId]
         RestApiId: !Ref ApiGateway
         RequestParameters:
-          method.request.querystring.id: true
-          method.request.querystring.mode: true
+          method.request.querystring.user_id: true
     ApiGatewayDeployment:
       Type: AWS::ApiGateway::Deployment
       DependsOn:
@@ -209,6 +211,22 @@ Resources:
             HttpMethod: GET
             MetricsEnabled: 'true'
             DataTraceEnabled: 'true'
+    ApiGatewayInvokeLambdaPermission:
+      Type: "AWS::Lambda::Permission"
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !GetAtt
+          - LambdaRealTimeTrigger
+          - Arn
+        Principal: apigateway.amazonaws.com
+        SourceArn: !Join [
+            "", [
+              "arn:aws:execute-api:",
+              { "Ref": "AWS::Region" }, ":",
+              { "Ref": "AWS::AccountId" }, ":",
+              !Ref ApiGateway, "/*/GET/"
+          ]
+        ]
     LambdaRole:
       Type: 'AWS::IAM::Role'
       Properties:
@@ -229,6 +247,19 @@ Resources:
                                "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess",
                                "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
                                "arn:aws:iam::aws:policy/AmazonS3FullAccess"]
+    RolePolicy:
+      Type: "AWS::IAM::Policy"
+      Properties:
+        PolicyName: "LambdaGetIam"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'iam:GetRole'
+              Resource: '*'
+        Roles:
+          - Ref: LambdaRole
 
 
 

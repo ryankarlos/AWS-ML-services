@@ -3,6 +3,7 @@ import logging
 import boto3
 import json
 import urllib.parse
+import time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -11,13 +12,15 @@ iam = boto3.client("iam")
 personalize_rec = boto3.client(service_name="personalize")
 s3 = boto3.client("s3")
 
+timestamp_id = int(time.time())
+
 solution_arn = os.environ["SOLUTION_ARN"]
 results_key = os.environ["BATCH_RESULTS_KEY"]
-job_name = os.environ["JOB_NAME"]
-num_results = os.environ["NUM_RESULTS"]
+job_name = f'{os.environ["JOB_NAME"]}_{timestamp_id}'
+num_results = int(os.environ["NUM_RESULTS"])
 role_name = os.environ["ROLE_NAME"]
 config = os.environ["CONFIG"]
-num_users = os.environ["num_users"]
+num_users = int(os.environ["NUM_USERS"])
 
 
 def create_batch_segment_job(

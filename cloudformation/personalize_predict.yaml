@@ -184,7 +184,7 @@ Resources:
           IntegrationHttpMethod: POST
           RequestTemplates:
             "application/json": "{
-                \"user_id\" : $input.params('user_id')
+                \"user_id\" : \"$input.params('user_id')\"
               }"
           Type: AWS
           Uri: !Sub >-

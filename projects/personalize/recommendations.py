@@ -216,7 +216,12 @@ def main(
     elif recommendation_mode == "batch_segment":
         logger.info(f"Running batch segment job {job_name} for {num_users} users")
         return create_batch_segment_job(
-            s3_input_path, s3_segment_results_path, job_name, num_users, role_arn, sol_arn
+            s3_input_path,
+            s3_segment_results_path,
+            job_name,
+            num_users,
+            role_arn,
+            sol_arn,
         )
     elif recommendation_mode == "realtime":
         context = json.loads(context)

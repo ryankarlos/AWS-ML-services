@@ -51,4 +51,4 @@ def lambda_handler(event, context):
     print(transformed_batch)
     results_key = f'{results_key.rsplit("/", 1)[0]}/transformed.parquet'
     s3_output_path = f"s3://{bucket}/{results_key}"
-    wr.s3.to_parquet(df=transformed_batch,path=s3_output_path)
+    wr.s3.to_parquet(df=transformed_batch, path=s3_output_path)

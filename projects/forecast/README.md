@@ -1,5 +1,9 @@
 ### AWS Forecast 
 
+Forecast is a fully managed AWS service for time-series analysis. It can select from multiple time series prediction models to find the best one for your particular data sets.
+Amazon Forecast  automatically examines the historical data provided (including any additional features that can impact the forecast), and identify what is meaningful, and produce 
+a forecasting model capable of making highly accurate predictions.
+
 ![](../../screenshots/forecast/aws_forecast_architecture.png)
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)

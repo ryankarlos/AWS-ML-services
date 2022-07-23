@@ -1,6 +1,6 @@
 ## AWS NLP services
 
-This section will focus on pipelines combining the following AWS services:
+This section will focus on pipelines combining the following AWS service for an NLP application:
 
 * AWS Transcribe: automatic speech recognition (speech to text)
 * AWS Polly: Convert text to life like speech
@@ -38,7 +38,7 @@ Launching subshell in virtual environment...
  . /Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/bin/activate
 ```
 
-#### deploying lambda function 
+#### Deploying lambda function 
 
 
 We will first need to create a lambda function with packaged code in lambdas/parses3json. This parses the json from s3 

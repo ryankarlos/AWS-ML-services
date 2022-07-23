@@ -1,24 +1,31 @@
-## Trying out various Auto ML services on AWS 
+# High Level AWS ML services
 
-*  [Rekognition](projects/rekognition) 
-*  [NLP Services](projects/nlp) 
-*  [Forecast](projects/forecast) 
-*  [Fraud Detector](projects/fraud) 
-*  [Personalize](projects/personalize) 
+AWS has a number of machine learning and artificial intelligence services and products that can be used in 
+conjunction with each other to make smart applications.  Here, I will demonstrate practically how one can 
+create ane end to end workflow involving some of these ML services, starting from raw labelled datasets to generating 
+predictions for unseen data from deployed trained models. Click on the links for the services for working through 
+the practical example workflow. This *'blog'* can be accessed either via [Github Pages](https://ryankarlos.github.io/AWS-ML-services/) or [Github Readme](https://github.com/ryankarlos/AWS-ML-services#readme).
+Please refer to the [Github Repo]((https://github.com/ryankarlos/AWS-ML-services)) for all the scripts referenced in the examples.
 
-### Environment and dependencies
+* Use of multiple [AWS NLP Services](projects/nlp) including Comprehend, Transcribe, Translate and Polly for an application to translate speech into multiple languages.
+* [AWS Forecast](projects/forecast) for forecasting the daily log-scale page views of an American Football Quarterback's Wikipedia page.
+* [AWS Fraud Detector](projects/fraud) 
+* [AWS Personalize](projects/personalize) for recommending new movies to users, based on their ratings to other similar movies.
+* [AWS Rekognition](projects/rekognition)  for classifying food images into their respective categories 
 
+For each of the examples, you would need to have a virtual environment setup if you need to run the scripts locally. Thsi can be setup 
+by following the instructions in the next section.
 
-Using pipenv  to manage environment and dependencies
-https://pipenv.pypa.io/en/latest/install/#installing-packages-for-your-project
+## Environment and dependencies
 
-first install pipenv
+We will use [pipenv](https://pipenv.pypa.io/en/latest/install/#installing-packages-for-your-project) to manage environment and dependencies
+First install *pipenv* using *pip* command
 
 ```
 pip install --user pipenv
 ```
 
-Then create virtual env based on dependencies in pipfile.lock and pipfile
+Then create a virtual environment based on dependencies in *pipfile.lock* and *pipfile* in the base of the [Github repository](https://github.com/ryankarlos/AWS-ML-services)
 
 ```
 $ pipenv shell     
@@ -39,8 +46,7 @@ Launching subshell in virtual environment...
 
 ```
 
-to update the lock file if the pipefile is updated (for example, if you
-have updated the dev-packages section), run:
+To update the lock file if the pipefile is updated (for example, if you  have updated the dev-packages section), run:
 
 ```
 $ pipenv update
@@ -57,9 +63,7 @@ Installing dependencies from Pipfile.lock (687a38)...
 All dependencies are now up-to-date!
 
 ```
-This will also install the dependencies to the env.
-
-To install directly from lock file, can run `pipenv install` or `pipenv install -d` to
+This will also install the dependencies to the env. To install directly from lock file, can run `pipenv install` or `pipenv install -d` to
 install specifically dev-packages
 
 ```
@@ -70,7 +74,7 @@ Installing dependencies from Pipfile.lock (595137)...
 
 ```
 
-To see a graph of packages and their dependencies
+To see a graph of packages and their dependencies, use the following command.
 
 ```
 $ pipenv graph 

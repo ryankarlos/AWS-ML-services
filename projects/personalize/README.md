@@ -1,11 +1,10 @@
+# AWS Personalize
 
-# AWS Personalize Examples
+Amazon Personalize allows developers with no prior machine learning experience to easily build sophisticated personalization capabilities into their applications. 
+With Personalize, you provide an activity stream from your application, as well as an inventory of the items you want to recommend, and Personalize will process 
+the data to train a personalization model that is customized for your data.
 
-There are a number of datasets that are available for recommendation research. Amongst them, the [MovieLens dataset](https://movielens.org/) is 
-probably one of the more popular ones. MovieLens is a non-commercial web-based movie recommender system. It is created in 1997 and 
-run by GroupLens, a research lab at the University of Minnesota, in order to gather movie rating data for research purposes. 
-MovieLens data has been critical for several research studies including personalized recommendation and social psychology.
-
+In this tutorial, we will be using the [MovieLens dataset](https://movielens.org/) which is a popular dataset used for recommendation research.
 Download the zip [MovieLens 25M Dataset](https://grouplens.org/datasets/movielens/) under **Recommended for new research** section
 From command line, we can unzip this as below. Navigate to the folder where the zip is stored and run the unzip comand.
 You may need to install the unzip package if not already installed from this [link](https://www.tecmint.com/install-zip-and-unzip-in-linux/). 

@@ -9,7 +9,7 @@ Please refer to the [Github Repo]((https://github.com/ryankarlos/AWS-ML-services
 
 * Use of multiple [AWS NLP Services](projects/nlp) including Comprehend, Transcribe, Translate and Polly for an application to translate speech into multiple languages.
 * [AWS Forecast](projects/forecast) for forecasting the daily log-scale page views of an American Football Quarterback's Wikipedia page.
-* [AWS Fraud Detector](projects/fraud) 
+* [AWS Fraud Detector](projects/fraud) for classifying fraudulent online registered accounts for simulated data from Kaggle.
 * [AWS Personalize](projects/personalize) for recommending new movies to users, based on their ratings to other similar movies.
 * [AWS Rekognition](projects/rekognition)  for classifying food images into their respective categories 
 

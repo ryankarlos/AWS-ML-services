@@ -27,7 +27,7 @@ Archive:  datasets/personalize/ml-25m.zip
 
 ```
 
- ## Loading data into S3 
+## Loading data into S3 
 
 For this tutorial, we will be using the full 25m MovieLens dataset (25 million ratings and one million tag applications applied to 62,000 movies by 162,000 users).
 This can result in a large bill when training a personalize solution, depending on the recipe used (> $100).
@@ -38,7 +38,6 @@ The following example sets Status=Enabled to enable Transfer Acceleration on a b
 
 ```
 $ aws s3api put-bucket-accelerate-configuration --bucket recommendation-sample-data --accelerate-configuration Status=Enabled
-
 ```
 
 It's a best practice to use aws s3 commands (such as aws s3 cp) for multipart uploads and downloads, because these aws s3 commands automatically perform multipart uploading and downloading based on the file size
@@ -54,6 +53,7 @@ The following example uploads a file to a bucket enabled for Transfer Accelerati
 $ aws configure set default.s3.use_accelerate_endpoint true
 $ aws configure set default.s3.max_concurrent_requests 20
 $ aws s3 cp datasets/personalize/ml-25m/ s3://recommendation-sample-data/movie-lens/raw_data/ --region us-east-1 --recursive --endpoint-url https://recommendation-sample-data.s3-accelerate.amazonaws.com
+
 
 upload: datasets\personalize\ml-25m\links.csv to s3://recommendation-sample-data/movie-lens/links.csv
 upload: datasets\personalize\ml-25m\input\movies.csv to s3://recommendation-sample-data/movie-lens/movies.csv
@@ -71,30 +71,16 @@ the query accordingly. Run the following commands from root of the repo
 
 ```
 $ aws s3 cp step_functions/personalize-definition.json s3://recommendation-sample-data/movie-lens/personalize-definition.json
-
-upload: step_functions/personalize-definition.json to s3://recommendation-sample-data/movie-lens/personalize-definition.json
-
-```
-
-```
 $ aws s3 cp lambdas/trigger_glue_personalize.zip s3://recommendation-sample-data/movie-lens/lambda/trigger_glue_personalize.zip
-
-upload: lambdas\trigger_glue_personalize.zip to s3://recommendation-sample-data/movie-lens/lambda/trigger_glue_personalize.zip
-
 ```
+
+If you have not configured transfer acceleration for the default glue assets bucket, then you can set to false before running `cp` command as below.
+Otherwise, you will get the following error: *An error occurred (InvalidRequest) when calling the PutObject operation: S3 Transfer Acceleration is not configured on this bucket*
 
 ```
 $ aws configure set default.s3.use_accelerate_endpoint false
 $ aws s3 cp projects/personalize/glue/Personalize_Glue_Script.py s3://aws-glue-assets-376337229415-us-east-1/scripts/Personalize_Glue_Script.py
-
-upload: projects\personalize\glue\Personalize_Glue_Script.py to s3://aws-glue-assets-376337229415-us-east-1/scripts/Personalize_Glue_Script.py
-
 ```
-
-If not configured transfer acceleration for the default glue assets bucket then can set to false before running cp command.
-Otherwise, you will get the error
-`An error occurred (InvalidRequest) when calling the PutObject operation: S3 Transfer Acceleration is not configured on this bucket`
-
 
 ## CloudFormation Templates
 
@@ -142,12 +128,10 @@ sfn name `GlueETLPersonalizeTraining`
 
 We need to configure S3 event notifications for train and prediction workflows:
 
-* Training workflow
-
+* **Training workflow**
 - S3 to lambda notification (for put raw data object event) to trigger the step function execution for the train workflow
 
-* Batch/RealTime Recommendations
-
+* **Batch/RealTime Recommendations**
 1. S3 to Lambda notification for triggering Personalize Batch Job when batch sample data object but into S3 bucket prefix
 2. S3 to Lambda notification for triggering lambda to transform output of batch job added to S3. 
 3. S3 notification to SNS topic, when the output of lambda transform lands in S3 bucket. We have configured email as subscriber 
@@ -183,7 +167,7 @@ INFO:__main__:HTTPStatusCode: 200
 INFO:__main__:RequestId: Q0BCATSW52X1V299
 ```
 
-Note: There is currently not support for notifications to FIFO type SNS topics. 
+**Note**: There is currently not support for notifications to FIFO type SNS topics. 
 
 ## Trigger Workflow for Training Solution
 
@@ -258,7 +242,7 @@ Once the notebook has finished running, you should see two folders in `s3://reco
 Each of these will contain a csv file corresponding to the interactions data (which will be used for training solution) and 
 additional metadata (i.e. columns with movie genres, ratings etc)
 
-NOTE: The notebook by default samples half the number of rows in the ratings csv which is still around 12.5 million rows.
+**Note**: The notebook by default samples half the number of rows in the ratings csv which is still around 12.5 million rows.
 This can result in a large bill if training a model (as mentioned in previous section).
 You may want to adjust the fraction parameter to sample method, to a lower value (e.g. 0.05) and check the ratings 
 dataframe row count afterwards.
@@ -294,7 +278,7 @@ values as in the screenshot below and then click `Create and train solution`
 * Advanced Configuration - Turn on 'Perform HPO'. Leave the other parameter values as it is.
 
 The User-Personalization (aws-user-personalization) recipe is optimized for all User_Personalization recommendation scenarios. 
-When recommending items, this recipe uses automatic item exploration. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html)
+When recommending items, this recipe uses automatic item exploration [Ref](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html)
 
 ![](../../screenshots/personalize/create_solution_console.png)
 
@@ -310,7 +294,7 @@ For USER_SEGMENTATION recipes, the training set consists of 80% of each user's i
 For all other recipe types, the training set consists of 90% of your users and their interactions data. The testing set consists of the remaining 10% of users and their interactions data.
 Amazon Personalize then creates the solution version using the training set. After training completes, Amazon Personalize gives the new solution version the oldest 90% of each user’s 
 data from the testing set as input. Amazon Personalize then calculates metrics by comparing the recommendations the solution version generates to the actual interactions in the 
-newest 10% of each user’s data from the testing set. https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html
+newest 10% of each user’s data from the testing set [Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
 ![](../../screenshots/personalize/personalize_solution_user-personalization_recipe_with_HPO.png)
 
@@ -327,36 +311,33 @@ python projects/personalize/evaluate_solution.py --solution_version_arn <solutio
 
 The above metrics are described below :
 
-* coverage : An evaluation metric that tells you the proportion of unique items that Amazon Personalize might recommend using your model 
+**coverage**
+An evaluation metric that tells you the proportion of unique items that Amazon Personalize might recommend using your model 
 out of the total number of unique items in Interactions and Items datasets. To make sure Amazon Personalize recommends more of your items, 
 use a model with a higher coverage score. Recipes that feature item exploration, such as User-Personalization, have higher coverage than those that 
-don’t, such as popularity-count [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
-
-* mean reciprocal rank at 25
+don’t, such as popularity-count [Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
+**mean reciprocal rank at 25**
 An evaluation metric that assesses the relevance of a model’s highest ranked recommendation. Amazon Personalize calculates this metric 
 using the average accuracy of the model when ranking the most relevant recommendation out of the top 25 recommendations over all requests for recommendations.
-This metric is useful if you're interested in the single highest ranked recommendation. [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
-
-
-* normalized discounted cumulative gain (NCDG) at K (5/10/25)
+This metric is useful if you're interested in the single highest ranked recommendation [Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
+**normalized discounted cumulative gain (NCDG) at K (5/10/25)**
 An evaluation metric that tells you about the relevance of your model’s highly ranked recommendations, where K is a sample size of 5, 10, or 25 recommendations. 
 Amazon Personalize calculates this by assigning weight to recommendations based on their position in a ranked list, where each recommendation is 
 discounted (given a lower weight) by a factor dependent on its position. The normalized discounted cumulative gain at K assumes that recommendations that 
 are lower on a list are less relevant than recommendations higher on the list.
 Amazon Personalize uses a weighting factor of 1/log(1 + position), where the top of the list is position 1.
-This metric rewards relevant items that appear near the top of the list, because the top of a list usually draws more attention.[Refrence](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
-
-* precision at K
+This metric rewards relevant items that appear near the top of the list, because the top of a list usually draws more attention.[Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
+**precision at K**
 An evaluation metric that tells you how relevant your model’s recommendations are based on a sample size of K (5, 10, or 25) recommendations. 
 Amazon Personalize calculates this metric based on the number of relevant recommendations out of the top K recommendations, divided by K, 
-where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
+where K is 5, 10, or 25. This metric rewards precise recommendation of the relevant items [Ref](https://docs.aws.amazon.com/personalize/latest/dg/working-with-training-metrics.html)
 
   
 ## Creating Campaign for realtime recommendations
 
 A campaign is a deployed solution version (trained model) with provisioned dedicated transaction capacity for creating 
 real-time recommendations for your application users.  After you complete Preparing and importing data and Creating a solution, you are ready to 
-deploy your solution version by creating an AWS Personalize Campaign [Refrence](https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html)
+deploy your solution version by creating an AWS Personalize Campaign [Ref](https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html)
 If you are getting batch recommendations, you don't need to create a campaign.
 
 ```
@@ -368,7 +349,7 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 ```
 
 An additional arg `--config` can be passed, to set the **explorationWeight** and **explorationItemAgeCutOff** parameters for the user
-personalizaion recipe [Reference](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html#bandit-hyperparameters)
+personalizaion recipe [Ref](https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html#bandit-hyperparameters)
 These parameters default to 0.3 and 30.0 respectively if not passed (as in previous example)
 To set the explorationWeight and ItemAgeCutoff to 0.6 and 100 respectively, run the script as below:
 
@@ -387,12 +368,12 @@ $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign 
 
 With the User-Personalization recipe, Amazon Personalize generates scores for items based on a user's interaction data and metadata. 
 These scores represent the relative certainty that Amazon Personalize has in whether the user will interact with the item next. 
-Higher scores represent greater certainty.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
+Higher scores represent greater certainty.[Ref](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
 
 Amazon Personalize scores all the items in your catalog relative to each other on a scale from 0 to 1 (both inclusive), so that the total of 
 all scores equals 1. For example, if you're getting movie recommendations for a user and there are three movies in the Items dataset, 
 their scores might be 0.6, 0.3, and 0.1. Similarly, if you have 1,000 movies in your inventory, the highest-scoring movies might have very 
-small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
+small scores (the average score would be.001), but, because scoring is relative, the recommendations are still valid.[Ref](https://docs.aws.amazon.com/personalize/latest/dg/recommendations.html)
 
 
 To get batch recommendations, you use a batch inference job. A batch inference job is a tool that imports your batch input data from an Amazon 
@@ -403,7 +384,7 @@ job when you want to get batch item recommendations for your users or find simil
 To get user segments, you use a batch segment job. A batch segment job is a tool that imports your batch input data from an Amazon
 S3 bucket, uses your solution version trained with a USER_SEGMENTATION recipe to generate user segments for each row of input 
 data, and exports the segments to an Amazon S3 bucket. Each user segment is sorted in descending order based on the probability that 
-each user will interact with items in your inventory. [Reference](https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html)
+each user will interact with items in your inventory. [Ref](https://docs.aws.amazon.com/personalize/latest/dg/recommendations-batch.html)
 
 The input data in S3 needs to be a json file with the data in a specific format as specified [here](https://docs.aws.amazon.com/personalize/latest/dg/batch-data-upload.html#batch-recommendations-json-examples)
 For this example we will use a sample as in `datasets\personalize\ml-25m\batch\input\users.json` and upload this to S3 bucket `recommendation-sample-data` in
@@ -496,13 +477,38 @@ and `datasets/personalize/ml-25m/batch/results/transformed.parquet`
 
 You can also get real-time recommendations from Amazon Personalize with a campaign created earlier to give movie recommendations.
 To increase recommendation relevance, include contextual metadata for a user, such as their device type or the time of day, 
-when you get recommendations or get a personalized ranking.[Reference](https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html)
+when you get recommendations or get a personalized ranking [Ref](https://docs.aws.amazon.com/personalize/latest/dg/getting-real-time-recommendations.html)
 
 The API Gateway integration with lambda backend, should already be configured if cloudformation was run successfully.
-The API endpoint to be invoked should be visible from the console, under the stage tab.
-We have configured the method request to accept a querystring parameter `user_id` and defined model schema.
-We configured a mapping template for API Gateway to map the method request querystring parameter to the JSON payload, as required by the backend Lambda function.
+We have configured the method request to accept a querystring parameter *user_id* and defined model schema.
+An API method can be integrated with Lambda using one of two [integration methods](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-integrations.html),
+*Lambda proxy integration* or *Lambda non-proxy (custom) integration*. By default, we used [Lambda Proxy Integration](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html) 
+in cloudformation template *personalize_predict.yaml*, which allows the client to call a single lambda function in the backend. When a client submits a request, API Gateway sends the raw request to lambda 
+without necessarily preserving the order of the parameters. This request data includes the request headers, query string parameters, URL path variables, payload, and API configuration 
+data [Ref](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html).
+We could also use [Lambda non-proxy integration](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-custom-integrations.html)  by setting the template parameter *APIGatewayIntegrationType* 
+to AWS. The difference to the Proxy Integration method is that in addition, we also need to configure a mapping template to map the incoming request data  to the integration request, 
+as required by the backend Lambda function. In the cloudformation template *personalize_predict.yaml*, this is already predefined in the *RequestTemplates* property of the *ApiGatewayRootMethod* resource, 
+which  translates the user_id query string parameter to the user_id property of the JSON payload. This is necessary because input to a Lambda function in the Lambda function must be expressed in the body. 
+However, as the default type is set to *AWS_PROXY*, the mapping template is ignored as it is not required.
 
+![](../../screenshots/personalize/api-gateway-get-method-execution.png)
+
+The API endpoint URL to be invoked should be visible from the console, under the stage tab.
+
+![](../../screenshots/personalize/api-gateway-dev-stage-console.png)
+
+The API can be tested by opening a browser and typing the URL  into a browser address bar along with the querystring parameters. 
+For example: *https://knmel67a1g.execute-api.us-east-1.amazonaws.com/dev?user_id=5*
+
+For monitoring, we have also configured API gateway to send traces to XRay and logs to Cloudwatch.
+Since the API is integrated with a single lambda function, you will see nodes in the service map containing information about the overall time spent and other performance
+metrics in the API Gateway service, the Lambda service, and the Lambda function. The timeline shows the hierarchy of segments and subsegments.  Further details on 
+request/response times and faults/errors can be found by clicking on each segment/subsegment in the timeline.
+For more information refer to [AWS docs](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-using-xray-maps.html)
+
+
+![](../../screenshots/personalize/Xrayconsole-APIGateway-lambda-trace-timeline.png)
 
 ### Running in Local Mode
 

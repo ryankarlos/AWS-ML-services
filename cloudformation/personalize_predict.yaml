@@ -59,6 +59,12 @@ Parameters:
       Type: String
       AllowedPattern: "[a-z0-9]+"
       Default: dev
+    APIGatewayIntegrationType:
+      Type: String
+      Default: AWS_PROXY
+      AllowedValues:
+        - AWS
+        - AWS_PROXY
 Resources:
     LambdaBatchTrigger:
         Type: AWS::Lambda::Function
@@ -186,7 +192,7 @@ Resources:
             "application/json": "{
                 \"user_id\" : \"$input.params('user_id')\"
               }"
-          Type: AWS
+          Type: !Ref APIGatewayIntegrationType
           Uri: !Sub >-
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaRealTimeTrigger.Arn}/invocations
         ResourceId: !GetAtt [ApiGateway, RootResourceId]

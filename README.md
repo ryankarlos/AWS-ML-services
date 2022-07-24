@@ -5,7 +5,7 @@ conjunction with each other to make smart applications.  Here, I will demonstrat
 create ane end to end workflow involving some of these ML services, starting from raw labelled datasets to generating 
 predictions for unseen data from deployed trained models. Click on the links for the services for working through 
 the practical example workflow. This *'blog'* can be accessed either via [Github Pages](https://ryankarlos.github.io/AWS-ML-services/) or [Github Readme](https://github.com/ryankarlos/AWS-ML-services#readme).
-Please refer to the [Github Repo]((https://github.com/ryankarlos/AWS-ML-services)) for all the scripts referenced in the examples.
+Please refer to the github repo link at the top for all the scripts referenced in the examples.
 
 * Use of multiple [AWS NLP Services](projects/nlp) including Comprehend, Transcribe, Translate and Polly for an application to translate speech into multiple languages.
 * [AWS Forecast](projects/forecast) for forecasting the daily log-scale page views of an American Football Quarterback's Wikipedia page.

@@ -50,7 +50,7 @@ as all the items belong to the same group (i.e Manning's wikipedia hits)
 
 The dataset group and import job can then be created using the snippet below after setting the data frequency for daily frequency and ts_schema.
 
-```
+```python
 DATASET_FREQUENCY = "D"
 ts_schema ={
    "Attributes":[
@@ -80,7 +80,7 @@ so it is ready for training. After creating the import job - we can check for jo
 progressing to the training step
 
 
-```
+```python
 bucket_name = 'aws-forecast-demo-examples'
 key = "manning_ts_2015.csv"
 ts_dataset_import_job_response = create_import_job(bucket_name, key, dataset_arn, role_arn)
@@ -113,8 +113,7 @@ and is suggested as the preferred method by AWS
 Predictors created with AutoPredictor are generally more accurate than predictors created with AutoML or manual selection."
 
 
-```
-
+```python
 FORECAST_LENGTH = 35
 DATASET_FREQUENCY = "D"
 predictor_name = f"{PROJECT}_{DATA_VERSION}_automl"
@@ -181,7 +180,7 @@ We can also see MASE metric better highlights the difference in
 performance between various algorithms as it is more suited to
 this dataset due to cyclical/seasonal properties in data
 
-```
+```python
 plot_backtest_metrics(error_metrics)
 ```
 
@@ -193,7 +192,7 @@ Now we have a trained model so we can create a forecast. This
 includes predictions for every item (item_id) in the dataset group 
 that was used to train the predictor [Reference](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html)
 
-```
+```python
 forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
 forecast_arn = create_forecast(forecast_name, predictor_arn)
 ```
@@ -207,7 +206,7 @@ This will return forecast for only those items that satisfy the criteria [Refere
 In this case, we query the forecast and return all the items 
 by using the item id dimension
 
-```
+```python
 filters = {"item_id":"1"}
 forecast_response = run_forecast_query_and_plot(forecast_arn, filters)
 df = create_forecast_plot(forecast_response)
@@ -223,7 +222,7 @@ df = create_forecast_plot(forecast_response)
 Finally we can tear down all the AWS Forecast resources: predictor, forecast and 
 dataset group 
 
-```
+```python
 kwargs = {'forecast':forecast_name,
 'predictor':predictor_name
 }

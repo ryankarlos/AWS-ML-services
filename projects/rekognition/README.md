@@ -13,8 +13,9 @@ We also need to attach a resource policy to the bucket to give AWS Rekogniiton r
 permissions to acccess bucket. We will run the following `transfer_data_s3.py` script located in this [folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/s3) Pass the required resource policy filename 
 We need to pass an arg `--policy_filename` to the script which is the filename of the s3 resource policy defined [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/s3/resource_policies/rekognition_permissions.json)
 
-```
-$ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir datasets/food101 --policy_filename rekognition_permissions.json   
+```shell
+$ python s3/transfer_data_s3.py --bucket_name rekognition-cv --local_dir datasets/food101 --policy_filename rekognition_permissions.json 
+  
 2022-05-15 00:46:40,095 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials
 2022-05-15 00:46:40,698 __main__ INFO:Creating new bucket with name:rekognition-cv
 2022-05-15 00:46:41,180 __main__ INFO:Creating bucket policy
@@ -29,8 +30,9 @@ A project manages the model versions, training dataset, and test dataset for a m
 console or with the CreateProject API as described in the [docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/mp-create-project.html).
 Run the following `create_project.py` script in the [project folder](https://github.com/ryankarlos/AWS-ML-services/projects/rekognition) 
 
-```
+```shell
 $ python rekognition/creating_project.py custom_labels
+
 INFO: Found credentials in shared credentials file: ~/.aws/credentials
 INFO: Creating project: custom_labels
 Creating project: custom_labels
@@ -64,13 +66,14 @@ to be fair a lot of false negatives and positives are rubbish images which shoul
 We run the model inference on a set of unseen images, by running the following [script](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/rekognition/inference.py)
 and substituing the values for model_arn, project_arn and path to set of test images to the respective args below.
 
-```Shell
+```shell
 $ python rekognition/inference.py --model_arn=<model-arn-value> --project_arn=<project-arn-value> --image=datasets/cv/food101/train
 ```
 
 This should output the following in the terminal
 
-```
+```shell
+
 INFO: Starting model
 INFO: Status: RUNNING
 INFO: Message: The model is running.
@@ -110,40 +113,34 @@ We can cleanup resources created in this example, using a [custom script](https:
 However, we cannot delete project directly as have to clean up datasets and model first.
 So first get project and dataset-arns using aws-cli
 
-```
+```shell
 $ aws rekognition describe-projects --project-name custom_labels
 ```
 
 Then delete test and train datasets with each arn
 
-```
+```shell
 $ python rekognition/cleanup_resources.py --resource=dataset --dataset_arn="<arn-value>"
+
 INFO: Deleting dataset: <arn-value>
 INFO: waiting for dataset deletion <arn-value>
 INFO: dataset deleted: <arn-value>
 INFO: dataset deleted: <arn-value>
 INFO: Finished deleting dataset: <arn-value>
-
-
-$ python rekognition/cleanup_resources.py --resource=dataset --dataset_arn=<arn-value>
-INFO: Deleting dataset: <arn-value>
-INFO: waiting for dataset deletion <arn-value>
-INFO: dataset deleted: <arn-value>
-INFO: dataset deleted: <arn-value>
-INFO: Finished deleting dataset: <arn-value>
-
-```
+````
 
 Use the project arn retrieved from the previous step to get the model-arn using the cli command below
 
-```
+```shell
 aws rekognition describe-project-versions --project-arn="<arn-value>"
 ```
 
 Then delete the model resource, running the custom script and passing in the resource value as `model`
 and model-arn retrieved form the previous step
-```
+
+```shell 
 $ python rekognition/cleanup_resources.py --resource=model --model_arn=<arn-value>
+
 Are you sure you wany to delete model <arn-value> ?
 Enter delete to delete your model: delete
 INFO: Deleting model: <arn-value>
@@ -154,8 +151,9 @@ INFO: Deleting dataset: <arn-value>
 Then run the custom script again to delete the project dataset, by passing in the resource value as `project`
 and `project-arn`
 
-```
+```shell 
 $ python rekognition/cleanup_resources.py --resource=project --project_arn=<arn-value>
+
 INFO: Deleting project: 
 INFO: project status: DELETING
 INFO: waiting for project deletion 
@@ -166,7 +164,7 @@ INFO: Finished deleting project:
 Finally, we can run the custom script to delete selected resources in bucket or the entire bucket. If the entire bucket does not need to
 be deleted, the `--resource_list` arg can be passed.
 
-```
+```shell
 $ python s3/cleanup_resources.py --bucket_name=rekognition-cv
 
 2022-03-17 01:15:41,602 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials

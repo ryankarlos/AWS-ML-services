@@ -300,8 +300,9 @@ newest 10% of each user’s data from the testing set [Ref](https://docs.aws.ama
 You retrieve the metrics for a the trained solution version above, by running the following script, which calls the GetSolutionMetrics operation with  
 `solutionVersionArn` parameter
 
-```
+```shell
 python projects/personalize/evaluate_solution.py --solution_version_arn <solution-version-arn>
+
 2022-07-09 20:31:24,671 - evaluate - INFO - Solution version status: ACTIVE
 2022-07-09 20:31:24,787 - evaluate - INFO - Metrics:
 
@@ -339,7 +340,7 @@ real-time recommendations for your application users.  After you complete Prepar
 deploy your solution version by creating an AWS Personalize Campaign [Ref](https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html)
 If you are getting batch recommendations, you don't need to create a campaign.
 
-```
+```shell
 $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> --mode create
 
 2022-07-09 21:12:08,412 - deploy - INFO - Name: MoviesCampaign
@@ -352,7 +353,7 @@ personalizaion recipe [Ref](https://docs.aws.amazon.com/personalize/latest/dg/na
 These parameters default to 0.3 and 30.0 respectively if not passed (as in previous example)
 To set the explorationWeight and ItemAgeCutoff to 0.6 and 100 respectively, run the script as below:
 
-```
+```shell
 $ python projects/personalize/deploy_solution.py --campaign_name MoviesCampaign --sol_version_arn <solution_version_arn> \
 --config "{\"itemExplorationConfig\":{\"explorationWeight\":\"0.6\",\"explorationItemAgeCutOff\":\"100\"}}" --mode create
 
@@ -441,7 +442,7 @@ The configuration, should look like below, with the lambda layer and destination
 
 To trigger the batch inference job workflow, copy the sample `users.json` batch data to s3 path below.
 
-```
+```shell
 aws s3 cp datasets/personalize/ml-25m/batch/input/users.json s3://recommendation-sample-data/movie-lens/batch/input/users.json
 ```
 This creates a batch inference job with the job name having the unixtimestamp affixed to the end.
@@ -515,71 +516,70 @@ We can run the recommendations locally using custom scripts in the repo.
 For **real time recommendations**, run the following script, passing in the solution version arn, campaign arn, role name, user id and setting 
 recommendation mode to realtime. So for user `1`, the model recommends movies of drama/romance theme.
 
-```
+```shell
 python projects/personalize/recommendations.py --job_name Moviesrealtimerecommend --sol_arn <solution-arn> --role_name PersonalizeRole \
 --campaign_arn <campaign-arn> --user_id 1 --recommendation_mode realtime
-2022-07-09 21:22:46,038 - recommendations - INFO - Generating 10 recommendations for user 1 using campaign arn:aws:personalize:........:campaign/MoviesCampaign
-2022-07-09 21:22:46,646 - recommendations - INFO - Recommended items:
-
-Bad Education (La mala educaci▒n) (2004) (Drama|Thriller)
-Eternal Sunshine of the Spotless Mind (2004) (Drama|Romance|Sci-Fi)
-Nobody Knows (Dare mo shiranai) (2004) (Drama)
-Good bye, Lenin! (2003) (Comedy|Drama)
-Man Without a Past, The (Mies vailla menneisyytt▒) (2002) (Comedy|Crime|Drama)
-Amelie (Fabuleux destin d'Am▒lie Poulain, Le) (2001) (Comedy|Romance)
-Talk to Her (Hable con Ella) (2002) (Drama|Romance)
-Motorcycle Diaries, The (Diarios de motocicleta) (2004) (Adventure|Drama)
-Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004) (Drama|Mystery|Romance|War)
-In the Mood For Love (Fa yeung nin wa) (2000) (Drama|Romance)
 ```
+
+|Bad Education (La mala educaci▒n) (2004)| (Drama|Thriller)|
+|Eternal Sunshine of the Spotless Mind (2004)| (Drama|Romance|Sci-Fi)|
+|Nobody Knows (Dare mo shiranai) (2004)| (Drama)|
+|Good bye, Lenin! (2003)| (Comedy|Drama)|
+|Man Without a Past, The (Mies vailla menneisyytt▒) (2002)| (Comedy|Crime|Drama)|
+|Amelie (Fabuleux destin d'Am▒lie Poulain, Le) (2001)| (Comedy|Romance)|
+|Talk to Her (Hable con Ella) (2002)| (Drama|Romance)|
+|Motorcycle Diaries, The (Diarios de motocicleta) (2004)| (Adventure|Drama)|
+|Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004)| (Drama|Mystery|Romance|War)|
+|In the Mood For Love (Fa yeung nin wa) (2000)| (Drama|Romance)|
+
 
 User `40` has been recommended crime/drama themed movies.
 
-```
-Kill Bill: Vol. 2 (2004) (Action|Drama|Thriller)
-Little Miss Sunshine (2006) (Adventure|Comedy|Drama)
-Snatch (2000) (Comedy|Crime|Thriller)
-There Will Be Blood (2007) (Drama|Western)
-Last King of Scotland, The (2006) (Drama|Thriller)
-Trainspotting (1996) (Comedy|Crime|Drama)
-Mystic River (2003) (Crime|Drama|Mystery)
-No Country for Old Men (2007) (Crime|Drama)
-Sin City (2005) (Action|Crime|Film-Noir|Mystery|Thriller)
-Platoon (1986) (Drama|War)
-```
+
+|Kill Bill: Vol. 2 (2004)| (Action|Drama|Thriller)|
+Little Miss Sunshine (2006)| (Adventure|Comedy|Drama)|
+|Snatch (2000)| (Comedy|Crime|Thriller)|
+|There Will Be Blood (2007)| (Drama|Western)|
+|Last King of Scotland, The (2006)| (Drama|Thriller)|
+|Trainspotting (1996)| (Comedy|Crime|Drama)|
+|Mystic River (2003)| (Crime|Drama|Mystery)|
+|No Country for Old Men (2007)| (Crime|Drama)|
+|Sin City (2005)| (Action|Crime|Film-Noir|Mystery|Thriller)|
+|Platoon (1986)| (Drama|War)|
+
 
 User `162540` is interesting and seems to have recommended a combination of children/comedy and action/thriller 
 genre movies based on users interactions.
 
-```
-Ice Age 2: The Meltdown (2006) (Adventure|Animation|Children|Comedy)
-I Am Legend (2007) (Action|Horror|Sci-Fi|Thriller|IMAX)
-Shrek the Third (2007) (Adventure|Animation|Children|Comedy|Fantasy)
-2 Fast 2 Furious (Fast and the Furious 2, The) (2003) (Action|Crime|Thriller)
-Saw II (2005) (Horror|Thriller)
-300 (2007) (Action|Fantasy|War|IMAX)
-Fight Club (1999) (Action|Crime|Drama|Thriller)
-Night at the Museum (2006) (Action|Comedy|Fantasy|IMAX)
-Dark Knight, The (2008) (Action|Crime|Drama|IMAX)
-Hancock (2008) (Action|Adventure|Comedy|Crime|Fantasy)
-```
+
+|Ice Age 2: The Meltdown (2006)| (Adventure|Animation|Children|Comedy)|
+|I Am Legend (2007)| (Action|Horror|Sci-Fi|Thriller|IMAX)|
+|Shrek the Third (2007)| (Adventure|Animation|Children|Comedy|Fantasy)|
+|2 Fast 2 Furious (Fast and the Furious 2, The) (2003)| (Action|Crime|Thriller)|
+|Saw II (2005)| (Horror|Thriller)|
+|300 (2007)| (Action|Fantasy|War|IMAX)|
+|Fight Club (1999)| (Action|Crime|Drama|Thriller)|
+|Night at the Museum (2006)| (Action|Comedy|Fantasy|IMAX)|
+|Dark Knight, The (2008)| (Action|Crime|Drama|IMAX)|
+|Hancock (2008)| (Action|Adventure|Comedy|Crime|Fantasy)|
+
 
 We can also limit the number of results by passing in value for arg `--num_results`, which defaults to 10.
 So for example, for `--user_id 15000` , we can get the top 4 results   
 
-```
-Kiss the Girls (1997) (Crime|Drama|Mystery|Thriller)
-Scream (1996) (Comedy|Horror|Mystery|Thriller)
-Firm, The (1993) (Drama|Thriller)
-Wild Things (1998) (Crime|Drama|Mystery|Thriller)
-```
+
+|Kiss the Girls (1997)| (Crime|Drama|Mystery|Thriller)|
+|Scream (1996)| (Comedy|Horror|Mystery|Thriller)|
+|Firm, The (1993)| (Drama|Thriller)|
+|Wild Things (1998)| (Crime|Drama|Mystery|Thriller)|
+
 
 For **Batch Inference jobs**, we need to run the `projects/personalize/recommendations.py` script.
 This uses the default s3 bucket name `recommendation-sample-data` and input data key `movie-lens/batch/input/users.json`.
 These can be overridden by passing a value to the `--bucket` and `--batch_input_key` args respectively. The results output will be stored in `movie-lens/batch/results/`
 but a different path can be chosen by passing a path to `--batch_results_key` arg.
 
-```
+```shell
 $ python projects/personalize/recommendations.py --job_name BatchInferenceMovies --num_results 25 --sol_arn arn:aws:personalize:.........:solution/PersonalizeModel/03c184cc --role_name PersonalizeRole
 2022-07-10 05:50:55,409 - recommendations - INFO - Running batch inference job BatchInferenceMovies with config: {"itemExplorationConfig": {"explorationWeight": "0.3", "explorationItemAgeCutOff": "30"}}
 2022-07-10 05:50:56,140 - recommendations - INFO - Response:

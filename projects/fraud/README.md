@@ -50,14 +50,8 @@ More details on cloudformation can be found [here](../../cloudformation), which 
 The stacks can be created by running the bash script below and passing in either 'endpoint' or 'detector' argument to 
 create a glue dve endpoint  stack or frauddetectorglue stack
 
-```
+```shell
  sh projects/fraud/bash_scripts/create-resources.sh endpoint
-Creating glue dev endpoint 
-
-{
-    "StackId": "arn:aws:cloudformation:<region>:<account-id>:stack/GlueEndpointDev/213a61f0-f42e-11ec-b344-0eab2ca9a161"
-}
-
 ```
 
 The FraudDetectorGlue stack creates the detector and associated rules, the variables, labels and outcomes
@@ -71,8 +65,9 @@ Run the following command specifying the local path to fraud test and train raw 
 and bucket name.  This creates a bucket (if it does not already exists) and then 
 proceeds to the upload step. 
 
-```
+```shell
 $ python s3/transfer_data_s3.py --bucket_name fraud-sample-data --local_dir datasets/fraud-sample-data/dataset1
+
 2022-05-15 01:21:55,390 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials
 2022-05-15 01:21:55,982 __main__ INFO:Creating new bucket with name:fraud-sample-data
 0it [00:00, ?it/s]2022-05-15 01:21:56,733 __main__ INFO:Starting upload ....
@@ -310,8 +305,9 @@ To start model training in local mode, run the following script stored in `proje
 api directly after dong the necessary data processing from data in S3 (i.e. it avoids the use of Glue Crawler and Glue used in the architecture above). 
 This is useful for quick troubleshooting.
 
-```
+```shell
 $ python projects/fraud/training.py
+
 Starting model training with variables ['cc_num', 'merchant', 'category', 'amt', 'first', 'last', 'gender', 'street', 'city', 'state', 'zip', 'city_pop', 'job', 'trans_num']....
 {'modelId': 'fraud_model', 'modelType': 'ONLINE_FRAUD_INSIGHTS', 'modelVersionNumber': '1.0', 'status': 'TRAINING_IN_PROGRESS', 'ResponseMetadata': {'RequestId': 'a1fac915-282d-4dc6-93a5-4331e579f64a', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Sat, 25 Jun 2022 03:18:01 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '120', 'connection': 'keep-alive', 'x-amzn-requestid': 'a1fac915-282d-4dc6-93a5-4331e579f64a'}, 'RetryAttempts': 0}}
 ```
@@ -350,7 +346,8 @@ and associate the model version (--model_version arg) and the rules_version (--r
 the increment of the existing rule version.
 This will automatically increment the detector version to 2.0 as the existing version is 1.0
 
-```
+```shell
+
 $ python projects/fraud/deploy.py --update_rule 1 --model_version 1.0 --rules_version 2                
 26-06-2022 04:50:34 : INFO : deploy : main : 121 : Updating rule version 1
 26-06-2022 04:50:34 : INFO : deploy : update_detector_rules : 71 : Updating Investigate rule ....
@@ -499,9 +496,8 @@ the fraud prediction results (once delivered in S3) and Amazon QuickSight for vi
 Copy the batch sample file delivered in the  glue_transformed folder (following successful glue job run) to batch_predict folder.
 This will trigger notification to SQS queue which has Lambda function as target, which starts the batch prediction job in Fraud Detector
 
-```
+```shell
 $ aws s3 cp s3://fraud-sample-data/glue_transformed/test/fraudTest.csv s3://fraud-sample-data/batch_predict/fraudTest.csv
-copy: s3://fraud-sample-data/glue_transformed/test/fraudTest.csv to s3://fraud-sample-data/batch_predict/fraudTest.csv
 ```
 
 we can monitor the batch prediction jobs in Fraud Detector. Once complete,we should see the output in S3. An example of 
@@ -528,8 +524,9 @@ and the method of execution ('realtime' or batch) via the 'prediction' arg
 
 * In batch mode
 
-```
+```shell
 $ python projects/fraud/predictions.py --predictions batch --detector_version 2 --s3input s3://fraud-sample-data/glue_transformed/test/fraudTest.csv --s3output s3://fraud-sample-data/DetectorBatchResults.csv --role FraudDetectorRoleS3Access
+
 27-06-2022 02:35:38 : INFO : predictions : main : 149 : running batch prediction job
 27-06-2022 02:35:45 : INFO : predictions : main : 163 : Batch Job submitted successfully
 {'batchPredictions': [{'jobId': 'credit_card_transaction-1656293738', 'status': 'IN_PROGRESS_INITIALIZING', 'startTime': '2022-06-27T01:35:39Z', 'lastHeartbeatTime': '2022-06-27T01:35:39Z', 'inputPath': 's3://fraud-sample-data/glue_transformed/test/fraudTest.csv', 'outputPath': 's3://fraud-sample-data/DetectorBatchResults.csv', 'eventTypeName': 'credit_card_transaction', 'detectorName': 'fraud_detector_demo', 'detectorVersion': '2', 'iamRoleArn': 'arn:aws:iam::376337229415:role/FraudDetectorRoleS3Access', 'arn': 'arn:aws:frauddetector:us-east-1:376337229415:batch-prediction/credit_card_transaction-1656293738', 'processedRecordsCount': 0}], 'ResponseMetadata': {'RequestId': 'af585d00-23f0-4a05-82dc-712057c9f912', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Mon, 27 Jun 2022 01:35:44 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '623', 'connection': 'keep-alive', 'x-amzn-requestid': 'af585d00-23f0-4a05-82dc-712057c9f912'}, 'RetryAttempts': 0}}
@@ -538,11 +535,11 @@ $ python projects/fraud/predictions.py --predictions batch --detector_version 2 
 
 * In realtime mode 
 
-```
-
+```shell
 $ python projects/fraud/predictions.py \
 --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
 --role AmazonFraudDetectorRole
+
 26-06-2022 04:13:54 : INFO : predictions : main : 152 : running realtime prediction
 
 [
@@ -596,9 +593,10 @@ For instructions on creating a custom template, see Create Custom Worker Task Te
 https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-custom-templates.html
 The script also uses the `Create Flow Definition` API to create a workflow definition. 
 
-```
+```shell
 $ export PYTHONPATH=.
 $ python augmented_ai/fraud/create_workflow.py --workteam_arn <workforce-arn>
+
 Created human task ui with Arn: .......human-task-ui/fraud9079296d-f592-11ec-92fc-50ebf6424219
 Created flow definition with Arn: ..........flow-definition/fraud-detector-a2i-1656277037953
 
@@ -637,9 +635,10 @@ However, we need to pass in an extra argument `--flow_definition` with the arn v
 The example below uses payload which was marked for review from the model after batch prediction. When passed this
 payload via the realtime api - it outputs the prediction results as well as starts a human loop.
 
-```
+```shell
 $ python projects/fraud/predictions.py --predictions realtime --payload_path datasets/fraud-sample-data/dataset1/payload.json --detector_version 2 \
 --role AmazonFraudDetectorRole --flow_definition <arn>
+
 27-06-2022 02:51:31 : INFO : predictions : main : 170 : running realtime prediction
 27-06-2022 02:51:31 : INFO : predictions : main : 186 : fraud score 858.0 between range thresholds 900 and 700
 27-06-2022 02:51:31 : INFO : predictions : main : 193 : Human loop input:
@@ -669,15 +668,14 @@ which resources you want to delete
 
 For the endpoint resource:
 
-```
+```shell
 sh projects/fraud/bash_scripts/teardown.sh endpoint
-echo "Deleting endpoint"
-
 ```
+
 For tearing down the trained fraud model, detector (including rules), event type 
 (including outcomes, variables, labels), run the following:
 
-```
+```shell
 sh projects/fraud/bash_scripts/teardown.sh
 
 Delete model versions
@@ -734,7 +732,7 @@ Delete selected resources in bucket or entire bucket. If entire bucket not neede
 `--resource_list` arg can be passed.
 
 
-```
+```shell
 python s3/cleanup_resources.py --bucket_name=fraud-sample-data
 
 2022-05-15 01:20:00,996 botocore.credentials INFO:Found credentials in shared credentials file: ~/.aws/credentials

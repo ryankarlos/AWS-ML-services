@@ -21,37 +21,25 @@ by following the instructions in the next section.
 We will use [pipenv](https://pipenv.pypa.io/en/latest/install/#installing-packages-for-your-project) to manage environment and dependencies
 First install *pipenv* using *pip* command
 
-```
+```shell
 pip install --user pipenv
 ```
 
 Then create a virtual environment based on dependencies in *pipfile.lock* and *pipfile* in the base of the [Github repository](https://github.com/ryankarlos/AWS-ML-services)
 
-```
+```shell
 $ pipenv shell     
 ```
 
 To update the lock file if the pipefile is updated (for example, if you  have updated the dev-packages section), run:
 
-```
+```shell
 $ pipenv update
-
-Running $ pipenv lock then $ pipenv sync.
-Locking [dev-packages] dependencies...
-Locking [packages] dependencies...
-Building requirements...
-Resolving dependencies...
-✔ Success! 
-Updated Pipfile.lock (687a38)!
-Installing dependencies from Pipfile.lock (687a38)...
-  🐍   ▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉ 41/41 — 00:00:30
-All dependencies are now up-to-date!
-
 ```
 This will also install the dependencies to the env. To install directly from lock file, can run `pipenv install` or `pipenv install -d` to
 install specifically dev-packages
 
-```
+```shell
 $ pipenv install -d
 
 Installing dependencies from Pipfile.lock (595137)...
@@ -61,6 +49,6 @@ Installing dependencies from Pipfile.lock (595137)...
 
 To see a graph of packages and their dependencies, use the following command.
 
-```
+```shell
 $ pipenv graph 
 ```

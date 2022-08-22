@@ -11,19 +11,9 @@ You may need to install the unzip package if not already installed from this [li
 For example on ubuntu `sudo apt-get install -y unzip`.
 We do not require the _genome-tags.csv_ and _genome-scores.csv_ so these can be deleted
 
-```
+```shell
 $ cd datasets/personalize
 $ unzip ml-25m.zip
-Archive:  datasets/personalize/ml-25m.zip
-   creating: ml-25m/
-  inflating: ml-25m/tags.csv
-  inflating: ml-25m/links.csv
-  inflating: ml-25m/README.txt
-  inflating: ml-25m/ratings.csv
-  inflating: ml-25m/genome-tags.csv
-  inflating: ml-25m/genome-scores.csv
-  inflating: ml-25m/movies.csv
-
 ```
 
 ## Loading data into S3 
@@ -35,7 +25,7 @@ So either one could sample a smaller dataset from this or use the MovieLens Late
 
 The following example sets Status=Enabled to enable Transfer Acceleration on a bucket. You use Status=Suspended to suspend Transfer Acceleration.
 
-```
+```shell
 $ aws s3api put-bucket-accelerate-configuration --bucket recommendation-sample-data --accelerate-configuration Status=Enabled
 ```
 
@@ -48,18 +38,10 @@ You can direct all Amazon S3 requests made by s3 and s3api AWS CLI commands to t
 in your AWS Config file. Transfer Acceleration must be enabled on your bucket to use the accelerate endpoint.
 The following example uploads a file to a bucket enabled for Transfer Acceleration by using the --endpoint-url parameter to specify the accelerate endpoint.
 
-```
+```shell
 $ aws configure set default.s3.use_accelerate_endpoint true
 $ aws configure set default.s3.max_concurrent_requests 20
 $ aws s3 cp datasets/personalize/ml-25m/ s3://recommendation-sample-data/movie-lens/raw_data/ --region us-east-1 --recursive --endpoint-url https://recommendation-sample-data.s3-accelerate.amazonaws.com
-
-
-upload: datasets\personalize\ml-25m\links.csv to s3://recommendation-sample-data/movie-lens/links.csv
-upload: datasets\personalize\ml-25m\input\movies.csv to s3://recommendation-sample-data/movie-lens/movies.csv
-upload: datasets\personalize\ml-25m\README.txt to s3://recommendation-sample-data/movie-lens/README.txt
-upload: datasets\personalize\ml-25m\tags.csv to s3://recommendation-sample-data/movie-lens/tags.csv
-upload: datasets\personalize\ml-25m\input\ratings.csv to s3://recommendation-sample-data/movie-lens/ratings.csv
-
 ```
 
 ![](../../screenshots/personalize/s3_raw_data.png)
@@ -68,7 +50,7 @@ Finally we need to add the glue script and lambda function to S3 bucket as well.
 as in `lambdas/data_import_personalize.zip` and you have a bucket with key `aws-glue-assets-376337229415-us-east-1/scripts`. If not adapt
 the query accordingly. Run the following commands from root of the repo
 
-```
+```shell
 $ aws s3 cp step_functions/personalize-definition.json s3://recommendation-sample-data/movie-lens/personalize-definition.json
 $ aws s3 cp lambdas/trigger_glue_personalize.zip s3://recommendation-sample-data/movie-lens/lambda/trigger_glue_personalize.zip
 ```
@@ -76,7 +58,7 @@ $ aws s3 cp lambdas/trigger_glue_personalize.zip s3://recommendation-sample-data
 If you have not configured transfer acceleration for the default glue assets bucket, then you can set to false before running `cp` command as below.
 Otherwise, you will get the following error: *An error occurred (InvalidRequest) when calling the PutObject operation: S3 Transfer Acceleration is not configured on this bucket*
 
-```
+```shell
 $ aws configure set default.s3.use_accelerate_endpoint false
 $ aws s3 cp projects/personalize/glue/Personalize_Glue_Script.py s3://aws-glue-assets-376337229415-us-east-1/scripts/Personalize_Glue_Script.py
 ```
@@ -96,7 +78,7 @@ We can use the following cli command to create the template, with the path to th
 argument. Adapt this depending on where your template is stored. We also need to include the `CAPABILITIES_NAMED_IAM` value to 
 `--capabilities` arg as the template includes IAM resources e.g. IAM role which has a custom name such as a RoleName
 
-```
+```shell
  $ aws cloudformation create-stack --stack-name PersonalizeGlue \
  --template-body file://cloudformation/personalize.yaml \
  --capabilities CAPABILITY_NAMED_IAM
@@ -141,7 +123,7 @@ To add bucket event notification for starting the training workflow via step fun
 passing arg `--workflow` with value `train`. By default, this will send S3 event when csv file is uploaded into 
 `movie-lens/batch/results/` prefix in the bucket.
 
-```
+```shell
 $ python projects/personalize/put_notification_s3.py --workflow train
 
 INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
@@ -155,7 +137,7 @@ The default prefixes set for the object event triggers for s3 to lambda and s3 t
 code](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/put_notification_s3.py). 
 These can be overridden by passing the respective argument names (see click options in the[source code](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/personalize/put_notification_s3.py)).
 
-```
+```shell
 $ python projects/personalize/put_notification_s3.py --workflow predict
 
 INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
@@ -246,7 +228,7 @@ This can result in a large bill if training a model (as mentioned in previous se
 You may want to adjust the fraction parameter to sample method, to a lower value (e.g. 0.05) and check the ratings 
 dataframe row count afterwards.
 
-```
+```python
 resampledratings_dyf = DynamicFrame.fromDF(
     S3inputratings_node1656882568718.toDF().sample(False, 0.5, seed=0),
     glueContext,
@@ -260,8 +242,9 @@ resampledratings_dyf.toDF().count()
 
 We can then import dataset into personalize by running the following script:
 
-```
+```shell
 $ python projects/personalize/import_dataset.py --dataset_arn arn:aws:personalize:us-east-1:376337229415:dataset/RecommendGroup/INTERACTIONS --role_arn arn:aws:iam::376337229415:role/PersonalizeRole
+
 Dataset Import Job arn: arn:aws:personalize:us-east-1:376337229415:dataset-import-job/MoviesDatasetImport
 Name: MoviesDatasetImport
 ARN: arn:aws:personalize:us-east-1:376337229415:dataset-import-job/MoviesDatasetImport
@@ -521,57 +504,57 @@ python projects/personalize/recommendations.py --job_name Moviesrealtimerecommen
 --campaign_arn <campaign-arn> --user_id 1 --recommendation_mode realtime
 ```
 
-|Bad Education (La mala educaci▒n) (2004)| (Drama|Thriller)|
-|Eternal Sunshine of the Spotless Mind (2004)| (Drama|Romance|Sci-Fi)|
-|Nobody Knows (Dare mo shiranai) (2004)| (Drama)|
-|Good bye, Lenin! (2003)| (Comedy|Drama)|
-|Man Without a Past, The (Mies vailla menneisyytt▒) (2002)| (Comedy|Crime|Drama)|
-|Amelie (Fabuleux destin d'Am▒lie Poulain, Le) (2001)| (Comedy|Romance)|
-|Talk to Her (Hable con Ella) (2002)| (Drama|Romance)|
-|Motorcycle Diaries, The (Diarios de motocicleta) (2004)| (Adventure|Drama)|
-|Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004)| (Drama|Mystery|Romance|War)|
-|In the Mood For Love (Fa yeung nin wa) (2000)| (Drama|Romance)|
+|Bad Education (La mala educaci▒n) (2004)| Drama|Thriller|
+|Eternal Sunshine of the Spotless Mind (2004)| Drama|Romance|Sci-Fi|
+|Nobody Knows (Dare mo shiranai) (2004)| Drama|
+|Good bye, Lenin! (2003)| Comedy,Drama|
+|Man Without a Past, The (Mies vailla menneisyytt▒) (2002)| Comedy,Crime,Drama|
+|Amelie (Fabuleux destin d'Am▒lie Poulain, Le) (2001)| Comedy,Romance|
+|Talk to Her (Hable con Ella) (2002)| Drama,Romance|
+|Motorcycle Diaries, The (Diarios de motocicleta) (2004)| Adventure,Drama|
+|Very Long Engagement, A (Un long dimanche de fian▒ailles) (2004)| Drama,Mystery,Romance,War|
+|In the Mood For Love (Fa yeung nin wa) (2000)| Drama,Romance|
 
 
 User `40` has been recommended crime/drama themed movies.
 
 
-|Kill Bill: Vol. 2 (2004)| (Action|Drama|Thriller)|
-Little Miss Sunshine (2006)| (Adventure|Comedy|Drama)|
-|Snatch (2000)| (Comedy|Crime|Thriller)|
-|There Will Be Blood (2007)| (Drama|Western)|
-|Last King of Scotland, The (2006)| (Drama|Thriller)|
-|Trainspotting (1996)| (Comedy|Crime|Drama)|
-|Mystic River (2003)| (Crime|Drama|Mystery)|
-|No Country for Old Men (2007)| (Crime|Drama)|
-|Sin City (2005)| (Action|Crime|Film-Noir|Mystery|Thriller)|
-|Platoon (1986)| (Drama|War)|
+|Kill Bill: Vol. 2 (2004)| Action|Drama,Thriller|
+Little Miss Sunshine (2006)| Adventure,Comedy,Drama|
+|Snatch (2000)| Comedy,Crime,Thriller|
+|There Will Be Blood (2007)| Drama,Western|
+|Last King of Scotland, The (2006)| Drama,Thriller|
+|Trainspotting (1996)| Comedy,Crime,Drama|
+|Mystic River (2003)| Crime,Drama,Mystery|
+|No Country for Old Men (2007)| Crime,Drama|
+|Sin City (2005)| Action,Crime,Film-Noir,Mystery,Thriller|
+|Platoon (1986)| Drama,War|
 
 
 User `162540` is interesting and seems to have recommended a combination of children/comedy and action/thriller 
 genre movies based on users interactions.
 
 
-|Ice Age 2: The Meltdown (2006)| (Adventure|Animation|Children|Comedy)|
-|I Am Legend (2007)| (Action|Horror|Sci-Fi|Thriller|IMAX)|
-|Shrek the Third (2007)| (Adventure|Animation|Children|Comedy|Fantasy)|
-|2 Fast 2 Furious (Fast and the Furious 2, The) (2003)| (Action|Crime|Thriller)|
-|Saw II (2005)| (Horror|Thriller)|
-|300 (2007)| (Action|Fantasy|War|IMAX)|
-|Fight Club (1999)| (Action|Crime|Drama|Thriller)|
-|Night at the Museum (2006)| (Action|Comedy|Fantasy|IMAX)|
-|Dark Knight, The (2008)| (Action|Crime|Drama|IMAX)|
-|Hancock (2008)| (Action|Adventure|Comedy|Crime|Fantasy)|
+|Ice Age 2: The Meltdown (2006)| Adventure,Animation,Children,Comedy|
+|I Am Legend (2007)| Action,Horror,Sci-Fi,Thriller,IMAX|
+|Shrek the Third (2007)| Adventure,Animation,Children,Comedy,Fantasy|
+|2 Fast 2 Furious (Fast and the Furious 2, The) (2003)| Action,Crime,Thriller|
+|Saw II (2005)| Horror,Thriller|
+|300 (2007)| Action,Fantasy,War,IMAX|
+|Fight Club (1999)| Action,Crime,Drama,Thriller|
+|Night at the Museum (2006)| Action,Comedy,Fantasy,IMAX|
+|Dark Knight, The (2008)| Action,Crime,Drama,IMAX|
+|Hancock (2008)| Action,Adventure,Comedy,Crime,Fantasy|
 
 
 We can also limit the number of results by passing in value for arg `--num_results`, which defaults to 10.
 So for example, for `--user_id 15000` , we can get the top 4 results   
 
 
-|Kiss the Girls (1997)| (Crime|Drama|Mystery|Thriller)|
-|Scream (1996)| (Comedy|Horror|Mystery|Thriller)|
-|Firm, The (1993)| (Drama|Thriller)|
-|Wild Things (1998)| (Crime|Drama|Mystery|Thriller)|
+|Kiss the Girls (1997)| Crime,Drama,Mystery,Thriller|
+|Scream (1996)| Comedy,Horror,Mystery,Thriller|
+|Firm, The (1993)| Drama,Thriller|
+|Wild Things (1998)| Crime,Drama,Mystery,Thriller|
 
 
 For **Batch Inference jobs**, we need to run the `projects/personalize/recommendations.py` script.

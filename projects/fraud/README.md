@@ -40,7 +40,7 @@ We will create a workflow to read data from S3, perform ETL job, train a Fraud D
 and used to generate predictions for a sample of batch data as well as realtime predictions via a custom API.
 
 The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services) and 
-configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
+configuring virtual environment with dependencies [here](https://raw.githubusercontent.com/ryankarlos/AWS-ML-services/master/README.md)
 
 ### CloudFormation Templates
 

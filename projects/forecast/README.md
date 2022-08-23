@@ -11,7 +11,7 @@ example dataset which is a time series of the Wikipedia page hits for Peyton Man
 can be found [here](https://peerj.com/preprints/3190/)
 
 The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast) and 
-configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
+configuring virtual environment with dependencies [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies)
 
 Notebooks for the various steps described in the next sections can be found [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb)
 The notebook [AWS_Forecast.ipynb](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb) uses the functions in the modules in this package to 
@@ -37,13 +37,9 @@ profile
 ![](../../screenshots/forecast/manning_raw_data_plot.png)
 
 Module [dataset_and_import_jobs.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/dataset_and_import_jobs.py) 
-creates an AWS Forecast dataset group and dataset as described in [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html)
-Here we only use target time series dataset type 
-
-As per [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html),
->The dataset group must include a target time series dataset. The target time series dataset includes the 
-target attribute (item_id) and timestamp attribute, as well as any dimensions. 
-Related time series and Item metadata is optional".
+creates an AWS Forecast dataset group and dataset as described in AWS docs [1].
+Here we only use target time series dataset type  The dataset group must include a target time series dataset which includes the 
+target attribute (item_id) and timestamp attribute, as well as any dimensions. Related time series and Item metadata is optional [1]
 
 For the data uploaded to S3 using module `prepare_data_for_s3.py`, the itemid column has been created and set to arbitary value (1) 
 as all the items belong to the same group (i.e Manning's wikipedia hits)
@@ -97,20 +93,18 @@ check_job_status(dataset_import_job_arn, job_type="import_data")
 Create a predictor (an Amazon Forecast model) that is trained using the target time series. 
 You can use predictors to generate forecasts based on your time-series data.
 
-As per [AWS docs](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html), the following
-paramters are passed into the custom functions for creating the predictor
+Amazon Forecast requires the  Dataset group, Forecast frequency and Forecast horizon inputs when training a predictor [2]
+Hence these are passed into the custom functions for creating the predictor, with the following settings:
 
 * Dataset group (defined previously)
 * Forecast frequency – The granularity of your forecasts (in this case daily).
 * Forecast horizon – The number of time steps being forecasted (in this case,
   set this to 35 days)
   
-This custom function calls the forecast.create_predictor method and sets the
-AutoML parameter to _True_. 
-However, this can also be upgraded to AutoPredictor as detailed [here](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html)
-and is suggested as the preferred method by AWS
->AutoPredictor is the default and preferred method to create a predictor with Amazon Forecast. AutoPredictor creates predictors by applying the optimal combination of algorithms for each time series in your dataset.
-Predictors created with AutoPredictor are generally more accurate than predictors created with AutoML or manual selection."
+This custom function calls the forecast.create_predictor method and sets the AutoML parameter to _True_. 
+However, this can also be upgraded to AutoPredictor and is suggested by AWS as the preferred method, since the predictors 
+created are more accurate compared with those created via manual selection [2]. AutoPredictor achieves this by selecting the 
+optimal combination of models for the time series in the dataset.
 
 
 ```python
@@ -124,8 +118,17 @@ check_job_status(predictor_arn, job_type="training")
 
 ### Backtest results
 
-Amazon Forecast provides following [metrics](https://docs.aws.amazon.com/forecast/latest/dg/metrics.html) to evaluate predictors.
-Described below, are some of the metrics which are used in this example for evaluating model performance.
+Amazon Forecast uses backtesting to compute metrics, for evaluating predictors. Some of these are listed below, along with the
+common use cases for applying each one [3].
+
+|Metric |                                                                     Definition                                                                     |When to use | 
+| :----:|:--------------------------------------------------------------------------------------------------------------------------------------------------:|:----------:|
+| Root Mean Square Error(RMSE)|                                                    square root of the average of squared errors                                                    ||
+| Weighted Quantile Loss|                                                    accuracy of a model at a specified quantile                                                     ||
+|Mean Absolute Scaled Error (MASE)|divides the average error by a scaling factor which is dependent on the seasonality value, m, <br/>that is selected based on the forecast frequency |ideal for datasets that are cyclical in nature or have seasonal properties. e.g. forecasting for products that are in high demand in summer compared to winter.|
+
+|Mean Absolute Percentage Error(MAPE)|takes the absolute value of the percentage error between observed and predicted values for each unit of time, then averages those values|useful for cases where values differ significantly between time points and outliers have a significant impact
+
 
 >1. Root Mean Square Error (RMSE): square root of the average of squared errors, and is therefore more sensitive to 
   outliers than other accuracy metrics. A lower value indicates a more accurate model.
@@ -149,17 +152,13 @@ between those two values. A lower value indicates a more accurate model. WAPE is
 Root Mean Square Error (RMSE) because it uses the absolute error instead of the squared error.
 
 
-The metrics are provided for each backtest window  specified. 
+The metrics are provided for each backtest window specified. For multiple backtest windows, the metrics are averaged across
+all the windows. The user can adjust the backtest window length (testing set) and the number of backtests (can vary from 1 to 5) 
+when training a predictor [3]. However, the backtest window length must be at least as large as the prediction window or forecast horizon 
+(this is the default setting if not overriden by the user). It also cannot exceed more that half the length of 
+the entire time series. The metrics are computed from the forecasted values and observed values during backtesting. Missing values 
+which are filled in the dataset using one of the AWS forecast supported methods [4], are not used when computing the metrics as they are not classed as observed values [3].
 
->Forecast uses backtesting to calculate accuracy metrics. If you run multiple backtests, Forecast averages each 
-metric over all backtest windows. By default, Forecast computes one backtest, with the size of the backtest window 
-(testing set) equal to the length of the forecast horizon (prediction window). You can set both the backtest window 
-length and the number of backtest scenarios when training a predictor.
-Forecast omits filled values from the backtesting process, and any item with filled values within a given 
-backtest window will be excluded from that backtest. This is because Forecast only compares forecasted values with 
-observed values during backtesting, and filled values are not observed values.
-The backtest window must be at least as large as the forecast horizon, and smaller than half the length of the entire 
-target time-series dataset. You can choose from between 1 and 5 backtests.
 
 
 ```
@@ -190,7 +189,7 @@ plot_backtest_metrics(error_metrics)
 
 Now we have a trained model so we can create a forecast. This
 includes predictions for every item (item_id) in the dataset group 
-that was used to train the predictor [Reference](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html)
+that was used to train the predictor [5]
 
 ```python
 forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
@@ -202,7 +201,7 @@ forecast_arn = create_forecast(forecast_name, predictor_arn)
 
 Once this is done, we can then query the forecast by passing a filter (key-value pair),
 where the key/values are one of the schema attribute names and valid values respectively. 
-This will return forecast for only those items that satisfy the criteria [Reference](https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html)
+This will return forecast for only those items that satisfy the criteria [5].
 In this case, we query the forecast and return all the items 
 by using the item id dimension
 
@@ -228,3 +227,12 @@ kwargs = {'forecast':forecast_name,
 }
 delete_training_forecast_resources(**kwargs)
 ```
+
+
+## References 
+
+1. Importing datasets https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html
+2. Training Predictors https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html
+3. Predictor metrics and backtesting https://docs.aws.amazon.com/forecast/latest/dg/metrics.html
+4. Handling missing values https://docs.aws.amazon.com/forecast/latest/dg/howitworks-missing-values.html
+5. Generating and Querying forecasts https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html

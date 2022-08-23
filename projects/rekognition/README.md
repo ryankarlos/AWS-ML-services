@@ -3,7 +3,7 @@
 Rekognition is the AWS service for computer vision. It's capable of object detection, facial recognition and analysis, celebrity detection, text extraction, as well as detect any inappropriate 
 content. It is a highly scalable service that requires no ML expertise to use. With Amazon Rekognition Custom Labels, you can identify the objects and scenes in images that are specific to 
 your business needs. The following exercise, demonstrates using AWS Rekognition Custom Labels to train a custom labelled food images dataset  and then use the model to classify a set of test images.
-All the scripts used in this exercise can be found in this [repo](https://github.com/ryankarlos/AWS-ML-services/projects/rekognition) and have been adapated from the [AWS docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/what-is.html)
+All the scripts used in this exercise can be found in this [repo](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/rekognition) and have been adapated from the [AWS docs](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/what-is.html)
 for the use of these sample dataset in this exercise. To configure virtual environment follow the instructions [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
 
 #### Uploading datatset to S3

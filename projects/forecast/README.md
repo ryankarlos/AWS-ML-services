@@ -121,35 +121,13 @@ check_job_status(predictor_arn, job_type="training")
 Amazon Forecast uses backtesting to compute metrics, for evaluating predictors. Some of these are listed below, along with the
 common use cases for applying each one [3].
 
-|Metric |                                                                     Definition                                                                     |When to use | 
-| :----:|:--------------------------------------------------------------------------------------------------------------------------------------------------:|:----------:|
-| Root Mean Square Error(RMSE)|                                                    square root of the average of squared errors                                                    ||
-| Weighted Quantile Loss|                                                    accuracy of a model at a specified quantile                                                     ||
-|Mean Absolute Scaled Error (MASE)|divides the average error by a scaling factor which is dependent on the seasonality value, m, <br/>that is selected based on the forecast frequency |ideal for datasets that are cyclical in nature or have seasonal properties. e.g. forecasting for products that are in high demand in summer compared to winter.|
-
-|Mean Absolute Percentage Error(MAPE)|takes the absolute value of the percentage error between observed and predicted values for each unit of time, then averages those values|useful for cases where values differ significantly between time points and outliers have a significant impact
-
-
->1. Root Mean Square Error (RMSE): square root of the average of squared errors, and is therefore more sensitive to 
-  outliers than other accuracy metrics. A lower value indicates a more accurate model.
->2. Weighted Quantile Loss (wQL): measures the accuracy of a model at a specified quantile. It is particularly useful 
-  when there are different costs for underpredicting and overpredicting. By setting the weight (τ) of the wQL function, 
-  you can automatically incorporate differing penalties for underpredicting and overpredicting.
-  By default, Forecast computes wQL at 0.1 (P10), 0.5 (P50), and 0.9 (P90).
->3. Average Weighted Quantile Loss (Average wQL): mean value of weighted quantile losses over all specified quantiles. 
-  By default, this will be the average of wQL[0.10], wQL[0.50], and wQL[0.90]
->4. Mean Absolute Scaled Error (MASE): calculated by dividing the average error by a scaling factor. This scaling factor 
-  is dependent on the seasonality value, m, which is selected based on the forecast frequency. A lower value indicates 
-  a more accurate model. MASE is ideal for datasets that are cyclical in nature or have seasonal properties. 
-  For example, forecasting for items that are in high demand during summers and in low demand during winters can 
-  benefit from taking into account the seasonal impact.
->5. Mean Absolute Percentage Error (MAPE): takes the absolute value of the percentage error between observed and 
-  predicted values for each unit of time, then averages those values. A lower value indicates a more accurate model.
-  MAPE is useful for cases where values differ significantly between time points and outliers have a significant impact.
->6. Weighted Absolute Percentage Error (WAPE): measures the overall deviation of forecasted values from observed values. 
-WAPE is calculated by taking the sum of observed values and the sum of predicted values, and calculating the error 
-between those two values. A lower value indicates a more accurate model. WAPE is more robust to outliers than 
-Root Mean Square Error (RMSE) because it uses the absolute error instead of the squared error.
+|Metric | Definition |When to use | equation |
+| :----:|:--------:|:----------:| :----------:|
+| Root Mean Square Error(RMSE)| square root of the average of squared errors. It is sensitive to large deviations (outliers) between the actual demand and forecasted values.|Useful in cases when you want to penalise outliers where a few large incorrect predictions from a model on some items can be very costly to the business. For sparse datasets where demand for items in historical data is low, it would be better to use WAPE or wQL instead as RMSE will not account for scale of total demand|$\frac{n}{T} \Sigma_{i,t}({y_{i,t}}-\hat{y_{i,t}})^2$ |
+| Weighted Quantile Loss (wQL)| measures accuracy of a model at a specified quantile. An extension of this is the Average wQL metric which is the mean of wQL values for all quantiles (forecast types) selected during predictor creation. |wQL is particularly useful when there are different costs for underpredicting and overpredicting. By setting the weight of the wQL function, you can automatically incorporate differing penalties for underpredicting and overpredicting. The Average wQL can be used for evaluating forecasts at multiple quantiles together.| $2\frac{\Sigma_{i,t}[\tau\max(y_{i,t} - q_{i,t}^{(\tau)}, 0) + (1-\tau)\max(q_{i,t}^{(\tau)} - y_{i,t}, 0)]}{\Sigma_{i,t}\left\| y_{i,t} \right\|}$ |                                    
+|Mean Absolute Scaled Error (MASE)|divides the average error by a scaling factor which is dependent on the seasonality value, that is selected based on the forecast frequency. MASE is a scale-free metric, which makes it useful for comparing models from different datasets. MASE values can be used to meaningfully compare forecast error across different datasets regardless of the scale of total demand. |ideal for datasets that are cyclical in nature or have seasonal properties. e.g. forecasting for products that are in high demand in summer compared to winter| $\frac{\frac{1}{J} \Sigma_{j}( \left\| {e_{j}} \right\|)}{\frac{1}{T-m} \Sigma_{t=m+1}^{T}( \left\| {Y_{t} - {Y_{t-m}}} \right\|)} $ |
+|Mean Absolute Percentage Error(MAPE)|percentage difference of the mean forecasted and actual value) averaged over all time points.  The normalization in the MAPE allows this metric to be compared across datasets with different scales.|useful for datasets where forecasting errors need to be emphasised equally on all items regardless of demand. It also equally penalizes for under-forecasting or over-forecasting, so useful metric to use when the difference in costs of under-forecasting or over-forecasting is negligible|$\frac{1}{n} \Sigma_{i,t} \left\| \frac{A_{t} - F_{t}}{A_{t}} \right\| $ |
+|Weighted absolute percentage error(WAPE)|sum of the absolute error normalized by the total demand. A high total demand results in a low WAPE and vice versa.The weighting allows these metrics to be compared across datasets with different scales.|useful in evaluating datasets that contain a mix of items with large and small demand. A retailer may want to prioritise forecasting errrors for standard items with high sales compared to special edition items which are sold infrequently. WAPE would be a good choice in such a case. For sparse datasets where a large proportion of products are sold infrequently (i.e. demand is 0 for most of the historical data), WAPE would be a better choice compared to RMSE as it accounts for the total scale of demand.| $\frac{ \Sigma_{i,t}({y_{i,t}}-\hat{y_{i,t}})^2}{\Sigma_{i,t}({y_{i,t}}})$|
 
 
 The metrics are provided for each backtest window specified. For multiple backtest windows, the metrics are averaged across

@@ -10,13 +10,7 @@ Illustrating the use of AWS Forecasts service using the Manning Dataset. This is
 example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 
 can be found [here](https://peerj.com/preprints/3190/)
 
-The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast) and 
-configuring virtual environment with dependencies [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies)
-
-Notebooks for the various steps described in the next sections can be found [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb)
-The notebook [AWS_Forecast.ipynb](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb) uses the functions in the modules in this package to 
-import data into S3, create an AWS forecast dataset and import data into it from S3, 
-train a predictor and then forecast using the model. 
+The modules and functions referenced in the code blocks in this exercise can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast). These contain helper functions for importing data into S3, creating an AWS forecast dataset and importing data into it from S3, training a predictor and then forecasting using the model. The code snippets and outputs used in the next few sections, can also be accessed in the [notebook](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb). Instructions on configuring the virtual environment with dependencies can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies).
 
 #### Data prep 
 
@@ -41,12 +35,14 @@ creates an AWS Forecast dataset group and dataset as described in AWS docs [1].
 Here we only use target time series dataset type  The dataset group must include a target time series dataset which includes the 
 target attribute (item_id) and timestamp attribute, as well as any dimensions. Related time series and Item metadata is optional [1]
 
-For the data uploaded to S3 using module `prepare_data_for_s3.py`, the itemid column has been created and set to arbitary value (1) 
+For the data uploaded to S3 using module [prepare_data_for_s3.py](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/prepare_data_for_s3.py), the itemid column has been created and set to arbitary value (1) 
 as all the items belong to the same group (i.e Manning's wikipedia hits)
 
 The dataset group and import job can then be created using the snippet below after setting the data frequency for daily frequency and ts_schema.
+We can access all the forecast services apis via the boto client interface.
 
 ```python
+forecast = boto3.client("forecast")
 DATASET_FREQUENCY = "D"
 ts_schema ={
    "Attributes":[
@@ -66,6 +62,32 @@ ts_schema ={
 }
 PROJECT = 'manning_ts'
 DATA_VERSION = 1
+
+def create_dataset(dataset_name, freq, schema):
+    response = forecast.create_dataset(
+        Domain="CUSTOM",
+        DatasetType="TARGET_TIME_SERIES",
+        DatasetName=dataset_name,
+        DataFrequency=freq,
+        Schema=schema,
+    )
+
+    dataset_arn = response["DatasetArn"]
+    print(forecast.describe_dataset(DatasetArn=dataset_arn))
+    return dataset_arn
+    
+def create_dataset_group_with_dataset(dataset_name, dataset_arn):
+    dataset_arns = [dataset_arn]
+    try:
+        create_dataset_group_response = forecast.create_dataset_group(
+            Domain="CUSTOM", DatasetGroupName=dataset_name, DatasetArns=dataset_arns
+        )
+        dataset_group_arn = create_dataset_group_response["DatasetGroupArn"]
+        return dataset_group_arn
+    except forecast.exceptions.ResourceAlreadyExistsException:
+        print("Dataset group already exists")
+
+
 dataset_name = f"{PROJECT}_{DATA_VERSION}"
 dataset_arn = create_dataset(dataset_name, DATASET_FREQUENCY, ts_schema)
 dataset_group_arn = create_dataset_group_with_dataset(dataset_name, dataset_arn)
@@ -77,8 +99,12 @@ progressing to the training step
 
 
 ```python
+from dataset_and_import_jobs import create_import_job
+from common import check_job_status
+
 bucket_name = 'aws-forecast-demo-examples'
 key = "manning_ts_2015.csv"
+
 ts_dataset_import_job_response = create_import_job(bucket_name, key, dataset_arn, role_arn)
 dataset_import_job_arn=ts_dataset_import_job_response['DatasetImportJobArn']
 check_job_status(dataset_import_job_arn, job_type="import_data")
@@ -101,16 +127,20 @@ Hence these are passed into the custom functions for creating the predictor, wit
 * Forecast horizon – The number of time steps being forecasted (in this case,
   set this to 35 days)
   
-This custom function calls the forecast.create_predictor method and sets the AutoML parameter to _True_. 
+This [function](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/create_predictor_forecast_jobs.py#L9) calls the `forecast.create_predictor` method and sets the AutoML parameter to _True_. 
 However, this can also be upgraded to AutoPredictor and is suggested by AWS as the preferred method, since the predictors 
 created are more accurate compared with those created via manual selection [2]. AutoPredictor achieves this by selecting the 
 optimal combination of models for the time series in the dataset.
 
 
 ```python
+from create_predictor_forecast_jobs import train_aws_forecast_model
+from common import check_job_status
+
 FORECAST_LENGTH = 35
 DATASET_FREQUENCY = "D"
 predictor_name = f"{PROJECT}_{DATA_VERSION}_automl"
+
 create_predictor_response , predictor_arn = train_aws_forecast_model(predictor_name, FORECAST_LENGTH, DATASET_FREQUENCY, dataset_group_arn)
 check_job_status(predictor_arn, job_type="training")
 ```
@@ -137,31 +167,69 @@ when training a predictor [3]. However, the backtest window length must be at le
 the entire time series. The metrics are computed from the forecasted values and observed values during backtesting. Missing values 
 which are filled in the dataset using one of the AWS forecast supported methods [4], are not used when computing the metrics as they are not classed as observed values [3].
 
-
+We can generate the backtesting metrics by calling the [function](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/create_predictor_forecast_jobs.py#L70) with the `predictor_arn` value, 
+which calls the  `get_accuracy_metrics` method from the forecast api.
 
 ```
+from create_predictor_forecast_jobs import evaluate_backtesting_metrics
 error_metrics = evaluate_backtesting_metrics(predictor_arn)
 ```
 
 ![](../../screenshots/forecast/manning-predictors.png)
 
 
-and to plot the backtest results for all metrics except 
-Weighted Quantile Losses.
-
-Looking at the results, seems like NPTS is the winning algorithm
-followed by Deep AR Plus. 
-So AWS Forecast, will use the NPTS model for serving forecasts
-
-We can also see MASE metric better highlights the difference in
-performance between various algorithms as it is more suited to
-this dataset due to cyclical/seasonal properties in data
+We can also plot the backtest results for all the metrics.
 
 ```python
+import numpy as np
+import json
+
+def plot_backtest_metrics(error_metrics):
+    parsed_json = {
+        "Algorithm": [],
+        "WQuantLosses": [],
+        "WAPE": [],
+        "RMSE": [],
+        "MASE": [],
+        "MAPE": [],
+        "AvgWQuantLoss": [],
+    }
+    for v in error_metrics:
+        algo = v["AlgorithmArn"].split("/")[-1]
+        weighted_quantile_losses = v["TestWindows"][0]["Metrics"][
+            "WeightedQuantileLosses"
+        ]
+        wape = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["WAPE"]
+        rmse = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["RMSE"]
+        mase = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["MASE"]
+        mape = v["TestWindows"][0]["Metrics"]["ErrorMetrics"][0]["MAPE"]
+        avg_weighted_quantile_losses = v["TestWindows"][0]["Metrics"][
+            "AverageWeightedQuantileLoss"
+        ]
+        parsed_json["Algorithm"].append(algo)
+        parsed_json["WQuantLosses"].append(json.dumps(weighted_quantile_losses))
+        parsed_json["WAPE"].append(np.round(wape, 4))
+        parsed_json["RMSE"].append(np.round(rmse, 4))
+        parsed_json["MASE"].append(np.round(mase, 4))
+        parsed_json["MAPE"].append(np.round(mape, 4))
+        parsed_json["AvgWQuantLoss"].append(np.round(avg_weighted_quantile_losses, 4))
+    df = (
+        pd.DataFrame(parsed_json)
+        .set_index("Algorithm")
+        .T.rename_axis("Metric", axis=0)
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+    df.iloc[1::, :].plot(x="Metric", kind="bar", figsize=(15, 8), legend=True)
+    return df
+
 plot_backtest_metrics(error_metrics)
 ```
 
 ![](../../screenshots/forecast/manning-backtest-results-plot.png)
+
+Looking at the results, seems like NPTS is the winning algorithm followed by Deep AR Plus. So AWS Forecast, will use the NPTS model for serving forecasts. We can also see MASE metric better highlights the difference in performance between various algorithms as it is more suited to this dataset due to cyclical/seasonal properties in data
+
 
 #### Forecast and query
 
@@ -170,6 +238,8 @@ includes predictions for every item (item_id) in the dataset group
 that was used to train the predictor [5]
 
 ```python
+from create_predictor_forecast_jobs import create_forecast
+
 forecast_name = f"{PROJECT}_{DATA_VERSION}_automl_forecast"
 forecast_arn = create_forecast(forecast_name, predictor_arn)
 ```
@@ -180,14 +250,39 @@ forecast_arn = create_forecast(forecast_name, predictor_arn)
 Once this is done, we can then query the forecast by passing a filter (key-value pair),
 where the key/values are one of the schema attribute names and valid values respectively. 
 This will return forecast for only those items that satisfy the criteria [5].
-In this case, we query the forecast and return all the items 
-by using the item id dimension
+In this case, we query the forecast and return all the items  by using the item id dimension.
+We will use the `forecast_arn` value returned from the previous code block.
 
 ```python
-filters = {"item_id":"1"}
-forecast_response = run_forecast_query_and_plot(forecast_arn, filters)
-df = create_forecast_plot(forecast_response)
 
+forecast = boto3.client("forecast")
+forecastquery = boto3.client(service_name="forecastquery")
+
+def run_forecast_query(forecast_arn, filters):
+    forecast_response = forecastquery.query_forecast(
+        ForecastArn=forecast_arn, Filters=filters
+    )
+    return forecast_response["Forecast"]["Predictions"]
+
+def create_forecast_plot(forecast_response):
+    ts = {}
+
+    timestamp = [k["Timestamp"] for k in forecast_response["p10"]]
+    p10 = [k["Value"] for k in forecast_response["p10"]]
+    p50 = [k["Value"] for k in forecast_response["p50"]]
+    p90 = [k["Value"] for k in forecast_response["p90"]]
+
+    ts["timestamp"] = timestamp
+    ts["p10"] = p10
+    ts["p50"] = p50
+    ts["p90"] = p90
+    df = pd.DataFrame(ts)
+    df.plot(x="timestamp", figsize=(15, 8))
+    return df
+    
+filters = {"item_id":"1"}
+forecast_response = run_forecast_query(forecast_arn, filters)
+create_forecast_plot(forecast_response)
 ```
 
 ![](../../screenshots/forecast/manning-forecast-p10-p50-p90-plot.png)
@@ -200,9 +295,11 @@ Finally we can tear down all the AWS Forecast resources: predictor, forecast and
 dataset group 
 
 ```python
+from teardown_resource import delete_training_forecast_resources
 kwargs = {'forecast':forecast_name,
 'predictor':predictor_name
 }
+
 delete_training_forecast_resources(**kwargs)
 ```
 

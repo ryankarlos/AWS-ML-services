@@ -133,10 +133,16 @@ Hence these are passed into the custom functions for creating the predictor, wit
 * Forecast horizon – The number of time steps being forecasted (in this case,
   set this to 35 days)
   
-This [function](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/create_predictor_forecast_jobs.py#L9) calls the `forecast.create_predictor` method and sets the AutoML parameter to _True_. 
-However, this can also be upgraded to AutoPredictor and is suggested by AWS as the preferred method, since the predictors 
-created are more accurate compared with those created via manual selection [2]. AutoPredictor achieves this by selecting the 
-optimal combination of models for the time series in the dataset.
+This [function](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/create_predictor_forecast_jobs.py#L9) 
+runs automl by default, trains an  optimal combination of algorithms to each time series in the dataset. 
+However, if the  `auto_ml` parameter is set to `False`, it will run manual selection based on the `alogorithm` parameter 
+set. This defaults to 'Non Parametric Time Series' but can be overidden.  
+**Note** In the script, I am currently using the  legacy predictor (`CreatePredictor`) api for manual selection. 
+we can also upgrade to use `AutoPredictor` to create predictors as suggested in the AWS docs [2].
+This has two advantages. Forecast Explainability and predictor retraining features are only available for 
+predictors created with AutoPredictor. AutoPredictor is the default and preferred method to create a predictor 
+with Amazon Forecast as the predictors are more accurate. It applies the optimal combination of algorithms to the time series in the dataset.[2]. 
+If the script is run without changing any parameters, it will create predictors using `AutoPredictor`.
 
 
 ```python

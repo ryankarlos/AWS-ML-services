@@ -288,6 +288,11 @@ create_forecast_plot(forecast_response)
 ![](../../screenshots/forecast/manning-forecast-p10-p50-p90-plot.png)
 
 
+We can also further analyse the results stored in S3 directly from [Athena](https://aws.amazon.com/blogs/big-data/analyzing-data-in-s3-using-amazon-athena/) or 
+or create external tables in [Redshift Spectrum](https://aws.amazon.com/premiumsupport/knowledge-center/redshift-spectrum-external-table/) which 
+reference database in Glue Data Catalog. This will allow simple queries to be run without having to load data into Redshift tables.
+We can also query the data using Athena as it can access the Glue Data Catalog. When mapping data stored in S3 bucket as external 
+tables, the path to the S3 file needs to be passed to the `LOCATION` parameter in the query.
 
 #### Terminating resources
 

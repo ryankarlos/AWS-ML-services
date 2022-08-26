@@ -8,14 +8,17 @@ a forecasting model capable of making highly accurate predictions.
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
 example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 
-can be found [here](https://peerj.com/preprints/3190/)
+can be found [here](https://peerj.com/preprints/3190/). The dataset is freely available in the [FbProphet repo](https://github.com/facebook/prophet/blob/main/examples/example_wp_log_peyton_manning.csv)
 
-The modules and functions referenced in the code blocks in this exercise can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast). These contain helper functions for importing data into S3, creating an AWS forecast dataset and importing data into it from S3, training a predictor and then forecasting using the model. The code snippets and outputs used in the next few sections, can also be accessed in the [notebook](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb). Instructions on configuring the virtual environment with dependencies can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies).
+The modules and functions referenced in the code blocks in this exercise can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast). 
+These contain helper functions for importing data into S3, creating an AWS forecast dataset and importing data into it from S3, training a predictor and then forecasting using the model. 
+The code snippets and outputs used in the next few sections, can also be accessed in the [notebook](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb). 
+Instructions on configuring the virtual environment with dependencies can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies).
 
 ### Data preparation
 
-The functions in modules [prepare_data_for_s3.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/prepare_data_for_s3.py) filter the existing dataset to
-only include historical data for one year (2015) and then reformat the dataset
+The functions in modules [prepare_data_for_s3.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/prepare_data_for_s3.py) 
+filter the existing dataset to only include historical data for one year (2015) and then reformat the dataset
 to have columns ("timestamp", "target_value","item_id") and values as expected by AWS Forecast api.
 Finally we call the s3 put object to add to created S3 bucket.
 

@@ -1,4 +1,4 @@
-### AWS Forecast 
+## AWS Forecast 
 
 Forecast is a fully managed AWS service for time-series analysis. It can select from multiple time series prediction models to find the best one for your particular data sets.
 Amazon Forecast  automatically examines the historical data provided (including any additional features that can impact the forecast), and identify what is meaningful, and produce 
@@ -12,7 +12,7 @@ can be found [here](https://peerj.com/preprints/3190/)
 
 The modules and functions referenced in the code blocks in this exercise can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast). These contain helper functions for importing data into S3, creating an AWS forecast dataset and importing data into it from S3, training a predictor and then forecasting using the model. The code snippets and outputs used in the next few sections, can also be accessed in the [notebook](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/forecast/notebooks/AWS_Forecast_automl.ipynb). Instructions on configuring the virtual environment with dependencies can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md#environment-and-dependencies).
 
-#### Data prep 
+### Data preparation
 
 The functions in modules [prepare_data_for_s3.py](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast/prepare_data_for_s3.py) filter the existing dataset to
 only include historical data for one year (2015) and then reformat the dataset
@@ -114,7 +114,7 @@ check_job_status(dataset_import_job_arn, job_type="import_data")
 
 ![](../../screenshots/forecast/manning-dashboard.png)
 
-#### Model Training
+### Model Training
 
 Create a predictor (an Amazon Forecast model) that is trained using the target time series. 
 You can use predictors to generate forecasts based on your time-series data.
@@ -232,7 +232,7 @@ plot_backtest_metrics(error_metrics)
 Looking at the results, seems like NPTS is the winning algorithm followed by Deep AR Plus. So AWS Forecast, will use the NPTS model for serving forecasts. We can also see MASE metric better highlights the difference in performance between various algorithms as it is more suited to this dataset due to cyclical/seasonal properties in data
 
 
-#### Forecast and query
+### Forecast and query
 
 Now we have a trained model so we can create a forecast. This
 includes predictions for every item (item_id) in the dataset group 
@@ -295,7 +295,7 @@ data into Redshift tables. We can also query the data using Athena as it can acc
 data stored in S3 bucket as external tables, the path to the S3 file needs to be passed to the `LOCATION` parameter 
 in the query.
 
-#### Terminating resources
+### Terminating resources
 
 Finally we can tear down all the AWS Forecast resources: predictor, forecast and 
 dataset group 
@@ -310,7 +310,7 @@ delete_training_forecast_resources(**kwargs)
 ```
 
 
-## References 
+### References 
 
 1. Importing datasets https://docs.aws.amazon.com/forecast/latest/dg/howitworks-datasets-groups.html
 2. Training Predictors https://docs.aws.amazon.com/forecast/latest/dg/howitworks-predictor.html

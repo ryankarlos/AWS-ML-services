@@ -36,7 +36,7 @@ output of the transcribed data stored in S3. The parsed data will then be passed
 further analysis by other AWS services. In the next section we will deploy the code to lambda function for 
 parsing the data.
 
-#### Deploying lambda function 
+### Deploying lambda function 
 
 
 We will first need to create a lambda function containing the following handler.
@@ -147,7 +147,7 @@ of 15 minutes)
 $ python lambdas/deploy_lambda_function.py --function_name parses3json --role "NewLambdaRole" --timeout 150
 ```
 
-#### Step Function Execution
+### Step Function Execution
 
 Before creating and executing the Step Functions workflows, first need to grant Step Functions workflow 
 (state machine) permissions to trigger Lambda functions via IAM role as below. Here I have attached a number 

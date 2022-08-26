@@ -288,11 +288,11 @@ create_forecast_plot(forecast_response)
 ![](../../screenshots/forecast/manning-forecast-p10-p50-p90-plot.png)
 
 
-We can also further analyse the results stored in S3 directly from [Athena](https://aws.amazon.com/blogs/big-data/analyzing-data-in-s3-using-amazon-athena/) or 
-or create external tables in [Redshift Spectrum](https://aws.amazon.com/premiumsupport/knowledge-center/redshift-spectrum-external-table/) which 
-reference database in Glue Data Catalog. This will allow simple queries to be run without having to load data into Redshift tables.
-We can also query the data using Athena as it can access the Glue Data Catalog. When mapping data stored in S3 bucket as external 
-tables, the path to the S3 file needs to be passed to the `LOCATION` parameter in the query.
+We can also further analyse the results stored in S3 directly from Athena or create external tables in Redshift Spectrum 
+which reference database in Glue Data Catalog [6][7]. This will allow simple queries to be run without having to load 
+data into Redshift tables. We can also query the data using Athena as it can access the Glue Data Catalog. When mapping 
+data stored in S3 bucket as external tables, the path to the S3 file needs to be passed to the `LOCATION` parameter 
+in the query.
 
 #### Terminating resources
 
@@ -316,3 +316,5 @@ delete_training_forecast_resources(**kwargs)
 3. Predictor metrics and backtesting https://docs.aws.amazon.com/forecast/latest/dg/metrics.html
 4. Handling missing values https://docs.aws.amazon.com/forecast/latest/dg/howitworks-missing-values.html
 5. Generating and Querying forecasts https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html
+6. Query S3 data from Athena https://aws.amazon.com/blogs/big-data/analyzing-data-in-s3-using-amazon-athena/
+7. Create External Tables Redshift Spectrum https://aws.amazon.com/premiumsupport/knowledge-center/redshift-spectrum-external-table/

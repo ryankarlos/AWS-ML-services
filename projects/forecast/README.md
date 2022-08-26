@@ -7,8 +7,11 @@ a forecasting model capable of making highly accurate predictions.
 ![](../../screenshots/forecast/aws_forecast_architecture.png)
 
 Illustrating the use of AWS Forecasts service using the Manning Dataset. This is part of the [FbProphet Library](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
-example dataset which is a time series of the Wikipedia page hits for Peyton Manning. More details about the package 
-can be found [here](https://peerj.com/preprints/3190/). The dataset is freely available in the [FbProphet repo](https://github.com/facebook/prophet/blob/main/examples/example_wp_log_peyton_manning.csv)
+example dataset which is a time series of the Wikipedia search frequencies (log-
+transformed) for Peyton Manning taken over an 8 year period [8]. American Football begins in Septemeber and ends in early January every year, with playoffs 
+scheduled thereafter. Games tend to be televised on Sunday and Monday nights. By using historical data of wikipedia page hits 
+of a popular player like Peyton Manning, we could model weekly and yearly seasonality of wikipedia page hits and use that as 
+an indication of football hype. We may expect to see a lot more activity during the playoff season and superbowl for example.
 
 The modules and functions referenced in the code blocks in this exercise can be accessed [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/projects/forecast). 
 These contain helper functions for importing data into S3, creating an AWS forecast dataset and importing data into it from S3, training a predictor and then forecasting using the model. 
@@ -322,3 +325,4 @@ delete_training_forecast_resources(**kwargs)
 5. Generating and Querying forecasts https://docs.aws.amazon.com/forecast/latest/dg/howitworks-forecast.html
 6. Query S3 data from Athena https://aws.amazon.com/blogs/big-data/analyzing-data-in-s3-using-amazon-athena/
 7. Create External Tables Redshift Spectrum https://aws.amazon.com/premiumsupport/knowledge-center/redshift-spectrum-external-table/
+8. Facebook Prophet paper using Manning dataset https://peerj.com/preprints/3190/

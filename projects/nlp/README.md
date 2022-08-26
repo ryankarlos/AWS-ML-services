@@ -1,102 +1,147 @@
 ## AWS NLP services
 
-This section will focus on pipelines combining the following AWS service for an NLP application:
+This demo will focus on pipelines combining the following AWS service for translating 
+video speech and analysing sentiment and key-words in speech.
 
 * AWS Transcribe: automatic speech recognition (speech to text)
 * AWS Polly: Convert text to life like speech
 * AWS Translate: Translate text from one lang to another
 * AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
 
-The code for the following exercise can be found [here](https://github.com/ryankarlos/AWS-ML-services) and 
-configuring virtual environment with dependencies [here](https://ryankarlos.github.io/AWS-ML-services/#environment-and-dependencies)
+![](../../screenshots/nlp/nlp_workflow_for_speech_translation.png)
 
+The code for the following exercise can be found in the github repository [here](https://github.com/ryankarlos/AWS-ML-services) and
+For the next sections, we need to install the dependencies in the [pipfile](https://github.com/ryankarlos/AWS-ML-services/blob/master/Pipfile)
+by following the instructions [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md)
 
-### Use Case 1 - Translating Video speech to another language and analysing sentiment and key-words in speech
+The environment can then be activated by running the following commands from the root of the repository.
 
-![](../../screenshots/nlp/AWS_nlp_speech_translation_architecture.png)
+```shell
+$ export PYTHONPATH=.
+$ pipenv shell
+```
 
-The mp3 file we want to use is in `datasets/nlp/source/transcribe-sample.5fc2109bb28268d10fbc677e64b7e59256783d3c.mp3`
-and is just some english speech about ML. 
-we first need to create a bucket in S3 `awstestnlp` and then copy this data over, either via console or using cli
+### Loading data into S3
+
+The mp3 file we want to use is stored [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/datasets/nlp/source/transcribe-sample.mp3)
+and is just some speech in english about Machine Learning. We first need to create a bucket in S3 `awstestnlp` and then copy this data over, either via console or using cli
+as below
 
 ``shell
 $ aws s3 cp datasets/nlp/source/transcribe-sample.mp3 s3://awstestnlp/source/transcribe-sample.mp3
 ``
 
-
-For the next sections, first make sure you have activated virtual env added
-repo root to pythonpath
-
-```shell
-$ export PYTHONPATH=.
-$ pipenv shell
-
-Warning: Your Pipfile requires python_version 3.10, but you are using 3.9.1 (/Users/rk1103/.local/share/v/A/bin/python).
-  $ pipenv --rm and rebuilding the virtual environment may resolve the issue.
-  $ pipenv check will surely fail.
-Launching subshell in virtual environment...
- . /Users/rk1103/.local/share/virtualenvs/AWS-ML-services-sGYPpasX/bin/activate
-```
+The architecture diagram shows a lambda function  being invoked after the AWS transcribe is called to parse the 
+output of the transcribed data stored in S3. The parsed data will then be passed to the next stage in the state machine for 
+further analysis by other AWS services. In the next section we will deploy the code to lambda function for 
+parsing the data.
 
 #### Deploying lambda function 
 
 
-We will first need to create a lambda function with packaged code in lambdas/parses3json. This parses the json from s3 
-(returned  from AWS Transcription jon step in the state machine) and returns the output to the next stage for further 
-NLP processing by other AWS services
+We will first need to create a lambda function containing the following handler.
 
+```python
+import json
+import boto3
 
-
-Then run the following command
-
-```shell
-$ python lambdas/deploy_lambda_function.py --function_name parses3json
- 
-{
-    "ResponseMetadata": {
-        "RequestId": "8f272d31-ea01-4b3f-a34b-1e523dc4539d",
-        "HTTPStatusCode": 201,
-        "HTTPHeaders": {
-            "date": "Thu, 12 May 2022 22:55:16 GMT",
-            "content-type": "application/json",
-            "content-length": "999",
-            "connection": "keep-alive",
-            "x-amzn-requestid": "8f272d31-ea01-4b3f-a34b-1e523dc4539d"
-        },
-        "RetryAttempts": 0
-    },
-    "FunctionName": "parses3json",
-    "FunctionArn": "arn:aws:lambda:us-east-1:376337229415:function:parses3json",
-    "Runtime": "python3.9",
-    "Role": "arn:aws:iam::376337229415:role/service-role/ReadObjectsS3forLambda",
-    "Handler": "lambda_function.lambda_handler",
-    "CodeSize": 372,
-    "Description": "",
-    "Timeout": 20,
-    "MemorySize": 128,
-    "LastModified": "2022-05-12T22:55:16.473+0000",
-    "CodeSha256": "6Q14hDxyn8Eh9eXqxo9jhEka8I4wcAH302TxUMOww1s=",
-    "Version": "$LATEST",
-    "TracingConfig": {
-        "Mode": "PassThrough"
-    },
-    "RevisionId": "e574f385-0982-4b22-846b-a6ea0ac6a485",
-    "State": "Pending",
-    "StateReason": "The function is being created.",
-    "StateReasonCode": "Creating",
-    "PackageType": "Zip",
-    "Architectures": [
-        "x86_64"
-    ],
-    "EphemeralStorage": {
-        "Size": 512
-    }
-}
-
+def lambda_handler(event, context):
+    s3 = boto3.resource("s3")
+    obj = s3.Object(event["BucketName"], event["TranscribeOutputKey"]).get()
+    big_str = json.loads(obj["Body"].read().decode("utf-8"))
+    transcribed_text = big_str["results"]["transcripts"][0]["transcript"]
+    print(transcribed_text)
+    return {"TranscribedText": transcribed_text}
 ```
 
-Currently, this assumes we have a role named "ReadObjectsS3forLambda" for lambda resource to assume. If we need to
-change this, we can pass in an additional parameter. Also, timeout defaults to 20 secs. This can also be overwritten
+To deploy the lambda, we can either do this directly in the console or by using [zip archives](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html) with no
+dependencies. The following [script](https://github.com/ryankarlos/AWS-ML-services/blob/master/lambdas/deploy_lambda_function.py) from the base of the repository
+creates a zip archive and deploys the function code to lambda. 
+
+
+```python
+import boto3
+import shutil
+import json
+import click
+from pathlib import Path
+import os
+
+iam_client = boto3.client("iam")
+lambda_client = boto3.client("lambda")
+
+
+@click.command()
+@click.option("--function_name", help="Name of lambda resource to create")
+@click.option(
+    "--role", default="ReadObjectsS3forLambda", help="IAM role name for lambda resource"
+)
+@click.option("--timeout", default=20, help="Max allowable timeout for lambda")
+def create_lambda_aws(
+    function_name, role, timeout, handler="lambda_function.lambda_handler"
+):
+    os.chdir(Path(__file__).parent)
+    shutil.make_archive(function_name, "zip", function_name)
+    with open(f"{function_name}.zip", "rb") as f:
+        lambda_zip = f.read()
+
+    role = iam_client.get_role(RoleName=role)
+    print(f"\n Role details: {json.dumps(role, default=str)} \n")
+
+    response = lambda_client.create_function(
+        FunctionName=function_name,
+        Runtime="python3.9",
+        Role=role["Role"]["Arn"],
+        Handler=handler,
+        Code=dict(ZipFile=lambda_zip),
+        Timeout=timeout,  # Maximum allowable timeout
+    )
+
+    print(json.dumps(response, indent=4, default=str))
+
+
+if __name__ == "__main__":
+    create_lambda_aws()
+```
+
+The script above also assumes we have a [Lambda execution role](https://github.com/ryankarlos/AWS-ML-services/blob/master/iam/roles/ReadObjectsS3forLambda) 
+already created to include a policy to peform s3:GetObject action in the S3 bucket and log to Cloudwatch.
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:376337229415:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:376337229415:log-group:/aws/lambda/parseS3json:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::*"
+        }
+    ]
+}
+```
+
+By default, it uses a role named "ReadObjectsS3forLambda" for the lambda resource to assume. If we need to
+change this, we can pass in an additional parameter, when running this via the cli. If doing this
+via the console, just select the correct execution role. The timeout setting defaults to 20 seconds, which can also 
+be overwritten by passing the argument in the cli (from the console, this can be set directly to a maximum 
+of 15 minutes)
 
 ```shell
 $ python lambdas/deploy_lambda_function.py --function_name parses3json --role "NewLambdaRole" --timeout 150
@@ -111,17 +156,13 @@ comprehend services and S3,lambda etc
 
 ![](../../screenshots/nlp/step-function-role.png)
 
-
-If creating new step function, the create_state_machine() method of boto sfn client requires the
-Amazon States Language definition of the state machine in string format as described [here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine) 
-
+If creating new step function, the `create_state_machine` method of boto sfn client requires the
+Amazon States Language definition of the state machine in string format as described [here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine)
 This is defined in the json file `step_functions/AWSNLPServicesdefinition.json`, which is loaded and converted to
-json string format.
-This may need to be adapted depending if the lambda function to be executed has a different name/arn
+json string format. This may need to be adapted depending if the lambda function to be executed has a different name/arn
 
 To create and execute the step function run the following command. This will first deploy the step function and attach role
-'StepFunctionAWSNLPServices', with step function name 'NLPExecution'.
-Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
+'StepFunctionAWSNLPServices', with step function name 'NLPExecution'. Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
 `--target_lang_code`). This needs to be paired with a voice-id for the chosen target language, required by AWS Polly  
 [Reference](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html)
 
@@ -182,7 +223,6 @@ to spanish.
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
 ```
 
-
 The input to the state machine is computed in the code in `execute_pipeline.py` and is passed 
 in the following format for this execution
 
@@ -214,7 +254,6 @@ in the code in `execute_pipeline.py`
 
 ![](../../screenshots/nlp/step_function_text-speech-es.png)
 
-
 The following execution translates to French using voice id 'Mathieu'. This is a standard engine and 
 the flow passes it ot the appropriate task. Since French is supported by all comprehend services, the parallel block
 is executed.
@@ -223,12 +262,10 @@ is executed.
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code fr --voice_id Mathieu --no-deploy
 ```
 
-
 ![](../../screenshots/nlp/step-function_text-speech-fr.png)
 
 This execution  translates to Japanese using voice id 'Takumi'. This is a neural engine. However, the language is
 not supported by all the AWS Comprehend services used in the state machine and hence the choice task will skip this
-
 
 ```shell
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code ja --voice_id Takumi --no-deploy
@@ -237,11 +274,13 @@ $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_c
 ![](../../screenshots/nlp/step-function_text-speech-ja.png)
 
 
-
 #### Copying results to local 
 
-To copy all the contents of the s3 bucket `awstetsnlp` to local `datasets\nlp` folder
+To copy all the contents of the s3 bucket `awstetsnlp` to a local foldes 
 
-````shell
+```shell
 $ aws s3 cp s3://awstestnlp datasets/nlp --recursive
 ```
+
+The outputs of the steps from step functions can be accessed in this [folder](https://github.com/ryankarlos/AWS-ML-services/tree/master/datasets/nlp)
+including the translations of speech in different languages [here](https://github.com/ryankarlos/AWS-ML-services/tree/master/datasets/nlp/polly) 

@@ -6,7 +6,13 @@ video speech and analysing sentiment and key-words in speech.
 * AWS Transcribe: automatic speech recognition (speech to text)
 * AWS Polly: Convert text to life like speech
 * AWS Translate: Translate text from one lang to another
-* AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
+* AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection 
+  
+The architecture diagram for this workflow is shown below. An mp3 file will be uploaded to S3 and a step function 
+workflow will execute tasks listed above to transcribe, translate and convert text back to speech, which will be stored in
+mp3 format in S3. We will also invoke a lambda function as one of the tasks to parse the transcribed data so 
+it is in the required format for the downstream tasks. Outputs from most of the tasks will stored in S3, whilst lambda
+logs will automatically stored in cloudwatch logstream.
 ![](../../screenshots/nlp/nlp_workflow_for_speech_translation.png)
 The code for the following exercise can be found in the github repository [here](https://github.com/ryankarlos/AWS-ML-services) and
 For the next sections, we need to install the dependencies in the [pipfile](https://github.com/ryankarlos/AWS-ML-services/blob/master/Pipfile)

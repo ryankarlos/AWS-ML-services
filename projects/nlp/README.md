@@ -7,13 +7,11 @@ video speech and analysing sentiment and key-words in speech.
 * AWS Polly: Convert text to life like speech
 * AWS Translate: Translate text from one lang to another
 * AWS Comprehend: Analysis of text data e.g. sentiment analysis, POS tagging, key phrases, entity detection
-
 ![](../../screenshots/nlp/nlp_workflow_for_speech_translation.png)
-
 The code for the following exercise can be found in the github repository [here](https://github.com/ryankarlos/AWS-ML-services) and
 For the next sections, we need to install the dependencies in the [pipfile](https://github.com/ryankarlos/AWS-ML-services/blob/master/Pipfile)
 by following the instructions [here](https://github.com/ryankarlos/AWS-ML-services/blob/master/README.md)
-
+  
 The environment can then be activated by running the following commands from the root of the repository.
 
 ```shell
@@ -158,13 +156,17 @@ comprehend services and S3,lambda etc
 
 If creating new step function, the `create_state_machine` method of boto sfn client requires the
 Amazon States Language definition of the state machine in string format as described [here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/stepfunctions.html#SFN.Client.create_state_machine)
-This is defined in the json file `step_functions/AWSNLPServicesdefinition.json`, which is loaded and converted to
+This is already defined in the [json file]((https://github.com/ryankarlos/AWS-ML-services/blob/master/step_functions/AWSNLPServicesdefinition.json), which is loaded and converted to
 json string format. This may need to be adapted depending if the lambda function to be executed has a different name/arn
+We also create a role (in this case named 'StepFunctionAWSNLPServices') for the Step Function to orchestrate the NLP services and Lambda.
 
-To create and execute the step function run the following command. This will first deploy the step function and attach role
-'StepFunctionAWSNLPServices', with step function name 'NLPExecution'. Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
-`--target_lang_code`). This needs to be paired with a voice-id for the chosen target language, required by AWS Polly  
-[Reference](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html)
+To create and execute the step function, execute the [script](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/nlp/execute_pipeline.py) from the command line as below. This will first deploy the step 
+function and attach role 'StepFunctionAWSNLPServices', with step function name 'NLPExecution'. This script will use the state machine definition from file named 
+[AWSNLPServicesdefinition.json](https://github.com/ryankarlos/AWS-ML-services/blob/master/step_functions/AWSNLPServicesdefinition.json). Once deployed the step function will execute and translate the source mp3 video (default lang 'en-us') to spanish (set by
+`--target_lang_code`). This needs to be paired with a voice-id for the chosen target language, required by AWS Polly 
+(see [AWS docs] for voice id choices (https://docs.aws.amazon.com/polly/latest/dg/voicelist.html)).
+This will translate the video to spanish based on the target language specified.
+
 
 ```shell
 $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --deploy --role StepFunctionAWSNLPServices
@@ -213,20 +215,10 @@ Execution status is 'RUNNING', waiting 10 secs before checking status again
 Execution status is 'RUNNING', waiting 10 secs before checking status again
 Execution status is 'RUNNING', waiting 10 secs before checking status again
 Job succeeded !
-
 ```
 
-If step function is already created and we just want to execute, run the following command. This will translate the video
-to spanish.
-
-```shell
-$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
-```
-
-The input to the state machine is computed in the code in `execute_pipeline.py` and is passed 
-in the following format for this execution
-
-
+The input payload to the state machine execution above is automatically passed in the following format 
+when the script [execute_pipeline.py](https://github.com/ryankarlos/AWS-ML-services/blob/master/projects/nlp/execute_pipeline.py) is run.
 ````
 {
   "BucketName": "awstestnlp",
@@ -243,6 +235,13 @@ in the following format for this execution
   "SkipComprehend": false
 }
 ````
+
+If the step function is already created, we can execute it by passing the --no-deploy argument to the command above. 
+
+```shell
+$ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_code es --voice_id Lupe --no-deploy
+```
+
 
 We can see from the flow below, that depending on the engine type detected, the input will go to the 
 respective task to execute - which sets the engine parameter to 'neural' or 'standard' depending on the
@@ -274,7 +273,7 @@ $ python projects/nlp/execute_pipeline.py --sf_name NLPExecution --target_lang_c
 ![](../../screenshots/nlp/step-function_text-speech-ja.png)
 
 
-#### Copying results to local 
+### Copying results to local 
 
 To copy all the contents of the s3 bucket `awstetsnlp` to a local foldes 
 
